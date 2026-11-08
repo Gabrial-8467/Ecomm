@@ -13,7 +13,7 @@ import {
   findBrandBySlug,
   itemListJsonLd,
   parsePublicCatalogQuery,
-  searchCatalog,
+  getSearchProvider,
 } from '@/modules/catalog'
 
 export const dynamic = 'force-dynamic'
@@ -49,7 +49,7 @@ export default async function BrandPage({ params, searchParams }: PageProps) {
   const brand = await findBrandBySlug(slug)
   if (!brand || !brand.isActive) notFound()
 
-  const results = await searchCatalog({ ...query, brands: [brand.slug] })
+  const results = await getSearchProvider().search({ ...query, brands: [brand.slug] })
 
   return (
     <div className="container-page py-10 lg:py-14">

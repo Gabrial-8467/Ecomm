@@ -90,6 +90,20 @@ an HTTPS deployment were not executed; see `docs/08-IMPLEMENTATION-STATUS.md`.
 
 **Estimate:** 10–14 days.
 
+**Verified 8 Nov 2026:** 48 unit tests and 33 integration tests pass (PostgreSQL 18.6, dedicated
+`ecomm_test` database). Coverage includes category reparenting with descendant path rewrites, variant
+matrix generation and idempotency, attribute/brand/price facets, immutable price-history windows,
+publish rejection when Legal Metrology declarations, images, seller identity or required attributes
+are missing, public API publication filtering and cost-price stripping, ETag revalidation, URL
+serialisation and SEO/JSON-LD helpers. Live smoke tests rendered a fully declared published product
+with Product and BreadcrumbList JSON-LD, verified the product API omitted `costPrice`, and checked
+brand/category filters, sitemap entries, `/products`, `/products/[slug]`, `/categories`,
+`/categories/[slug]`, `/brands`, `/brands/[slug]`, `/search` (redirect) and `/sitemap.xml` over HTTP.
+The temporary fixture was removed afterwards; the development database contains only seeded taxonomy
+and the platform-seller placeholder. No fake products or reviews are seeded. Docker, browser E2E,
+k6, Redis-backed cache/rate limiting and a production HTTPS deployment were not executed; see
+`docs/08-IMPLEMENTATION-STATUS.md` for the current gap list.
+
 ### Phase 5 — Inventory
 
 **Deliverables:** warehouses, stock ledger, reservations with TTL, atomic oversell protection, adjustments, low-stock alerts, suppliers, purchase orders, goods receipts, transfers, serviceable PINs.

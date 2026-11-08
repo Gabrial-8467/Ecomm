@@ -1,3 +1,4 @@
+import { Prisma } from '@/generated/prisma/client'
 import { prisma } from '@/lib/prisma'
 
 let sequence = 0
@@ -30,9 +31,13 @@ export async function createSeller(
               postalCode: '560001',
               country: 'India',
             }
-          : overrides.registeredAddress,
+          : overrides.registeredAddress === null
+            ? Prisma.JsonNull
+            : overrides.registeredAddress,
       customerCareEmail:
-        overrides.customerCareEmail === undefined ? 'care@example.com' : overrides.customerCareEmail,
+        overrides.customerCareEmail === undefined
+          ? 'care@example.com'
+          : overrides.customerCareEmail,
       customerCarePhone: overrides.customerCarePhone ?? null,
     },
   })

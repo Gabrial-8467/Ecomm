@@ -304,7 +304,7 @@ export async function getCategoryPage(slug: string, baseQuery: PublicCatalogQuer
   if (!category || !category.isActive || category.archivedAt) return null
 
   const query: PublicCatalogQuery = { ...baseQuery, category: category.path }
-  const results = await searchCatalog(query)
+  const results = await getSearchProvider().search(query)
   const ancestorSlugs = category.path.split('/').filter(Boolean)
   const ancestors = await prisma.category.findMany({
     where: { slug: { in: ancestorSlugs } },
@@ -332,7 +332,7 @@ export async function suggestCatalog(term: string, limit = 10) {
     limit: Math.min(5, limit),
   }
   const [products, categories, brands] = await Promise.all([
-    searchCatalog(query),
+    getSearchProvider().search(query),
     prisma.category.findMany({
       where: {
         isActive: true,
@@ -380,4 +380,34 @@ export async function getRelatedProducts(slug: string, limit = 8) {
     select: productCardSelect,
   })
   return rows.map(productCardView)
+}
+
+/**
+ * Search boundary. The current provider is PostgreSQL full-text search with
+ * optional trigram fallback. Callers depend on this interface so a hosted
+ * engine (Meilisearch/Typesense) can be introduced later without changing
+ * route handlers or pages. Swapping the provider is deliberately explicit:
+ * index synchronisation and reindexing must be added with that provider.
+ */
+export interface SearchProvider {
+  readonly name: string
+  search(query: PublicCatalogQuery): Promise<CatalogSearchResult>
+  suggest(term: string, limit?: number): ReturnType<typeof suggestCatalog>
+}
+
+export const postgresSearchProvider: SearchProvider = {
+  name: 'postgres',
+  search: searchCatalog,
+  suggest: suggestCatalog,
+}
+
+let activeSearchProvider: SearchProvider = postgresSearchProvider
+
+export function getSearchProvider(): SearchProvider {
+  return activeSearchProvider
+}
+
+/** Test/boot seam. External providers must ship an index-sync strategy first. */
+export function setSearchProvider(provider: SearchProvider): void {
+  activeSearchProvider = provider
 }

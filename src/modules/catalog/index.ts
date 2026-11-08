@@ -48,10 +48,14 @@ export {
 export {
   getCategoryPage,
   getRelatedProducts,
+  getSearchProvider,
+  postgresSearchProvider,
   searchCatalog,
+  setSearchProvider,
   suggestCatalog,
   type CatalogFacets,
   type CatalogSearchResult,
+  type SearchProvider,
 } from './search.service'
 export {
   adminProductView,

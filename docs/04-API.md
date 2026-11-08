@@ -93,30 +93,36 @@ Set globally by `src/proxy.ts`: CSP with per-request nonce, `Strict-Transport-Se
 
 ## 2. Public storefront
 
-| Method | Path                        | Purpose                         | Notes                                                                                                                                        |
-| ------ | --------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/products`                 | List/filter/sort                | `category`, `brand[]`, `minPrice`, `maxPrice`, `rating`, `inStock`, `discount`, `attr.<code>=`, `countryOfOrigin`, `sort`, `cursor`, `limit` |
-| GET    | `/products/:slug`           | Product detail                  | variants, images, specs, declarations, price history summary, related                                                                        |
-| GET    | `/products/:slug/related`   | Related / FBT                   | type filter                                                                                                                                  |
-| GET    | `/products/:slug/reviews`   | Approved reviews                | paginated, rating summary                                                                                                                    |
-| GET    | `/products/:slug/questions` | Q&A                             | approved only                                                                                                                                |
-| GET    | `/categories`               | Navigation tree                 | active only                                                                                                                                  |
-| GET    | `/categories/:slug`         | Category page data              | breadcrumb, facets, SEO                                                                                                                      |
-| GET    | `/brands`                   | Brand list                      | featured filter                                                                                                                              |
-| GET    | `/search`                   | Full search                     | query, facets, sponsored block labelled                                                                                                      |
-| GET    | `/search/suggest`           | Autocomplete                    | products, categories, brands; max 10                                                                                                         |
-| GET    | `/serviceability/:pincode`  | Delivery/COD/installation check | cached 24h; never promises unsupported service                                                                                               |
-| GET    | `/shipping/rates`           | Quote shipping for PIN + cart   | server-side cart or explicit variant quantities                                                                                              |
-| GET    | `/stores`                   | Store locator                   |                                                                                                                                              |
-| GET    | `/banners`                  | Active banners by placement     |                                                                                                                                              |
-| GET    | `/pages/:slug`              | CMS page                        | published only                                                                                                                               |
-| GET    | `/legal/:slug`              | Current legal document          | version, effective date, draft flag                                                                                                          |
-| GET    | `/blog` / `/blog/:slug`     | Blog                            | published only                                                                                                                               |
-| GET    | `/faqs`                     | FAQs                            |                                                                                                                                              |
-| POST   | `/newsletter`               | Subscribe                       | double opt-in email                                                                                                                          |
-| POST   | `/grievances`               | File a grievance                | rate-limited, returns acknowledgement copy                                                                                                   |
-| GET    | `/grievances/:number`       | Track (email + number)          | no enumeration of PII                                                                                                                        |
-| GET    | `/orders/track`             | Guest order tracking            | order number + email/phone + OTP proof                                                                                                       |
+**Implemented in Phase 4:** `/products`, `/products/:slug`, `/products/:slug/related`,
+`/categories`, `/categories/:slug`, `/brands` and `/search/suggest`. `/search` is a storefront
+redirect to `/products`; its planned JSON endpoint is not implemented. Every other row below remains
+planned and is not routable yet. Implemented routes return resource JSON directly (for example
+`{ items, pagination, facets, query }` or `{ product }`), not the draft `{ data, meta }` envelope.
+
+| Method | Path                        | Purpose                         | Notes                                                                                                                                      |
+| ------ | --------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET    | `/products`                 | List/filter/sort                | `category`, `brand[]`, `minPrice`, `maxPrice`, `rating`, `inStock`, `discount`, `attr.<code>=`, `countryOfOrigin`, `sort`, `page`, `limit` |
+| GET    | `/products/:slug`           | Product detail                  | variants, images, specs, declarations, price summary; ETag revalidation                                                                    |
+| GET    | `/products/:slug/related`   | Related / FBT                   | limit 8, published only                                                                                                                    |
+| GET    | `/products/:slug/reviews`   | Approved reviews                | paginated, rating summary                                                                                                                  |
+| GET    | `/products/:slug/questions` | Q&A                             | approved only                                                                                                                              |
+| GET    | `/categories`               | Navigation tree                 | active only                                                                                                                                |
+| GET    | `/categories/:slug`         | Category page data              | breadcrumb, facets, SEO                                                                                                                    |
+| GET    | `/brands`                   | Brand list                      | active only; published-product counts                                                                                                      |
+| GET    | `/search`                   | Full search                     | Phase 4 redirects to `/products?…`; dedicated endpoint not implemented                                                                     |
+| GET    | `/search/suggest`           | Autocomplete                    | products, categories, brands; max 10                                                                                                       |
+| GET    | `/serviceability/:pincode`  | Delivery/COD/installation check | cached 24h; never promises unsupported service                                                                                             |
+| GET    | `/shipping/rates`           | Quote shipping for PIN + cart   | server-side cart or explicit variant quantities                                                                                            |
+| GET    | `/stores`                   | Store locator                   |                                                                                                                                            |
+| GET    | `/banners`                  | Active banners by placement     |                                                                                                                                            |
+| GET    | `/pages/:slug`              | CMS page                        | published only                                                                                                                             |
+| GET    | `/legal/:slug`              | Current legal document          | version, effective date, draft flag                                                                                                        |
+| GET    | `/blog` / `/blog/:slug`     | Blog                            | published only                                                                                                                             |
+| GET    | `/faqs`                     | FAQs                            |                                                                                                                                            |
+| POST   | `/newsletter`               | Subscribe                       | double opt-in email                                                                                                                        |
+| POST   | `/grievances`               | File a grievance                | rate-limited, returns acknowledgement copy                                                                                                 |
+| GET    | `/grievances/:number`       | Track (email + number)          | no enumeration of PII                                                                                                                      |
+| GET    | `/orders/track`             | Guest order tracking            | order number + email/phone + OTP proof                                                                                                     |
 
 **Product payload must include** (Legal Metrology + 2026 Rules): seller legal name/address, manufacturer/packer/importer, country of origin, net quantity + unit, unit sale price, MRP, selling price, prior price (lowest in 30 days) when a reduction is shown, tax-inclusive flag, warranty, return eligibility, assembly/installation flags. Missing mandatory declarations prevent `ACTIVE` status.
 
@@ -213,25 +219,37 @@ Payment verification flow:
 
 Every route is permission-gated. Permission codes shown are the minimum required.
 
-### Catalog
+### Catalog (implemented in Phase 4)
 
-| Method           | Path                           | Permission                                              |
-| ---------------- | ------------------------------ | ------------------------------------------------------- |
-| GET/POST         | `/admin/products`              | `products.view` / `products.create`                     |
-| GET/PATCH/DELETE | `/admin/products/:id`          | `products.view` / `products.update` / `products.delete` |
-| POST             | `/admin/products/:id/publish`  | `products.publish`                                      |
-| POST             | `/admin/products/:id/archive`  | `products.delete`                                       |
-| POST             | `/admin/products/import`       | `products.import` (async CSV/Excel job)                 |
-| GET              | `/admin/products/export`       | `products.export`                                       |
-| POST             | `/admin/products/:id/variants` | `products.update`                                       |
-| PATCH/DELETE     | `/admin/variants/:id`          | `products.update`                                       |
-| GET/POST         | `/admin/categories`            | `categories.view` / `categories.create`                 |
-| PATCH/DELETE     | `/admin/categories/:id`        | `categories.update` / `categories.delete`               |
-| GET/POST         | `/admin/brands`                | `brands.view` / `brands.manage`                         |
-| GET/POST         | `/admin/attributes`            | `catalog.attributes.manage`                             |
-| POST             | `/admin/uploads/presign`       | `media.upload`                                          |
-| GET/POST         | `/admin/promotions`            | `promotions.view` / `promotions.manage`                 |
-| GET/POST         | `/admin/sponsored-placements`  | `promotions.manage`                                     |
+Every mutating route also requires `X-CSRF-Token`. `GET` routes require `catalog:read`. Implemented
+paths use the `/api/v1` prefix; the admin UI mirrors them as `/admin/catalog/*` pages.
+
+| Method           | Path                                                         | Permission                                          |
+| ---------------- | ------------------------------------------------------------ | --------------------------------------------------- |
+| GET/POST         | `/admin/categories`                                          | `catalog:read` / `catalog:write`                    |
+| GET/PATCH/DELETE | `/admin/categories/:categoryId`                              | `catalog:read` / `catalog:write` / `catalog:delete` |
+| PUT              | `/admin/categories/:categoryId/attributes`                   | `catalog:write`                                     |
+| GET/POST         | `/admin/brands`                                              | `catalog:read` / `catalog:write`                    |
+| GET/PATCH/DELETE | `/admin/brands/:brandId`                                     | `catalog:read` / `catalog:write` / `catalog:delete` |
+| GET/POST         | `/admin/attributes`                                          | `catalog:read` / `catalog:write`                    |
+| GET/PATCH/DELETE | `/admin/attributes/:attributeId`                             | `catalog:read` / `catalog:write` / `catalog:delete` |
+| GET/POST         | `/admin/products`                                            | `catalog:read` / `catalog:write`                    |
+| GET/PATCH/DELETE | `/admin/products/:productId`                                 | `catalog:read` / `catalog:write` / `catalog:delete` |
+| POST             | `/admin/products/:productId/publish`                         | `catalog:publish`                                   |
+| POST             | `/admin/products/:productId/archive`                         | `catalog:delete`                                    |
+| POST             | `/admin/products/:productId/variants`                        | `catalog:write`                                     |
+| POST             | `/admin/products/:productId/variants/generate`               | `catalog:write`                                     |
+| PATCH/DELETE     | `/admin/variants/:variantId`                                 | `catalog:write` / `catalog:delete`                  |
+| POST             | `/admin/variants/:variantId/price`                           | `catalog:write`                                     |
+| POST             | `/admin/products/:productId/images`                          | `catalog:write`                                     |
+| DELETE           | `/admin/products/:productId/images/:imageId`                 | `catalog:delete`                                    |
+| POST             | `/admin/products/:productId/specifications`                  | `catalog:write`                                     |
+| DELETE           | `/admin/products/:productId/specifications/:specificationId` | `catalog:delete`                                    |
+| POST             | `/admin/products/:productId/attributes`                      | `catalog:write`                                     |
+| DELETE           | `/admin/products/:productId/attributes/:attributeId`         | `catalog:delete`                                    |
+
+Not implemented in Phase 4: CSV/Excel import/export, presigned media uploads, seller/legal-entity
+administration, and sponsored placements.
 
 ### Inventory
 

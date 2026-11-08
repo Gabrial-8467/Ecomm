@@ -1,8 +1,8 @@
 # Implementation Status
 
 **Last verified:** 8 November 2026
-**Phase:** 3 of 14 — authentication and authorization complete
-**Production readiness:** not ready; authentication exists, but no commerce workflow exists yet
+**Phase:** 4 of 14 — product catalog complete
+**Production readiness:** not ready; authentication and catalogue exist, but no cart, checkout, payment or order workflow exists yet
 
 This document records what was actually executed, not what was merely written.
 
@@ -24,11 +24,12 @@ touched.
 | TypeScript                      | `npm run typecheck`             | ✅ clean                                                     |
 | ESLint                          | `npm run lint`                  | ✅ 0 errors, 0 warnings                                      |
 | Prettier                        | `npm run format:check`          | ✅ all files formatted                                       |
-| Unit tests                      | `npm test`                      | ✅ 4 files, 28 tests                                         |
-| Integration tests               | `npm run test:integration`      | ✅ 3 files, 27 tests                                         |
-| Production build                | `npm run build`                 | ✅ Next 16.4.5, 33 route entries                             |
-| Dev server                      | `npm run dev`                   | ✅ storefront, auth pages, API routes, CSP headers           |
+| Unit tests                      | `npm test`                      | ✅ 8 files, 48 tests                                         |
+| Integration tests               | `npm run test:integration`      | ✅ 4 files, 33 tests                                         |
+| Production build                | `npm run build`                 | ✅ Next 16.4.5, 81 route entries                             |
+| Dev server                      | `npm run dev`                   | ✅ storefront, auth pages, catalogue pages, API routes, CSP  |
 | Live auth smoke                 | `curl` against `localhost:3000` | ✅ register, verification gate, login, session, CSRF, logout |
+| Live catalogue smoke            | `curl` against `localhost:3000` | ✅ product page/JSON-LD, API, facets, brand, sitemap         |
 | Readiness                       | `GET /api/health/ready`         | ✅ `database: ok`, `cache: ok` (memory fallback)             |
 | Docker image                    | `docker build`                  | ⚠️ not run — Docker missing on machine                       |
 | Compose stack                   | `docker compose up`             | ⚠️ not run — Docker missing on machine                       |
@@ -140,13 +141,77 @@ Raw migration adds:
 | Admin rejects missing permission | admin route 401/403/200 tests; customer `/admin/whoami` returns 403              |
 | Session fixation/IDOR            | rotation invalidates old token; cross-user revoke returns 404                    |
 
+### Product catalog
+
+- `prisma/schema.prisma` — categories with materialised `path`/`level`, brands, attributes and
+  options, category-attribute assignments, products, variants, variant attribute values, images,
+  specifications, product attribute values and immutable `ProductPriceHistory`; one-default-variant
+  partial unique index
+- `src/modules/catalog/catalog.schema.ts` — Zod contracts for every catalogue input plus the
+  documented public query contract (brand, price, rating, stock, discount, origin, `attr.<code>`,
+  sort, pagination)
+- `src/modules/catalog/catalog.repository.ts` — explicit selects/includes; public card select strips
+  `costPrice`; published-only product, category and brand queries; sitemap query
+- `src/modules/catalog/category.service.ts` — create/update/delete, archive, active-only tree,
+  transactional reparenting that rewrites descendant paths and levels, descendant-cycle rejection,
+  category-attribute assignment
+- `src/modules/catalog/brand.service.ts` and `attribute.service.ts` — CRUD, slug generation,
+  activation, option management and audit events
+- `src/modules/catalog/product.service.ts` — product/variant/image/specification/attribute CRUD,
+  unique SKU/slug enforcement, one-default-variant enforcement, immutable initial and changed price
+  history, variant-matrix generation, publish/archive, catalogue-version bumps and audit events
+- `src/modules/catalog/matrix.ts` — deterministic cartesian variant combinations and sanitised SKUs
+- `src/modules/catalog/publish.ts` — pure Legal Metrology and Consumer Protection publish gate:
+  HSN/GST, tax-inclusive pricing, country of origin, manufacturer/importer, packer, net quantity,
+  unit of measure, unit sale price, consumer care, seller legal name/registered address/contact,
+  images, active priced variants, MRP ≥ selling price and required category attributes
+- `src/modules/catalog/search.service.ts` — `SearchProvider` seam with the PostgreSQL provider;
+  weight-ranked FTS (`name` > keywords > short description > description), optional `pg_trgm`
+  typo-tolerant matching, brand/price/attribute/origin/stock/discount filters, facet counts,
+  suggestions, category pages and related products
+- `src/modules/catalog/catalog.presenter.ts` — public and admin views, tax-inclusive price summary,
+  30-day lowest-price marketing rule and declaration projection
+- `src/modules/catalog/catalog.seo.ts` — canonical metadata, Product JSON-LD, AggregateOffer for
+  variants, AggregateRating only when verified reviews exist, BreadcrumbList and ItemList
+- `src/app/api/v1/admin/{categories,brands,attributes,products,variants}` — permission-gated admin
+  REST routes (`catalog:read`, `catalog:write`, `catalog:publish`, `catalog:delete`) with CSRF checks
+  on mutations, including variant matrix generation, price history and publish/archive
+- `src/app/api/v1/{products,categories,brands,search/suggest}` — public read APIs with cache headers
+  and ETag revalidation on product detail
+- `src/app/admin/catalog/*` — server-rendered overview, category tree, brands, attributes, product
+  list/new/detail, variants, matrix, images, specifications, product attributes, price history and
+  publish/archive/delete controls; every page permission-gates
+- `src/app/(storefront)/{products,categories,brands,search}` — published-only listing, product
+  detail with gallery/variant picker/declarations/specifications, category tree, brand pages, filters,
+  pagination and JSON-LD; `/search` redirects to the canonical `/products` listing
+- `src/app/sitemap.ts` — dynamic sitemap containing only published products, active categories and
+  active brands
+- `tests/integration/catalog.integration.test.ts` + `catalog-factories.ts` — dedicated-database
+  catalogue integration suite; `tests/unit/catalog-*.test.ts` — matrix, publish, URL and SEO units
+
+### Phase 4 acceptance mapping
+
+| Requirement                          | Evidence                                                                                                        |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Category tree and safe reparenting   | integration test builds a three-level tree, moves a subtree and asserts rewritten paths/levels and cycle block  |
+| Variant matrix                       | integration test creates 4 combinations idempotently; unit test asserts deterministic keys, labels and SKUs     |
+| Attribute and brand filters/facets   | integration test asserts attribute filtering, brand filtering, price filtering, facet counts and category page  |
+| Price history                        | integration test closes the previous window and records the new price; live product rendered the price summary  |
+| Publish blocked without declarations | unit test reports every missing Legal Metrology/seller field; integration test keeps the product `DRAFT`        |
+| Reference seed only                  | seed contains taxonomy/attributes/settings/navigation and a placeholder seller; no products, reviews or ratings |
+| No fabricated social proof           | product JSON-LD and UI omit `aggregateRating` until verified reviews exist; live smoke showed no rating block   |
+| SEO metadata and structured data     | unit tests cover Product/AggregateOffer/Breadcrumb/ItemList; live product page emitted valid JSON-LD            |
+| Public API safety                    | integration test returns only published products, strips `costPrice`, and revalidates with ETag 304             |
+| Search adapter boundary              | `SearchProvider` interface with `postgres` provider; public routes/pages resolve through `getSearchProvider()`  |
+
 ### Deliberately absent
 
-No product/category storefront routes, no cart, no checkout, no Razorpay integration, no order
-lifecycle, no catalog/inventory/returns/CMS admin modules, no published legal content, no BullMQ
-worker, no media storage adapter, no real email/SMS delivery, no browser E2E suite, and no
-deployment evidence. The admin dashboard shows no invented metrics. Marketing copy contains no
-customer counts, ratings, delivery promises or legal identifiers that have not been verified.
+No cart, checkout, coupons, Razorpay integration, order lifecycle, inventory/reservation workflow,
+returns, reviews/Q&A submission, CMS content editing, published legal content, BullMQ worker, media
+upload/processing adapter, real email/SMS delivery, browser E2E suite, hosted search engine, or
+deployment evidence. The storefront product page intentionally disables “Add to cart” and says the
+cart opens in the next release. The admin dashboard and marketing copy contain no invented metrics,
+ratings, delivery promises or legal identifiers.
 
 ---
 
@@ -166,8 +231,8 @@ customer counts, ratings, delivery promises or legal identifiers that have not b
 6. **MFA lifecycle gaps.** Staff can enrol and use TOTP and recovery codes, but there is no UI to
    disable MFA, regenerate recovery codes, or reset a lost authenticator through support. Those need
    an audited step-up flow in a later admin phase.
-7. **Admin surface is minimal.** Phase 3 ships only `/admin` dashboard and `/admin/whoami`; staff,
-   role and permission administration is not implemented.
+7. **Admin surface is partial.** Catalogue administration exists, but staff, role, permission,
+   seller-identity and legal-declaration administration are not implemented.
 8. **No browser-level E2E.** Forms and redirects are covered by typecheck/build plus API smoke tests,
    not by a real browser session.
 9. **Postgres extensions.** `pg_trgm` is optional in this environment; typo-tolerant search will only
@@ -177,18 +242,36 @@ customer counts, ratings, delivery promises or legal identifiers that have not b
     never be published as-is.
 12. **No email sender for newsletter.** Newsletter consent is stored, but double opt-in and
     unsubscribe emails are not implemented.
+13. **Media upload is not implemented.** Admin image screens store external URLs and alt text; there
+    is no presigned S3/Cloudinary upload, virus/content inspection, resizing or AVIF/WebP generation.
+    Public images currently render with `unoptimized`, so image-delivery performance is unmeasured.
+14. **Publishing is blocked until the seller is real.** The seeded platform seller has no registered
+    address, GSTIN/PAN or consumer-care contact, and there is no seller-admin screen. A real product
+    cannot be published until those verified details are entered; this is intentional.
+15. **No bulk catalogue import/export.** CSV/Excel import, export and scheduled feeds described in the
+    long-term API draft are not implemented in Phase 4.
+16. **Search is PostgreSQL-only.** The `SearchProvider` seam exists and the default provider passes
+    runtime tests, but no hosted engine or index-sync/reindex workflow exists. `pg_trgm` is optional
+    locally; production must install it for fuzzy matching.
+17. **Storefront catalogue is functional, not performance-tuned.** Pages are `force-dynamic` and
+    server-rendered for correctness; caching, Lighthouse budgets, image optimisation and browser
+    interaction tests have not been run. Full visual/storefront work remains Phase 6.
 
 ---
 
-## 4. Phase 4 entry criteria
+## 4. Phase 5 entry criteria
 
-Before starting the product catalog:
+Before starting inventory:
 
-- Decide the category/attribute publishing workflow and who can approve it (content vs. product
-  manager roles).
-- Confirm Legal Metrology declarations that block `ACTIVE` product status.
+- Decide the warehouse model (single fulfilment node vs. multiple) and the reservation TTL that
+  checkout will use.
+- Confirm the stock ledger invariant: every stock change must create a movement and reserved stock
+  must never exceed on-hand.
+- Wire catalogue variants to inventory rows; keep variant activation and price history independent of
+  stock levels.
+- Provide a way to mark products in stock for development without inventing customer-facing stock
+  numbers.
 - Install `pg_trgm` in staging/production or accept exact-match search until it is available.
-- Add media storage credentials or a local upload adapter for product images.
 - Keep the Phase 3 rule that authorization is checked in services, not only in routes/components.
-- Extend the integration harness with catalog fixtures; do not weaken the dedicated test database
-  isolation or truncate the development database.
+- Extend the existing dedicated-database integration harness; do not truncate the development
+  database.

@@ -5,7 +5,7 @@ import { CatalogPagination } from '@/components/catalog/catalog-pagination'
 import { ProductGrid } from '@/components/catalog/product-grid'
 import { JsonLd } from '@/components/seo/json-ld'
 import { catalogResetHref, searchParamsFromRecord, type PageSearchParams } from '@/lib/catalog-url'
-import { itemListJsonLd, parsePublicCatalogQuery, searchCatalog } from '@/modules/catalog'
+import { getSearchProvider, itemListJsonLd, parsePublicCatalogQuery } from '@/modules/catalog'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +33,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 export default async function ProductsPage({ searchParams }: PageProps) {
   const input = await searchParams
   const query = parsePublicCatalogQuery(searchParamsFromRecord(input))
-  const results = await searchCatalog(query)
+  const results = await getSearchProvider().search(query)
   const heading = query.q ? `Results for “${query.q}”` : 'All products'
 
   const activeFilterCount =
