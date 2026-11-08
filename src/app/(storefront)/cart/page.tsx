@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
-import { ArrowRight, ImageIcon, LockKeyhole, ShoppingBag } from 'lucide-react'
+import { ArrowRight, ImageIcon, ShoppingBag } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
 import { CartLineControls } from '@/components/store/cart-line-controls'
 import { ClearCartButton } from '@/components/store/clear-cart-button'
+import { CouponForm } from '@/components/store/coupon-form'
 import { Button } from '@/components/ui/button'
 import { getEnv } from '@/lib/env'
 import { getCartView } from '@/modules/cart/cart.service'
@@ -172,18 +173,21 @@ export default async function CartPage() {
               </div>
             </dl>
 
-            <p className="mt-3 text-xs leading-6 text-muted-foreground">
-              Free standard delivery above {money.format(freeShipping)} once checkout opens.
-              Shipping is confirmed against your pincode before payment.
+            <div className="mt-5 border-t border-border pt-4">
+              <CouponForm activeCoupon={cart.coupon} />
+            </div>
+
+            <p className="mt-4 text-xs leading-6 text-muted-foreground">
+              Free standard delivery above {money.format(freeShipping)}.
+              Shipping is confirmed against your pincode at checkout.
             </p>
 
-            <Button size="lg" className="mt-5 w-full" disabled>
-              <LockKeyhole aria-hidden="true" />
-              Checkout opens next release
+            <Button asChild size="lg" className="mt-5 w-full" disabled={cart.itemCount === 0}>
+              <Link href="/checkout">
+                Proceed to Checkout
+                <ArrowRight aria-hidden="true" />
+              </Link>
             </Button>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              Payment is not being collected. Your cart is saved until checkout is live.
-            </p>
 
             <Button asChild variant="outline" className="mt-3 w-full">
               <Link href="/products">Continue shopping</Link>

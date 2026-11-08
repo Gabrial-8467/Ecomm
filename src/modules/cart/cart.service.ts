@@ -9,10 +9,15 @@ import { InsufficientStockError, NotFoundError, ValidationError } from '@/lib/er
 import { ensureGuestTokenHash, readGuestTokenHash } from '@/lib/guest-identity'
 import { prisma } from '@/lib/prisma'
 import { getCurrentActor } from '@/lib/auth/guards'
+import {
+  evaluateCouponForOwner,
+  findCouponByCode,
+} from '@/modules/pricing/coupon.service'
 
 const CART_TTL_DAYS = 30
 
 const cartInclude = {
+  coupon: true,
   items: {
     orderBy: { createdAt: 'asc' },
     include: {
@@ -27,6 +32,16 @@ const cartInclude = {
               archivedAt: true,
               priceIncludesTax: true,
               gstRate: true,
+              sellerId: true,
+              categoryId: true,
+              brandId: true,
+              hsnCode: true,
+              shippingClass: true,
+              isReturnable: true,
+              returnWindowDays: true,
+              replacementAllowed: true,
+              installationRequired: true,
+              warrantyMonths: true,
               images: {
                 where: { isPrimary: true },
                 orderBy: { sortOrder: 'asc' },
@@ -59,12 +74,34 @@ export interface CartLine {
   sku: string
   image: { url: string; alt: string } | null
   unitPrice: number
+  unitMrp: number
   lineTotal: number
   quantity: number
   stock: number
   maxQuantity: number
   available: boolean
   unavailableReason: string | null
+  sellerId: string
+  categoryId: string
+  brandId: string | null
+  hsnCode: string | null
+  gstRate: number
+  taxRate: number
+  priceIncludesTax: boolean
+  shippingClass: import('@/generated/prisma/client').ShippingClass
+  isReturnable: boolean
+  returnWindowDays: number | null
+  replacementAllowed: boolean
+  installationRequired: boolean
+  warrantyMonths: number | null
+}
+
+export interface CartCouponView {
+  code: string
+  description: string | null
+  discount: number
+  freeShipping: boolean
+  reason: string | null
 }
 
 export interface CartView {
@@ -81,11 +118,13 @@ export interface CartView {
   grandTotal: number
   currency: string
   isGuest: boolean
+  coupon: CartCouponView | null
 }
 
 interface Owner {
   userId: string | null
   guestTokenHash: string | null
+  email: string | null
 }
 
 function toNumber(value: Decimal): number {
@@ -123,10 +162,11 @@ function emptyCart(isGuest: boolean): CartView {
     grandTotal: 0,
     currency: getEnv().DEFAULT_CURRENCY,
     isGuest,
+    coupon: null,
   }
 }
 
-function buildView(cart: CartWithItems, isGuest: boolean): CartView {
+async function buildView(cart: CartWithItems, owner: Owner): Promise<CartView> {
   let subtotal = new Decimal(0)
   let taxTotal = new Decimal(0)
   let itemCount = 0
@@ -165,6 +205,7 @@ function buildView(cart: CartWithItems, isGuest: boolean): CartView {
       sku: item.variant.sku,
       image: image ? { url: image.url, alt: image.alt } : null,
       unitPrice: toNumber(unitPrice),
+      unitMrp: toNumber(new Decimal(item.variant.mrp.toString())),
       lineTotal: toNumber(lineTotal),
       quantity: item.quantity,
       stock,
@@ -175,15 +216,53 @@ function buildView(cart: CartWithItems, isGuest: boolean): CartView {
         : stock <= 0
           ? 'Out of stock.'
           : null,
+      sellerId: product.sellerId,
+      categoryId: product.categoryId,
+      brandId: product.brandId,
+      hsnCode: product.hsnCode,
+      gstRate: Number(product.gstRate.toString()),
+      taxRate: taxRate.toNumber(),
+      priceIncludesTax: product.priceIncludesTax,
+      shippingClass: product.shippingClass,
+      isReturnable: product.isReturnable,
+      returnWindowDays: product.returnWindowDays,
+      replacementAllowed: product.replacementAllowed,
+      installationRequired: product.installationRequired,
+      warrantyMonths: product.warrantyMonths,
     }
   })
 
-  const discountTotal = new Decimal(cart.discountTotal.toString())
+  const availableLines = items.filter((item) => item.available)
+  let couponView: CartCouponView | null = null
+  let discount = new Decimal(0)
+  if (cart.coupon && availableLines.length > 0) {
+    const evaluation = await evaluateCouponForOwner(cart.coupon, {
+      lines: availableLines.map((line) => ({
+        productId: line.productId,
+        categoryId: line.categoryId,
+        brandId: line.brandId,
+        lineTotal: line.lineTotal,
+        quantity: line.quantity,
+      })),
+      subtotal: subtotal.toNumber(),
+      userId: owner.userId,
+      email: owner.email,
+    })
+    if (evaluation.valid) discount = new Decimal(evaluation.discount)
+    couponView = {
+      code: cart.coupon.code,
+      description: cart.coupon.description,
+      discount: evaluation.discount,
+      freeShipping: evaluation.freeShipping,
+      reason: evaluation.valid ? null : evaluation.reason,
+    }
+  }
+
   const shippingTotal = new Decimal(cart.shippingTotal.toString())
   const taxIncluded = cart.items.every((item) => item.variant.product.priceIncludesTax)
   const grandTotal = subtotal
     .plus(taxIncluded ? 0 : taxTotal)
-    .minus(discountTotal)
+    .minus(discount)
     .plus(shippingTotal)
     .toDecimalPlaces(2)
 
@@ -193,25 +272,26 @@ function buildView(cart: CartWithItems, isGuest: boolean): CartView {
     itemCount,
     totalItemCount,
     subtotal: toNumber(subtotal),
-    discountTotal: toNumber(discountTotal),
+    discountTotal: toNumber(discount),
     taxTotal: toNumber(taxTotal),
     shippingTotal: toNumber(shippingTotal),
     grandTotal: toNumber(Decimal.max(0, grandTotal)),
     currency: cart.currency,
-    isGuest,
+    isGuest: owner.userId === null,
+    coupon: couponView,
   }
 }
 
 async function resolveOwner(): Promise<Owner> {
   const actor = await getCurrentActor()
-  if (actor) return { userId: actor.userId, guestTokenHash: null }
-  return { userId: null, guestTokenHash: await readGuestTokenHash() }
+  if (actor) return { userId: actor.userId, guestTokenHash: null, email: actor.email }
+  return { userId: null, guestTokenHash: await readGuestTokenHash(), email: null }
 }
 
 async function ensureOwner(): Promise<Owner> {
   const actor = await getCurrentActor()
-  if (actor) return { userId: actor.userId, guestTokenHash: null }
-  return { userId: null, guestTokenHash: await ensureGuestTokenHash() }
+  if (actor) return { userId: actor.userId, guestTokenHash: null, email: actor.email }
+  return { userId: null, guestTokenHash: await ensureGuestTokenHash(), email: null }
 }
 
 function activeCartWhere(owner: Owner) {
@@ -303,7 +383,11 @@ async function fetchVariantForCart(variantId: string) {
 async function refreshTotals(cartId: string): Promise<void> {
   const cart = await prisma.cart.findUnique({ where: { id: cartId }, include: cartInclude })
   if (!cart) return
-  const view = buildView(cart, cart.userId === null)
+  const view = await buildView(cart, {
+    userId: cart.userId,
+    guestTokenHash: cart.guestTokenHash,
+    email: null,
+  })
   await prisma.cart.update({
     where: { id: cartId },
     data: {
@@ -321,8 +405,37 @@ export const getCartView = cache(async (): Promise<CartView> => {
   const owner = await resolveOwner()
   const cart = await findActiveCart(owner)
   if (!cart) return emptyCart(owner.userId === null)
-  return buildView(cart, owner.userId === null)
+  return buildView(cart, owner)
 })
+
+export interface CheckoutCartContext {
+  cartId: string
+  userId: string | null
+  guestTokenHash: string | null
+  email: string | null
+  currency: string
+  coupon: import('@/generated/prisma/client').Coupon | null
+  lines: CartLine[]
+  view: CartView
+}
+
+/** Raw cart + owner identity for checkout placement. */
+export async function getCheckoutCartContext(): Promise<CheckoutCartContext | null> {
+  const owner = await resolveOwner()
+  const cart = await findActiveCart(owner)
+  if (!cart) return null
+  const view = await buildView(cart, owner)
+  return {
+    cartId: cart.id,
+    userId: owner.userId,
+    guestTokenHash: owner.guestTokenHash,
+    email: owner.email,
+    currency: cart.currency,
+    coupon: cart.coupon,
+    lines: view.items,
+    view,
+  }
+}
 
 export const getCartCount = cache(async (): Promise<number> => {
   const owner = await resolveOwner()
@@ -433,9 +546,65 @@ export async function clearCart(): Promise<string> {
   const cart = await findActiveCart(owner)
   if (!cart) return 'Your cart is already empty.'
   await prisma.cartItem.deleteMany({ where: { cartId: cart.id } })
+  await prisma.cart.update({ where: { id: cart.id }, data: { couponId: null, discountTotal: 0 } })
   await refreshTotals(cart.id)
   revalidatePath('/cart')
   return 'Cart cleared.'
+}
+
+export async function applyCouponToCart(code: string): Promise<string> {
+  const owner = await ensureOwner()
+  const cart = await findActiveCart(owner)
+  if (!cart || cart.items.length === 0) {
+    throw new ValidationError('Add an item to your cart before applying a coupon.')
+  }
+
+  const coupon = await findCouponByCode(code)
+  if (!coupon) throw new ValidationError('That coupon code is not recognised.')
+
+  const view = await buildView(cart, owner)
+  const available = view.items.filter((item) => item.available)
+  if (available.length === 0) {
+    throw new ValidationError('No item in your cart is currently available.')
+  }
+
+  const evaluation = await evaluateCouponForOwner(coupon, {
+    lines: available.map((line) => ({
+      productId: line.productId,
+      categoryId: line.categoryId,
+      brandId: line.brandId,
+      lineTotal: line.lineTotal,
+      quantity: line.quantity,
+    })),
+    subtotal: view.subtotal,
+    userId: owner.userId,
+    email: owner.email,
+  })
+
+  if (!evaluation.valid) {
+    throw new ValidationError(evaluation.reason ?? 'This coupon cannot be applied to your cart.')
+  }
+
+  await prisma.cart.update({ where: { id: cart.id }, data: { couponId: coupon.id } })
+  await refreshTotals(cart.id)
+  revalidatePath('/cart')
+  revalidatePath('/checkout')
+
+  if (evaluation.freeShipping) {
+    return `${coupon.code} applied. Shipping is free at checkout.`
+  }
+  return `${coupon.code} applied. You save ₹${evaluation.discount.toFixed(2)}.`
+}
+
+export async function removeCouponFromCart(): Promise<string> {
+  const owner = await ensureOwner()
+  const cart = await findActiveCart(owner)
+  if (!cart) return 'Your cart is already empty.'
+  await prisma.cart.update({ where: { id: cart.id }, data: { couponId: null, discountTotal: 0 } })
+  await refreshTotals(cart.id)
+  revalidatePath('/cart')
+  revalidatePath('/checkout')
+  return 'Coupon removed.'
 }
 
 /**

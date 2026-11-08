@@ -561,6 +561,190 @@ async function seedLegalDocuments() {
   console.log(`legal documents: ${LEGAL_DOCUMENTS.length} (draft, unpublished)`)
 }
 
+async function seedWarehouses() {
+  const warehouses = [
+    {
+      code: 'WH-DEL-01',
+      name: 'Delhi Regional Fulfillment Center',
+      city: 'New Delhi',
+      state: 'Delhi',
+      pincode: '110001',
+      priority: 1,
+      isDefault: true,
+      isActive: true,
+    },
+    {
+      code: 'WH-BOM-01',
+      name: 'Mumbai Regional Fulfillment Center',
+      city: 'Mumbai',
+      state: 'Maharashtra',
+      pincode: '400001',
+      priority: 2,
+      isDefault: false,
+      isActive: true,
+    },
+    {
+      code: 'WH-BLR-01',
+      name: 'Bengaluru Regional Fulfillment Center',
+      city: 'Bengaluru',
+      state: 'Karnataka',
+      pincode: '560001',
+      priority: 3,
+      isDefault: false,
+      isActive: true,
+    },
+  ]
+
+  for (const wh of warehouses) {
+    await prisma.warehouse.upsert({
+      where: { code: wh.code },
+      update: {
+        name: wh.name,
+        city: wh.city,
+        state: wh.state,
+        pincode: wh.pincode,
+        priority: wh.priority,
+        isDefault: wh.isDefault,
+        isActive: wh.isActive,
+      },
+      create: wh,
+    })
+  }
+  console.log(`warehouses: ${warehouses.length}`)
+}
+
+async function seedServiceablePincodes() {
+  const delWh = await prisma.warehouse.findUnique({ where: { code: 'WH-DEL-01' } })
+  const bomWh = await prisma.warehouse.findUnique({ where: { code: 'WH-BOM-01' } })
+  const blrWh = await prisma.warehouse.findUnique({ where: { code: 'WH-BLR-01' } })
+
+  const pincodes = [
+    // Delhi NCR
+    { pincode: '110001', city: 'New Delhi', state: 'Delhi', warehouseId: delWh?.id ?? null, standardDays: 2 },
+    { pincode: '110020', city: 'New Delhi', state: 'Delhi', warehouseId: delWh?.id ?? null, standardDays: 2 },
+    { pincode: '110085', city: 'New Delhi', state: 'Delhi', warehouseId: delWh?.id ?? null, standardDays: 2 },
+    { pincode: '122001', city: 'Gurugram', state: 'Haryana', warehouseId: delWh?.id ?? null, standardDays: 2 },
+    { pincode: '201301', city: 'Noida', state: 'Uttar Pradesh', warehouseId: delWh?.id ?? null, standardDays: 2 },
+    // Mumbai Region
+    { pincode: '400001', city: 'Mumbai', state: 'Maharashtra', warehouseId: bomWh?.id ?? null, standardDays: 2 },
+    { pincode: '400050', city: 'Mumbai', state: 'Maharashtra', warehouseId: bomWh?.id ?? null, standardDays: 2 },
+    { pincode: '400076', city: 'Mumbai', state: 'Maharashtra', warehouseId: bomWh?.id ?? null, standardDays: 2 },
+    { pincode: '400601', city: 'Thane', state: 'Maharashtra', warehouseId: bomWh?.id ?? null, standardDays: 3 },
+    { pincode: '400703', city: 'Navi Mumbai', state: 'Maharashtra', warehouseId: bomWh?.id ?? null, standardDays: 3 },
+    { pincode: '411001', city: 'Pune', state: 'Maharashtra', warehouseId: bomWh?.id ?? null, standardDays: 3 },
+    // South Region
+    { pincode: '560001', city: 'Bengaluru', state: 'Karnataka', warehouseId: blrWh?.id ?? null, standardDays: 2 },
+    { pincode: '560034', city: 'Bengaluru', state: 'Karnataka', warehouseId: blrWh?.id ?? null, standardDays: 2 },
+    { pincode: '560038', city: 'Bengaluru', state: 'Karnataka', warehouseId: blrWh?.id ?? null, standardDays: 2 },
+    { pincode: '560100', city: 'Bengaluru', state: 'Karnataka', warehouseId: blrWh?.id ?? null, standardDays: 2 },
+    { pincode: '500001', city: 'Hyderabad', state: 'Telangana', warehouseId: blrWh?.id ?? null, standardDays: 3 },
+    { pincode: '500081', city: 'Hyderabad', state: 'Telangana', warehouseId: blrWh?.id ?? null, standardDays: 3 },
+    { pincode: '600001', city: 'Chennai', state: 'Tamil Nadu', warehouseId: blrWh?.id ?? null, standardDays: 3 },
+    { pincode: '700001', city: 'Kolkata', state: 'West Bengal', warehouseId: delWh?.id ?? null, standardDays: 4 },
+  ]
+
+  for (const pin of pincodes) {
+    await prisma.serviceablePincode.upsert({
+      where: {
+        pincode_warehouseId: {
+          pincode: pin.pincode,
+          warehouseId: pin.warehouseId ?? '',
+        },
+      },
+      update: {
+        city: pin.city,
+        state: pin.state,
+        codAvailable: true,
+        furnitureAvailable: true,
+        installationAvailable: true,
+        standardDays: pin.standardDays,
+        isActive: true,
+      },
+      create: {
+        pincode: pin.pincode,
+        warehouseId: pin.warehouseId,
+        city: pin.city,
+        state: pin.state,
+        codAvailable: true,
+        furnitureAvailable: true,
+        installationAvailable: true,
+        standardDays: pin.standardDays,
+        isActive: true,
+      },
+    })
+  }
+  console.log(`serviceable pincodes: ${pincodes.length}`)
+}
+
+async function seedCoupons() {
+  const coupons = [
+    {
+      code: 'WELCOME100',
+      description: '₹100 flat discount on your first order',
+      type: 'FIXED_AMOUNT' as const,
+      value: 100,
+      minOrderValue: 500,
+      scope: 'FIRST_ORDER' as const,
+      firstOrderOnly: true,
+      perCustomerLimit: 1,
+      isActive: true,
+    },
+    {
+      code: 'FESTIVE10',
+      description: '10% discount up to ₹500 on all orders',
+      type: 'PERCENTAGE' as const,
+      value: 10,
+      maxDiscount: 500,
+      minOrderValue: 1000,
+      scope: 'ORDER' as const,
+      firstOrderOnly: false,
+      perCustomerLimit: 5,
+      isActive: true,
+    },
+    {
+      code: 'FREESHIP',
+      description: 'Free delivery on orders above ₹499',
+      type: 'FREE_SHIPPING' as const,
+      value: 0,
+      minOrderValue: 499,
+      scope: 'ORDER' as const,
+      firstOrderOnly: false,
+      perCustomerLimit: 10,
+      isActive: true,
+    },
+  ]
+
+  for (const c of coupons) {
+    await prisma.coupon.upsert({
+      where: { code: c.code },
+      update: {
+        description: c.description,
+        type: c.type,
+        value: c.value,
+        maxDiscount: c.maxDiscount ?? null,
+        minOrderValue: c.minOrderValue,
+        scope: c.scope,
+        firstOrderOnly: c.firstOrderOnly,
+        perCustomerLimit: c.perCustomerLimit,
+        isActive: c.isActive,
+      },
+      create: {
+        code: c.code,
+        description: c.description,
+        type: c.type,
+        value: c.value,
+        maxDiscount: c.maxDiscount ?? null,
+        minOrderValue: c.minOrderValue,
+        scope: c.scope,
+        firstOrderOnly: c.firstOrderOnly,
+        perCustomerLimit: c.perCustomerLimit,
+        isActive: c.isActive,
+      },
+    })
+  }
+  console.log(`coupons: ${coupons.length}`)
+}
+
 async function seedBootstrapAdmin() {
   const email = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase()
   const password = process.env.BOOTSTRAP_ADMIN_PASSWORD
@@ -627,6 +811,9 @@ async function main() {
   await seedAttributes()
   await seedCategoryAttributes()
   await seedPlatformSeller()
+  await seedWarehouses()
+  await seedServiceablePincodes()
+  await seedCoupons()
   await seedSettings()
   await seedNavigation()
   await seedLegalDocuments()

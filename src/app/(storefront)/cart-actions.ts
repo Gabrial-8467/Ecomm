@@ -4,8 +4,10 @@ import { isAppError } from '@/lib/errors'
 import { logger } from '@/lib/logger'
 import {
   addCartItem,
+  applyCouponToCart,
   clearCart,
   removeCartItem,
+  removeCouponFromCart,
   setCartItemQuantity,
 } from '@/modules/cart/cart.service'
 
@@ -75,6 +77,30 @@ export async function clearCartAction(
 ): Promise<CartActionState> {
   try {
     return { status: 'success', message: await clearCart() }
+  } catch (error) {
+    return failure(error)
+  }
+}
+
+export async function applyCouponAction(
+  _previous: CartActionState,
+  formData: FormData,
+): Promise<CartActionState> {
+  const code = String(formData.get('code') ?? '').trim()
+  if (!code) return { status: 'error', message: 'Enter a coupon code.' }
+  try {
+    return { status: 'success', message: await applyCouponToCart(code) }
+  } catch (error) {
+    return failure(error)
+  }
+}
+
+export async function removeCouponAction(
+  _previous: CartActionState,
+  _formData: FormData,
+): Promise<CartActionState> {
+  try {
+    return { status: 'success', message: await removeCouponFromCart() }
   } catch (error) {
     return failure(error)
   }

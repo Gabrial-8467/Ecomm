@@ -1,28 +1,29 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 
-import { StatusPage } from '@/components/marketing/status-page'
+import { Button } from '@/components/ui/button'
+import { TrackOrderForm } from './track-order-form'
 
 export const metadata: Metadata = {
-  title: 'Track your order',
-  description: 'Order tracking opens with checkout.',
+  title: 'Track Your Order | CasaCircuit',
+  description: 'Look up real-time delivery status, tracking events, and invoices for your order.',
   robots: { index: false, follow: true },
 }
 
 export default function TrackOrderPage() {
   return (
-    <StatusPage
-      eyebrow="Tracking not live"
-      title="Order tracking is not open yet."
-      description="Tracking will be available once checkout and shipping are live. This page does not ask for an order number it cannot look up, and it does not display a simulated delivery status."
-      notes={[
-        'Delivery will be confirmed against your pincode before payment.',
-        'Tracking events will come from the shipping provider, not from a static timeline.',
-        'Product pages already show declared return windows and warranty terms.',
-      ]}
-      primaryHref="/faq"
-      primaryLabel="Read delivery questions"
-      secondaryHref="/contact"
-      secondaryLabel="Contact options"
-    />
+    <div className="container-page py-12 lg:py-16">
+      <div className="mb-6 flex justify-center">
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/orders">
+            <ArrowLeft className="size-4 mr-2" aria-hidden="true" />
+            Back to account orders
+          </Link>
+        </Button>
+      </div>
+
+      <TrackOrderForm />
+    </div>
   )
 }

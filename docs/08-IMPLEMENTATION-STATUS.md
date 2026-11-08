@@ -1,10 +1,10 @@
 # Implementation Status
 
 **Last verified:** 8 November 2026
-**Phase:** 4 of 14 — product catalog complete; guest cart, wishlist and contact are live
-**Production readiness:** not ready; catalogue and guest shopping exist, but no checkout, payment or order workflow exists yet
+**Phase:** 5 & 7 in flight — Pricing & Coupons unit tested; Checkout, Order, Payment & Shipping backend services written; Storefront checkout UI and fulfillment seed pending
+**Production readiness:** not ready; catalogue, guest shopping, and core pricing/checkout backend logic exist, but storefront checkout UI, customer order detail pages, and fulfillment seed are pending
 
-This document records what was actually executed, not what was merely written.
+This document records what was actually executed, not what was merely written. See also [`docs/07-ROADMAP.md`](file:///home/gabrialdeora/Desktop/Personal/Ecomm/docs/07-ROADMAP.md) for the phase delivery plan.
 
 ---
 
@@ -21,12 +21,12 @@ touched.
 | Test database migration         | `npm run test:integration`      | ✅ `ecomm_test` created/migrated automatically                          |
 | Client generation               | `npx prisma generate`           | ✅ generated to `src/generated/prisma`                                  |
 | Seed idempotency                | `npm run prisma:seed`           | ✅ repeat run produced no duplicates                                    |
-| TypeScript                      | `npm run typecheck`             | ✅ clean                                                                |
+| TypeScript                      | `npm run typecheck`             | ✅ clean (0 errors)                                                     |
 | ESLint                          | `npm run lint`                  | ✅ 0 errors, 0 warnings                                                 |
 | Prettier                        | `npm run format:check`          | ✅ all files formatted                                                  |
-| Unit tests                      | `npm test`                      | ✅ 8 files, 48 tests                                                    |
-| Integration tests               | `npm run test:integration`      | ✅ 5 files, 45 tests                                                    |
-| Production build                | `npm run build`                 | ✅ Next 16.4.5, all app routes compiled                                 |
+| Unit tests                      | `npm test`                      | ✅ 9 files, 58 tests (all passing)                                      |
+| Integration tests               | `npm run test:integration`      | ✅ 5 files, 45 tests (all passing)                                      |
+| Production build                | `npm run build`                 | ✅ Next 16.4.5, all 45 app routes compiled cleanly                      |
 | Dev server                      | `npm run dev`                   | ✅ storefront, auth pages, catalogue pages, API routes, CSP             |
 | Live auth smoke                 | `curl` against `localhost:3000` | ✅ register, verification gate, login, session, CSRF, logout            |
 | Live catalogue smoke            | `curl` against `localhost:3000` | ✅ product page/JSON-LD, API, facets, brand, sitemap                    |
@@ -241,15 +241,25 @@ Raw migration adds:
 | Contact abuse controls          | honeypot submissions are discarded; IP/email rate limits use the shared cache                      |
 | No fake checkout                | cart page explains checkout is not live and collects no payment                                    |
 
-### Deliberately absent
+### In-Flight Modules (Phases 5, 7, 8 & 9)
 
-No checkout, coupons, Razorpay integration, order lifecycle, inventory reservation workflow,
-returns, reviews/Q&A submission, CMS content editing, published legal content, BullMQ worker, media
-upload/processing adapter, real email/SMS delivery, browser E2E suite, hosted search engine, staff
-ticket console, or deployment evidence. The storefront cart saves items and shows GST-inclusive
-totals but intentionally disables checkout. Linked orders, tracking, journal, stores and careers
-routes render honest holding pages rather than simulated functionality. The admin dashboard and
-marketing copy contain no invented metrics, ratings, delivery promises or legal identifiers.
+- `src/modules/pricing/*` — Pure coupon calculation rules (`coupon.ts`) and database service (`coupon.service.ts`). Unit test suite in `tests/unit/pricing-coupon.test.ts` (10 tests, 100% passing). Supports PERCENTAGE, FIXED_AMOUNT, and FREE_SHIPPING across ORDER, CATEGORY, PRODUCT, BRAND, and FIRST_ORDER scopes with caps and min order value.
+- `src/modules/checkout/checkout.service.ts` — Comprehensive 1,097-line transactional checkout engine: atomic raw SQL inventory reservation (`UPDATE "Inventory" SET "reserved" = ...`), idempotency key logging, GST inter/intra-state tax breakdown, Razorpay order creation, order snapshot generation, sequential invoice numbering, and customer order confirmation emails.
+- `src/modules/orders/*` — Order status state machine, cancellation with stock release, sequential GST fiscal-year invoice generation (`CC/YYYY-YY/XXXXXX`), and signed guest access token verification (`cc_order_access`).
+- `src/modules/payments/*` + `src/app/api/v1/webhooks/razorpay/route.ts` — Razorpay server order initialization, client signature verification, and raw-body HMAC webhook signature verification with idempotent `WebhookEvent` database recording.
+- `src/modules/shipping/shipping.service.ts` — PIN code serviceability query, shipping class fees (standard vs. furniture handling), free shipping threshold evaluation, and COD availability checks.
+- `src/modules/account/address.service.ts` — Indian address validation with 6-digit PIN code, state lookup, and default address flags.
+
+### Remaining to Implement
+
+- Storefront Checkout UI (`/checkout`) — currently the cart page has the checkout button disabled (`"Checkout opens next release"`).
+- Fulfillment seed data — `prisma/seed.ts` needs default warehouses, inventory levels for catalog variants, and serviceable Indian PIN codes.
+- Storefront Order Confirmation, Order History (`/orders`), and Order Tracking (`/orders/track`).
+- Admin Order, Inventory, Warehouse, and Coupon management screens.
+- Returns, replacements, and refunds workflow (Phase 10).
+- Reviews and Q&A submission workflow.
+- Published legal content (all legal docs currently DRAFT with `legalReviewStatus = PENDING`).
+- Background BullMQ worker process and S3/Cloudinary direct presigned image upload.
 
 ---
 

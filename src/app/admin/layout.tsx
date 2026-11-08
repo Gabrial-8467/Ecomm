@@ -1,7 +1,17 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Boxes, LayoutDashboard, LogOut, ShieldCheck } from 'lucide-react'
+import {
+  Boxes,
+  LayoutDashboard,
+  LogOut,
+  RotateCcw,
+  Scale,
+  ShieldCheck,
+  ShoppingBag,
+  Ticket,
+  Warehouse,
+} from 'lucide-react'
 
 import { getCurrentActor } from '@/lib/auth/guards'
 import { getEnv } from '@/lib/env'
@@ -16,6 +26,11 @@ export const dynamic = 'force-dynamic'
 const NAV = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/catalog', label: 'Catalog', icon: Boxes },
+  { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
+  { href: '/admin/inventory', label: 'Inventory', icon: Warehouse },
+  { href: '/admin/coupons', label: 'Coupons', icon: Ticket },
+  { href: '/admin/returns', label: 'Returns', icon: RotateCcw },
+  { href: '/admin/compliance', label: 'Compliance', icon: Scale },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

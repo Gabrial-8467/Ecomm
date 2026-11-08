@@ -90,6 +90,47 @@ export function otpSms(input: { code: string; minutes: number }) {
   }
 }
 
+export function orderConfirmationEmail(input: {
+  orderNumber: string
+  email: string
+  total: string
+  paymentMethod?: string | null
+  items: { name: string; quantity: number; lineTotal: string }[]
+  viewUrl: string
+}) {
+  const env = getEnv()
+  const method =
+    input.paymentMethod === 'COD'
+      ? 'Cash on delivery — pay the courier when your order arrives.'
+      : input.paymentMethod === 'RAZORPAY'
+        ? 'Paid online — the payment provider confirmed this order.'
+        : 'Payment status will update once confirmed.'
+  const lines = input.items
+    .map((item) => `${item.quantity} × ${item.name} — ₹${item.lineTotal}`)
+    .join('\n')
+  const rows = input.items
+    .map(
+      (item) =>
+        `<tr><td style="padding:6px 0">${escapeHtml(item.name)}</td><td style="padding:6px 0;text-align:center">${item.quantity}</td><td style="padding:6px 0;text-align:right">₹${escapeHtml(item.lineTotal)}</td></tr>`,
+    )
+    .join('')
+
+  return {
+    template: 'order.confirmation',
+    subject: `Order ${input.orderNumber} confirmed`,
+    text: `Hello,\n\nThank you for your order ${input.orderNumber}.\n\n${lines}\n\nTotal: ₹${input.total}\n${method}\n\nView your order: ${input.viewUrl}\n\nDelivery dates are estimates based on your PIN code and are not a guarantee. Keep this email for your records.`,
+    html: layout(
+      `Order ${input.orderNumber}`,
+      `<p style="margin:0 0 12px">Thank you for shopping with ${escapeHtml(env.APP_NAME)}.</p>
+       <p style="margin:0 0 16px">${escapeHtml(method)}</p>
+       <table style="width:100%;border-collapse:collapse;font-size:14px">${rows}</table>
+       <p style="margin:16px 0 0;font-weight:700">Total: ₹${escapeHtml(input.total)}</p>
+       ${button(input.viewUrl, 'View your order')}
+       <p style="margin:0;font-size:13px;color:#6b6257">Delivery dates are estimates based on your PIN code and are not a guarantee. Keep this email for your records.</p>`,
+    ),
+  }
+}
+
 export function contactAcknowledgementEmail(input: {
   name: string
   ticketNumber: string

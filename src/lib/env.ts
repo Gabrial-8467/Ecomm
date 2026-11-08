@@ -104,6 +104,9 @@ const baseSchema = z.object({
   RESERVATION_TTL_MINUTES: intFromString(1, 60).default(15),
   COD_MAX_ORDER_VALUE: intFromString(0, 1_000_000).default(50_000),
   FREE_SHIPPING_THRESHOLD: intFromString(0, 10_000_000).default(4_999),
+  STANDARD_SHIPPING_FEE: intFromString(0, 100_000).default(99),
+  COD_FEE: intFromString(0, 10_000).default(0),
+  ORDER_ACCESS_TTL_DAYS: intFromString(1, 365).default(30),
   DEFAULT_RETURN_WINDOW_DAYS: intFromString(0, 365).default(7),
   ADMIN_MFA_REQUIRED: booleanFromString.default(true),
 
