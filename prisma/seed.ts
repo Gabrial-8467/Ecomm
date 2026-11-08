@@ -265,6 +265,82 @@ async function seedAttributes() {
   console.log(`attributes: ${ATTRIBUTES.length}`)
 }
 
+/**
+ * Single-seller inventory-owning entity. Legal name, registered address and
+ * statutory identifiers are intentionally left blank until the business
+ * supplies verified details; publishing is blocked until they are present.
+ * This is a seed placeholder, not a fabricated legal identity.
+ */
+async function seedPlatformSeller() {
+  const existing = await prisma.seller.findFirst({ where: { isPlatformOwner: true } })
+  const data = {
+    displayName: 'CasaCircuit',
+    legalName: process.env.SELLER_LEGAL_NAME?.trim() || 'CasaCircuit',
+    status: 'ACTIVE' as const,
+    isPlatformOwner: true,
+    customerCareEmail: process.env.SUPPORT_EMAIL || null,
+    customerCarePhone: null,
+    registeredAddress: undefined,
+  }
+
+  if (existing) {
+    await prisma.seller.update({
+      where: { id: existing.id },
+      data: {
+        displayName: data.displayName,
+        status: data.status,
+        isPlatformOwner: true,
+        ...(data.customerCareEmail ? { customerCareEmail: data.customerCareEmail } : {}),
+      },
+    })
+    console.log('platform seller: existing record retained')
+    return
+  }
+
+  await prisma.seller.create({ data })
+  console.log('platform seller: placeholder created (legal details pending)')
+}
+
+const CATEGORY_ATTRIBUTE_CODES: Record<string, string[]> = {
+  furniture: ['color', 'material', 'finish'],
+  'sofas-seating': ['color', 'material', 'finish', 'size'],
+  'beds-mattresses': ['color', 'material', 'size'],
+  'tables-desks': ['color', 'material', 'finish', 'size'],
+  'storage-wardrobes': ['color', 'material', 'finish', 'size'],
+  'outdoor-furniture': ['color', 'material', 'finish'],
+  electronics: ['color'],
+  televisions: ['color', 'screen_size_inch', 'size'],
+  audio: ['color', 'size'],
+  'home-appliances': ['color', 'energy_rating'],
+  'kitchen-appliances': ['color', 'energy_rating', 'size'],
+  'computers-accessories': ['color', 'screen_size_inch', 'size'],
+}
+
+async function seedCategoryAttributes() {
+  for (const [categorySlug, codes] of Object.entries(CATEGORY_ATTRIBUTE_CODES)) {
+    const category = await prisma.category.findUnique({ where: { slug: categorySlug } })
+    if (!category) continue
+    for (const [index, code] of codes.entries()) {
+      const attribute = await prisma.attributeDefinition.findUnique({ where: { code } })
+      if (!attribute) continue
+      await prisma.categoryAttribute.upsert({
+        where: {
+          categoryId_attributeId: { categoryId: category.id, attributeId: attribute.id },
+        },
+        update: { isFilterable: true, sortOrder: index },
+        create: {
+          categoryId: category.id,
+          attributeId: attribute.id,
+          isFilterable: true,
+          isRequired: false,
+          sortOrder: index,
+        },
+      })
+    }
+  }
+  console.log('category attributes: seeded')
+}
+
 const SETTINGS: { key: string; value: string | number | boolean; description: string }[] = [
   { key: 'store.name', value: 'CasaCircuit', description: 'Public store name' },
   { key: 'store.currency', value: 'INR', description: 'Default currency' },
@@ -549,6 +625,8 @@ async function main() {
   await seedRoles()
   await seedCategories()
   await seedAttributes()
+  await seedCategoryAttributes()
+  await seedPlatformSeller()
   await seedSettings()
   await seedNavigation()
   await seedLegalDocuments()

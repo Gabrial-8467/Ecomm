@@ -20,7 +20,7 @@ export const productDetailInclude = {
   images: { orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] },
   attributeValues: { include: { attribute: true, option: true } },
   specifications: { orderBy: [{ group: 'asc' }, { sortOrder: 'asc' }] },
-} as const
+} satisfies Prisma.ProductInclude
 
 export type ProductDetail = Prisma.ProductGetPayload<{ include: typeof productDetailInclude }>
 
@@ -37,6 +37,7 @@ export const productCardSelect = {
   soldCount: true,
   publishedAt: true,
   createdAt: true,
+  updatedAt: true,
   category: { select: { id: true, name: true, slug: true, path: true } },
   brand: { select: { id: true, name: true, slug: true } },
   images: {
