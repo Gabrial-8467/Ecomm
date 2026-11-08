@@ -12,6 +12,8 @@ import {
   verifyCsrfForCurrentSession,
 } from '@/lib/auth/guards'
 import { isAppError, ValidationError } from '@/lib/errors'
+import { clearGuestToken } from '@/lib/guest-identity'
+import { logger } from '@/lib/logger'
 import {
   changePassword,
   login,
@@ -31,6 +33,8 @@ import {
   registerSchema,
   sessionRevokeSchema,
 } from '@/modules/auth/auth.schema'
+import { mergeGuestCartIntoUser } from '@/modules/cart/cart.service'
+import { mergeGuestWishlistIntoUser } from '@/modules/wishlist/wishlist.service'
 
 export interface ActionState {
   status: 'idle' | 'error' | 'success' | 'mfa'
@@ -104,6 +108,21 @@ export async function loginAction(
       csrfToken: result.session.csrfToken,
       maxAgeSeconds: result.session.maxAgeSeconds,
     })
+
+    // Guest carts and wishlists follow the customer into their account. A
+    // merge failure must never block a successful sign-in.
+    if (result.session.kind === 'customer') {
+      try {
+        await mergeGuestCartIntoUser(result.actor.userId)
+        await mergeGuestWishlistIntoUser(result.actor.userId)
+        await clearGuestToken()
+      } catch (mergeError) {
+        logger.error(
+          { err: mergeError, userId: result.actor.userId },
+          'guest data merge after login failed',
+        )
+      }
+    }
   } catch (error) {
     if (isAppError(error)) return failure(error)
     throw error

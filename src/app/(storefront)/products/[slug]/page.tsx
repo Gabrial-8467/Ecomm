@@ -15,7 +15,9 @@ import { cache } from 'react'
 import { ProductCard } from '@/components/catalog/product-card'
 import { ProductGallery } from '@/components/catalog/product-gallery'
 import { JsonLd } from '@/components/seo/json-ld'
-import { Button } from '@/components/ui/button'
+import { AddToCartForm } from '@/components/store/add-to-cart-form'
+import { WishlistButton } from '@/components/store/wishlist-button'
+import { getEnv } from '@/lib/env'
 import { cn } from '@/lib/utils'
 import {
   breadcrumbJsonLd,
@@ -27,6 +29,8 @@ import {
   productMetadata,
   type PublicProductView,
 } from '@/modules/catalog'
+import { getVariantStock } from '@/modules/cart/cart.service'
+import { getWishlistProductIds } from '@/modules/wishlist/wishlist.service'
 
 export const dynamic = 'force-dynamic'
 
@@ -92,7 +96,13 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
 
   const view = productDetailView(product)
   const variant = selectedVariant(view, firstValue(input.variant))
-  const [related, categories] = await Promise.all([getRelatedProducts(slug, 4), listCategories()])
+  const [related, categories, savedIds, variantStock] = await Promise.all([
+    getRelatedProducts(slug, 4),
+    listCategories(),
+    getWishlistProductIds(),
+    variant ? getVariantStock(variant.id) : Promise.resolve(0),
+  ])
+  const saved = savedIds.has(view.id)
   const breadcrumb = categoryBreadcrumb(view, categories)
   const sellerAddress = formatAddress(view.declarations.sellerRegisteredAddress)
   const jsonLdBreadcrumb = [
@@ -255,12 +265,11 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
             ) : null}
 
             <div className="mt-6">
-              <Button size="lg" className="w-full" disabled>
-                Add to cart
-              </Button>
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                Cart and checkout open in the next release. Catalogue information is final.
-              </p>
+              <AddToCartForm
+                variantId={variant?.id ?? null}
+                maxQuantity={Math.min(variantStock, getEnv().CART_MAX_QUANTITY_PER_LINE)}
+              />
+              <WishlistButton productId={view.id} saved={saved} fullWidth className="mt-3" />
             </div>
 
             <ul className="mt-5 space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
@@ -476,7 +485,7 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
           <ul className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {related.map((item) => (
               <li key={item.id}>
-                <ProductCard product={item} />
+                <ProductCard product={item} saved={savedIds.has(item.id)} />
               </li>
             ))}
           </ul>

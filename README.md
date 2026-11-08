@@ -4,9 +4,10 @@ Indian furniture and electronics commerce platform. Next.js 16 App Router, stric
 PostgreSQL 18 + Prisma 7, Redis/BullMQ, GST-inclusive pricing and an admin surface designed around
 Indian consumer-protection, DPDP and e-commerce disclosure rules.
 
-> **Status: Phase 2 (foundation) complete. Not production-ready.**
-> There is no authentication, catalogue, cart, checkout, payment or admin UI yet. The seeded legal
-> documents are unpublished placeholders, not policies. See [Implementation status](docs/08-IMPLEMENTATION-STATUS.md).
+> **Status: Phase 4 (catalogue) complete; guest cart, wishlist and contact are live. Not production-ready.**
+> There is no checkout, payment, order workflow or staff ticket console yet. Carts persist but
+> checkout is disabled. The seeded legal documents are unpublished placeholders, not policies. See
+> [Implementation status](docs/08-IMPLEMENTATION-STATUS.md).
 
 ---
 

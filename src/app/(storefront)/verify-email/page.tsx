@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 
 import { ResendVerificationForm } from '../resend-verification-form'
 import { VerifyEmailForm } from './verify-email-form'
@@ -23,9 +24,9 @@ export default async function VerifyEmailPage({
         {token ? (
           <p className="mt-6 text-sm text-muted-foreground">
             Need a new link?{' '}
-            <a href="/login" className="font-medium text-accent underline underline-offset-4">
+            <Link href="/login" className="font-medium text-accent underline underline-offset-4">
               Sign in to request one
-            </a>
+            </Link>
             .
           </p>
         ) : (

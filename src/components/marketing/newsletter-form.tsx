@@ -1,8 +1,9 @@
 'use client'
 
+import { ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
-import { ArrowRight } from 'lucide-react'
 
 import { subscribeToNewsletter, type NewsletterState } from '@/app/actions/newsletter'
 import { Button } from '@/components/ui/button'
@@ -65,9 +66,9 @@ export function NewsletterForm() {
         <span className="text-white">
           I agree to receive occasional email updates from CasaCircuit. I can unsubscribe at any
           time. See the{' '}
-          <a href="/legal/privacy" className="underline underline-offset-2">
+          <Link href="/legal/privacy" className="underline underline-offset-2">
             privacy policy
-          </a>
+          </Link>
           .
         </span>
       </label>

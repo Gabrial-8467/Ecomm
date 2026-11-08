@@ -6,6 +6,7 @@ import {
   listPublicBrands,
   listPublishedProductsForSitemap,
 } from '@/modules/catalog'
+import { listPublicLegalDocuments } from '@/modules/legal/legal.public'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,10 +18,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getEnv().APP_URL
   const now = new Date()
 
-  const [categories, brands, products] = await Promise.all([
+  const [categories, brands, products, legalDocuments] = await Promise.all([
     listCategories(),
     listPublicBrands(),
     listPublishedProductsForSitemap(),
+    listPublicLegalDocuments(),
   ])
 
   const staticEntries: MetadataRoute.Sitemap = [
@@ -28,6 +30,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/products`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: `${baseUrl}/categories`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${baseUrl}/brands`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${baseUrl}/about`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${baseUrl}/faq`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
   ]
 
   const categoryEntries: MetadataRoute.Sitemap = categories
@@ -55,5 +60,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }))
 
-  return [...staticEntries, ...categoryEntries, ...brandEntries, ...productEntries]
+  const legalEntries: MetadataRoute.Sitemap = legalDocuments
+    .filter((document) => document.inForce)
+    .map((document) => ({
+      url: `${baseUrl}/legal/${document.slug}`,
+      lastModified: document.inForce?.effectiveAt ?? now,
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    }))
+
+  return [...staticEntries, ...categoryEntries, ...brandEntries, ...productEntries, ...legalEntries]
 }

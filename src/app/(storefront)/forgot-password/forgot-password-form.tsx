@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useActionState } from 'react'
 
 import { forgotPasswordAction, type ActionState } from '../auth-actions'
@@ -54,9 +55,9 @@ export function ForgotPasswordForm() {
       </button>
 
       <p className="text-sm text-muted-foreground">
-        <a href="/login" className="font-medium text-accent underline underline-offset-4">
+        <Link href="/login" className="font-medium text-accent underline underline-offset-4">
           Back to sign in
-        </a>
+        </Link>
       </p>
     </form>
   )

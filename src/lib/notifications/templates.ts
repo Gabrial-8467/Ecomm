@@ -89,3 +89,28 @@ export function otpSms(input: { code: string; minutes: number }) {
     text: `${input.code} is your ${env.APP_NAME} verification code. It expires in ${input.minutes} minutes. Never share this code.`,
   }
 }
+
+export function contactAcknowledgementEmail(input: {
+  name: string
+  ticketNumber: string
+  subject: string
+  message: string
+}) {
+  const env = getEnv()
+  const greeting = input.name ? `Hi ${input.name},` : 'Hello,'
+  return {
+    template: 'support.ticket_received',
+    subject: `We received your message (${input.ticketNumber})`,
+    text: `${greeting}\n\nYour message to ${env.APP_NAME} has been logged as ticket ${input.ticketNumber}.\n\nSubject: ${input.subject}\n\n${input.message}\n\nCustomer care is being staffed, so response times are not guaranteed yet. Quote ticket ${input.ticketNumber} in any follow-up. Do not send passwords, card numbers, UPI PINs or one-time codes.`,
+    html: layout(
+      'Your message has been logged',
+      `<p style="margin:0 0 12px">${escapeHtml(greeting)}</p>
+       <p style="margin:0 0 12px">Your message to ${escapeHtml(env.APP_NAME)} has been logged as ticket <strong>${escapeHtml(input.ticketNumber)}</strong>.</p>
+       <p style="margin:0 0 4px;font-size:13px;color:#6b6257">Subject</p>
+       <p style="margin:0 0 16px">${escapeHtml(input.subject)}</p>
+       <p style="margin:0 0 4px;font-size:13px;color:#6b6257">Your message</p>
+       <p style="margin:0;white-space:pre-wrap">${escapeHtml(input.message)}</p>
+       <p style="margin:20px 0 0;font-size:13px;color:#6b6257">Customer care is being staffed, so response times are not guaranteed yet. Quote ticket ${escapeHtml(input.ticketNumber)} in any follow-up. Never send passwords, card numbers, UPI PINs or one-time codes.</p>`,
+    ),
+  }
+}

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useActionState } from 'react'
 
 import { registerAction, type ActionState } from '../auth-actions'
@@ -121,21 +122,21 @@ export function RegisterForm() {
 
       <p className="text-xs text-muted-foreground">
         By creating an account you agree to our{' '}
-        <a href="/legal/terms" className="underline underline-offset-4">
+        <Link href="/legal/terms" className="underline underline-offset-4">
           terms
-        </a>{' '}
+        </Link>{' '}
         and{' '}
-        <a href="/legal/privacy" className="underline underline-offset-4">
+        <Link href="/legal/privacy" className="underline underline-offset-4">
           privacy policy
-        </a>
+        </Link>
         . These documents are draft placeholders pending legal review.
       </p>
 
       <p className="text-sm text-muted-foreground">
         Already have an account?{' '}
-        <a href="/login" className="font-medium text-accent underline underline-offset-4">
+        <Link href="/login" className="font-medium text-accent underline underline-offset-4">
           Sign in
-        </a>
+        </Link>
       </p>
     </form>
   )

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useActionState, useState } from 'react'
 
@@ -286,9 +287,12 @@ export function LoginForm() {
             <label htmlFor="login-password" className="block text-sm font-medium">
               Password
             </label>
-            <a href="/forgot-password" className="text-sm text-accent underline underline-offset-4">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-accent underline underline-offset-4"
+            >
               Forgot password?
-            </a>
+            </Link>
           </div>
           <input
             id="login-password"
@@ -310,9 +314,9 @@ export function LoginForm() {
 
         <p className="text-sm text-muted-foreground">
           New to CasaCircuit?{' '}
-          <a href="/register" className="font-medium text-accent underline underline-offset-4">
+          <Link href="/register" className="font-medium text-accent underline underline-offset-4">
             Create an account
-          </a>
+          </Link>
         </p>
       </form>
 

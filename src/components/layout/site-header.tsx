@@ -2,6 +2,8 @@ import { Heart, Menu, Search, ShoppingBag, UserRound, X } from 'lucide-react'
 import Link from 'next/link'
 
 import { getEnv } from '@/lib/env'
+import { getCartCount } from '@/modules/cart/cart.service'
+import { getWishlistCount } from '@/modules/wishlist/wishlist.service'
 
 const PRIMARY_LINKS = [
   { href: '/categories/furniture', label: 'Furniture' },
@@ -46,8 +48,12 @@ function Logo() {
   )
 }
 
-export function SiteHeader() {
+export async function SiteHeader() {
   const env = getEnv()
+  const [cartCount, wishlistCount] = await Promise.all([
+    getCartCount().catch(() => 0),
+    getWishlistCount().catch(() => 0),
+  ])
   const freeShipping = new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
@@ -113,18 +119,28 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/wishlist"
-            className="hidden rounded-md p-2 text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground sm:inline-flex"
-            aria-label="Wishlist"
+            className="relative hidden rounded-md p-2 text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground sm:inline-flex"
+            aria-label={wishlistCount > 0 ? `Wishlist, ${wishlistCount} saved` : 'Wishlist'}
           >
             <Heart className="size-5" aria-hidden="true" />
+            {wishlistCount > 0 ? (
+              <span className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-accent px-1 text-[0.625rem] leading-4 font-semibold text-accent-foreground">
+                {wishlistCount > 99 ? '99+' : wishlistCount}
+              </span>
+            ) : null}
           </Link>
           <Link
             href="/cart"
             className="relative inline-flex items-center gap-2 rounded-md p-2 text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground"
-            aria-label="Cart"
+            aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : 'Cart'}
           >
             <ShoppingBag className="size-5" aria-hidden="true" />
             <span className="hidden text-sm font-medium lg:inline">Cart</span>
+            {cartCount > 0 ? (
+              <span className="absolute -top-0.5 right-0 grid min-w-4 place-items-center rounded-full bg-accent px-1 text-[0.625rem] leading-4 font-semibold text-accent-foreground lg:static">
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            ) : null}
           </Link>
 
           <details className="group relative lg:hidden">

@@ -2,8 +2,9 @@ import { PackageSearch } from 'lucide-react'
 import Link from 'next/link'
 
 import { ProductCard, type ProductCardData } from '@/components/catalog/product-card'
+import { getWishlistProductIds } from '@/modules/wishlist/wishlist.service'
 
-export function ProductGrid({
+export async function ProductGrid({
   products,
   emptyTitle = 'No products match these filters',
   emptyBody = 'Try removing a filter or searching for a broader term.',
@@ -32,11 +33,13 @@ export function ProductGrid({
     )
   }
 
+  const savedIds = await getWishlistProductIds()
+
   return (
     <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
       {products.map((product) => (
         <li key={product.id}>
-          <ProductCard product={product} />
+          <ProductCard product={product} saved={savedIds.has(product.id)} />
         </li>
       ))}
     </ul>

@@ -1,8 +1,8 @@
 # Implementation Status
 
 **Last verified:** 8 November 2026
-**Phase:** 4 of 14 — product catalog complete
-**Production readiness:** not ready; authentication and catalogue exist, but no cart, checkout, payment or order workflow exists yet
+**Phase:** 4 of 14 — product catalog complete; guest cart, wishlist and contact are live
+**Production readiness:** not ready; catalogue and guest shopping exist, but no checkout, payment or order workflow exists yet
 
 This document records what was actually executed, not what was merely written.
 
@@ -14,30 +14,32 @@ Environment: Node.js 24.18.0, PostgreSQL 18.6 (isolated local cluster), Redis un
 Docker unavailable. Integration tests use a dedicated `ecomm_test` database; no development data is
 touched.
 
-| Check                           | Command                         | Result                                                       |
-| ------------------------------- | ------------------------------- | ------------------------------------------------------------ |
-| Schema syntax                   | `npx prisma validate`           | ✅ valid                                                     |
-| Initial + constraints migration | `npx prisma migrate dev`        | ✅ applied to clean DB                                       |
-| Test database migration         | `npm run test:integration`      | ✅ `ecomm_test` created/migrated automatically               |
-| Client generation               | `npx prisma generate`           | ✅ generated to `src/generated/prisma`                       |
-| Seed idempotency                | `npm run prisma:seed`           | ✅ repeat run produced no duplicates                         |
-| TypeScript                      | `npm run typecheck`             | ✅ clean                                                     |
-| ESLint                          | `npm run lint`                  | ✅ 0 errors, 0 warnings                                      |
-| Prettier                        | `npm run format:check`          | ✅ all files formatted                                       |
-| Unit tests                      | `npm test`                      | ✅ 8 files, 48 tests                                         |
-| Integration tests               | `npm run test:integration`      | ✅ 4 files, 33 tests                                         |
-| Production build                | `npm run build`                 | ✅ Next 16.4.5, 81 route entries                             |
-| Dev server                      | `npm run dev`                   | ✅ storefront, auth pages, catalogue pages, API routes, CSP  |
-| Live auth smoke                 | `curl` against `localhost:3000` | ✅ register, verification gate, login, session, CSRF, logout |
-| Live catalogue smoke            | `curl` against `localhost:3000` | ✅ product page/JSON-LD, API, facets, brand, sitemap         |
-| Readiness                       | `GET /api/health/ready`         | ✅ `database: ok`, `cache: ok` (memory fallback)             |
-| Docker image                    | `docker build`                  | ⚠️ not run — Docker missing on machine                       |
-| Compose stack                   | `docker compose up`             | ⚠️ not run — Docker missing on machine                       |
-| Playwright                      | `npm run test:e2e`              | ⚠️ browsers not installed on machine                         |
-| k6                              | `npm run test:load`             | ⚠️ k6 not installed on machine                               |
-| Redis rate-limit backend        | Redis-backed cache              | ⚠️ not run — Redis missing; memory fallback used             |
-| Real email/SMS providers        | Resend/MSG91/Twilio sandbox     | ⚠️ not run — console adapters used                           |
-| HTTPS production deployment     | Browser against deployed origin | ⚠️ not run — cookie flags covered by simulated env tests     |
+| Check                           | Command                         | Result                                                                  |
+| ------------------------------- | ------------------------------- | ----------------------------------------------------------------------- |
+| Schema syntax                   | `npx prisma validate`           | ✅ valid                                                                |
+| Initial + constraints migration | `npx prisma migrate dev`        | ✅ applied to clean DB                                                  |
+| Test database migration         | `npm run test:integration`      | ✅ `ecomm_test` created/migrated automatically                          |
+| Client generation               | `npx prisma generate`           | ✅ generated to `src/generated/prisma`                                  |
+| Seed idempotency                | `npm run prisma:seed`           | ✅ repeat run produced no duplicates                                    |
+| TypeScript                      | `npm run typecheck`             | ✅ clean                                                                |
+| ESLint                          | `npm run lint`                  | ✅ 0 errors, 0 warnings                                                 |
+| Prettier                        | `npm run format:check`          | ✅ all files formatted                                                  |
+| Unit tests                      | `npm test`                      | ✅ 8 files, 48 tests                                                    |
+| Integration tests               | `npm run test:integration`      | ✅ 5 files, 45 tests                                                    |
+| Production build                | `npm run build`                 | ✅ Next 16.4.5, all app routes compiled                                 |
+| Dev server                      | `npm run dev`                   | ✅ storefront, auth pages, catalogue pages, API routes, CSP             |
+| Live auth smoke                 | `curl` against `localhost:3000` | ✅ register, verification gate, login, session, CSRF, logout            |
+| Live catalogue smoke            | `curl` against `localhost:3000` | ✅ product page/JSON-LD, API, facets, brand, sitemap                    |
+| Live guest-commerce smoke       | `curl` against `localhost:3000` | ✅ `/cart`, `/wishlist`, `/contact` and product add controls return 200 |
+| Guest cart/wishlist tests       | `npm run test:integration`      | ✅ add/update/remove, stock caps, merge, contact ticket                 |
+| Readiness                       | `GET /api/health/ready`         | ✅ `database: ok`, `cache: ok` (memory fallback)                        |
+| Docker image                    | `docker build`                  | ⚠️ not run — Docker missing on machine                                  |
+| Compose stack                   | `docker compose up`             | ⚠️ not run — Docker missing on machine                                  |
+| Playwright                      | `npm run test:e2e`              | ⚠️ browsers not installed on machine                                    |
+| k6                              | `npm run test:load`             | ⚠️ k6 not installed on machine                                          |
+| Redis rate-limit backend        | Redis-backed cache              | ⚠️ not run — Redis missing; memory fallback used                        |
+| Real email/SMS providers        | Resend/MSG91/Twilio sandbox     | ⚠️ not run — console adapters used                                      |
+| HTTPS production deployment     | Browser against deployed origin | ⚠️ not run — cookie flags covered by simulated env tests                |
 
 Database counts after seed: 44 permissions, 8 roles, 12 categories, 8 draft legal versions,
 6 attribute definitions, 9 settings, 3 navigation menus.
@@ -184,6 +186,28 @@ Raw migration adds:
 - `src/app/(storefront)/{products,categories,brands,search}` — published-only listing, product
   detail with gallery/variant picker/declarations/specifications, category tree, brand pages, filters,
   pagination and JSON-LD; `/search` redirects to the canonical `/products` listing
+- `src/app/(storefront)/{about,faq,contact,legal,legal/[slug]}` — honest information pages. The legal
+  index lists every document with its version status; `legal/[slug]` renders only a `PUBLISHED`
+  version whose effective date has passed and otherwise shows an unpublished notice without exposing
+  draft text. Placeholder support addresses (`*.invalid`) are hidden rather than presented as a
+  working contact channel
+- `src/app/(storefront)/{cart,wishlist,contact}` — working guest-capable surfaces. `/cart` lists
+  authoritative variant lines with stock warnings, quantity controls and a GST summary but keeps
+  checkout disabled; `/wishlist` saves products and can move them to the cart; `/contact` files a
+  real `SupportTicket` + opening message, generates a `CC-YYMMDD-XXXXXX` reference and sends an
+  acknowledgement through the configured email adapter. All three work without an account through an
+  HttpOnly opaque `cc_guest` cookie whose SHA-256 hash is stored on `Cart.guestTokenHash` /
+  `Wishlist.guestTokenHash`. Guest carts and wishlists merge into the customer account after login
+- `src/modules/cart/cart.service.ts` — add/update/remove/clear, stock computed as
+  `onHand − reserved − damaged`, per-line quantity caps, server-recomputed totals and GST extraction,
+  guest-cart merge. Checkout and payment are deliberately not implemented
+- `src/modules/wishlist/wishlist.service.ts` — guest and account wishlists, toggle/remove,
+  move-to-cart with live stock checks, saved-product-id lookup and guest merge
+- `src/modules/support/contact.ts` + `contact-actions.ts` — contact categories, Zod validation,
+  honeypot, per-IP/per-email rate limits, ticket creation and acknowledgement email
+- `src/app/(storefront)/{orders,orders/track,blog,stores,careers}` — explicit holding pages for
+  linked routes that are not implemented; they state what is live, never simulate orders, delivery
+  events, articles, store addresses or vacancies, and are marked `noindex`
 - `src/app/sitemap.ts` — dynamic sitemap containing only published products, active categories and
   active brands
 - `tests/integration/catalog.integration.test.ts` + `catalog-factories.ts` — dedicated-database
@@ -204,14 +228,28 @@ Raw migration adds:
 | Public API safety                    | integration test returns only published products, strips `costPrice`, and revalidates with ETag 304             |
 | Search adapter boundary              | `SearchProvider` interface with `postgres` provider; public routes/pages resolve through `getSearchProvider()`  |
 
+### Guest commerce
+
+| Requirement                     | Evidence                                                                                           |
+| ------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Add/update/remove without login | integration test drives the cart service with a guest cookie and asserts quantities and totals     |
+| Stock is authoritative          | integration test rejects an over-stock add and caps repeated adds at available stock               |
+| Badge and page agree            | integration test drops stock to zero and asserts the header badge and cart saved/available counts  |
+| Guest wishlist                  | integration test adds, toggles, removes and moves a saved product to the cart                      |
+| Merge on login                  | integration test merges guest cart/wishlist into a customer and marks the guest cart `MERGED`      |
+| Contact form is real            | integration test creates a `SupportTicket` with an opening message and validates the ticket number |
+| Contact abuse controls          | honeypot submissions are discarded; IP/email rate limits use the shared cache                      |
+| No fake checkout                | cart page explains checkout is not live and collects no payment                                    |
+
 ### Deliberately absent
 
-No cart, checkout, coupons, Razorpay integration, order lifecycle, inventory/reservation workflow,
+No checkout, coupons, Razorpay integration, order lifecycle, inventory reservation workflow,
 returns, reviews/Q&A submission, CMS content editing, published legal content, BullMQ worker, media
-upload/processing adapter, real email/SMS delivery, browser E2E suite, hosted search engine, or
-deployment evidence. The storefront product page intentionally disables “Add to cart” and says the
-cart opens in the next release. The admin dashboard and marketing copy contain no invented metrics,
-ratings, delivery promises or legal identifiers.
+upload/processing adapter, real email/SMS delivery, browser E2E suite, hosted search engine, staff
+ticket console, or deployment evidence. The storefront cart saves items and shows GST-inclusive
+totals but intentionally disables checkout. Linked orders, tracking, journal, stores and careers
+routes render honest holding pages rather than simulated functionality. The admin dashboard and
+marketing copy contain no invented metrics, ratings, delivery promises or legal identifiers.
 
 ---
 
@@ -239,7 +277,8 @@ ratings, delivery promises or legal identifiers.
    use trigram indexes where the contrib package is installed. Production must install it.
 10. **No CSP report endpoint.** Violations are not collected yet.
 11. **Legal placeholders.** All legal documents are DRAFT with `legalReviewStatus = PENDING` and must
-    never be published as-is.
+    never be published as-is. The storefront legal index and detail pages therefore show an
+    “unpublished” notice and do not render draft content.
 12. **No email sender for newsletter.** Newsletter consent is stored, but double opt-in and
     unsubscribe emails are not implemented.
 13. **Media upload is not implemented.** Admin image screens store external URLs and alt text; there
@@ -256,6 +295,19 @@ ratings, delivery promises or legal identifiers.
 17. **Storefront catalogue is functional, not performance-tuned.** Pages are `force-dynamic` and
     server-rendered for correctness; caching, Lighthouse budgets, image optimisation and browser
     interaction tests have not been run. Full visual/storefront work remains Phase 6.
+18. **Checkout is not implemented.** Carts persist and totals are authoritative, but there is no
+    address/pincode step, shipping quote, payment intent, order record or reservation. The cart UI
+    says so and collects no payment.
+19. **Guest data is device-bound.** A guest cart or wishlist lives behind an HttpOnly `cc_guest`
+    cookie. Clearing site data or switching browsers loses it until the visitor signs in and merges.
+    There is no recovery link for anonymous carts.
+20. **No staff ticket console.** Contact messages are stored as `SupportTicket` rows with an opening
+    `SupportMessage`, but staff cannot read or reply from the admin UI yet. The acknowledgement email
+    says response times are not guaranteed.
+21. **Cart merge failures are non-fatal.** Login logs a merge error and still completes; a failed
+    merge can leave an orphaned guest cart/wishlist row that staff must clean up manually.
+22. **Contact category labels are not localised.** The form and acknowledgement are English-only,
+    consistent with the rest of the current storefront.
 
 ---
 

@@ -2,6 +2,7 @@ import { ImageIcon, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { WishlistButton } from '@/components/store/wishlist-button'
 import type { productCardView } from '@/modules/catalog'
 
 export type ProductCardData = ReturnType<typeof productCardView>
@@ -16,13 +17,19 @@ export function formatCatalogPrice(value: number): string {
   return money.format(value)
 }
 
-export function ProductCard({ product }: { product: ProductCardData }) {
+export function ProductCard({
+  product,
+  saved = false,
+}: {
+  product: ProductCardData
+  saved?: boolean
+}) {
   const { price } = product
   const hasRange = price.max > price.min
   const image = product.image
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card">
       <Link
         href={`/products/${product.slug}`}
         className="relative block aspect-[4/3] overflow-hidden bg-secondary"
@@ -48,6 +55,13 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           </span>
         ) : null}
       </Link>
+
+      <WishlistButton
+        productId={product.id}
+        saved={saved}
+        iconOnly
+        className="absolute top-3 right-3 z-10"
+      />
 
       <div className="flex flex-1 flex-col p-4">
         {product.brand ? (
