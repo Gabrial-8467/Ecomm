@@ -24,7 +24,7 @@ function hasAddress(value: unknown): boolean {
  */
 export function validateProductForPublish(
   product: ProductDetail,
-  options: { now?: Date } = {},
+  options: { now?: Date; requiredAttributeCodes?: string[] } = {},
 ): PublishIssue[] {
   const issues: PublishIssue[] = []
   const now = options.now ?? new Date()
@@ -171,6 +171,16 @@ export function validateProductForPublish(
       field: 'publishedAt',
       message: 'Publication time cannot be in the future.',
     })
+  }
+
+  const presentAttributes = new Set(product.attributeValues.map((value) => value.attribute.code))
+  for (const code of options.requiredAttributeCodes ?? []) {
+    if (!presentAttributes.has(code)) {
+      issues.push({
+        field: `attributeValues.${code}`,
+        message: `The category requires the “${code}” attribute.`,
+      })
+    }
   }
 
   return issues

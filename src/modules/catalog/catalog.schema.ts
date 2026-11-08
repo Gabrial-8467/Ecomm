@@ -196,7 +196,7 @@ export const variantAttributeValueSchema = z
     { message: 'Provide an option or a scalar value.' },
   )
 
-export const variantInputSchema = z
+const variantObjectSchema = z
   .object({
     sku: z.string().trim().min(1, 'Enter a SKU.').max(80),
     name: z.string().trim().min(1, 'Enter a variant name.').max(160),
@@ -214,10 +214,16 @@ export const variantInputSchema = z
     attributeValues: z.array(variantAttributeValueSchema).max(100).optional(),
   })
   .strict()
-  .refine((value) => value.mrp >= value.price, {
+
+export const variantInputSchema = variantObjectSchema.refine(
+  (value) => value.mrp >= value.price,
+  {
     path: ['mrp'],
     message: 'MRP must be greater than or equal to the selling price.',
-  })
+  },
+)
+
+export const variantUpdateSchema = variantObjectSchema.partial()
 
 export const productImageInputSchema = z
   .object({
@@ -430,6 +436,7 @@ export type AttributeUpdateInput = z.infer<typeof attributeUpdateSchema>
 export type ProductInput = z.infer<typeof productInputSchema>
 export type ProductUpdateInput = z.infer<typeof productUpdateSchema>
 export type VariantInput = z.infer<typeof variantInputSchema>
+export type VariantUpdateInput = z.infer<typeof variantUpdateSchema>
 export type ProductImageInput = z.infer<typeof productImageInputSchema>
 export type SpecificationInput = z.infer<typeof specificationInputSchema>
 export type ProductAttributeValueInput = z.infer<typeof productAttributeValueInputSchema>

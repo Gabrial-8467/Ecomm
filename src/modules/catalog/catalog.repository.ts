@@ -28,6 +28,7 @@ export const productCardSelect = {
   id: true,
   name: true,
   slug: true,
+  baseSku: true,
   shortDescription: true,
   status: true,
   ratingAvg: true,
