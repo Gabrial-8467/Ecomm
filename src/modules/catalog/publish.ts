@@ -98,7 +98,8 @@ export function validateProductForPublish(
     } else {
       issues.push({
         field: 'manufacturerName',
-        message: 'Manufacturer name and address (or importer name for imported goods) are required.',
+        message:
+          'Manufacturer name and address (or importer name for imported goods) are required.',
       })
     }
   }
@@ -142,7 +143,10 @@ export function validateProductForPublish(
     })
   }
 
-  if (product.isReturnable && (product.returnWindowDays ?? product.category?.returnWindowDays ?? 0) <= 0) {
+  if (
+    product.isReturnable &&
+    (product.returnWindowDays ?? product.category?.returnWindowDays ?? 0) <= 0
+  ) {
     issues.push({
       field: 'returnWindowDays',
       message: 'Returnable products need a positive return window.',

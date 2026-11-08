@@ -17,37 +17,37 @@ import { Button } from '@/components/ui/button'
 
 const CATEGORIES = [
   {
-    href: '/furniture/sofas-seating',
+    href: '/categories/sofas-seating',
     title: 'Sofas & seating',
     description: 'Deep seats, honest foam densities and fabrics that survive real life.',
     gradient: 'from-[#d9c3a5] via-[#c2a27f] to-[#8c6a4a]',
   },
   {
-    href: '/furniture/beds-mattresses',
+    href: '/categories/beds-mattresses',
     title: 'Beds & mattresses',
     description: 'Storage beds, solid-wood frames and mattresses with stated firmness.',
     gradient: 'from-[#cfd3c6] via-[#aeb7a4] to-[#7a8873]',
   },
   {
-    href: '/electronics/televisions',
+    href: '/categories/televisions',
     title: 'Televisions',
     description: 'Panel types, refresh rates and ports documented before you buy.',
     gradient: 'from-[#b9c3cf] via-[#8d9cae] to-[#536578]',
   },
   {
-    href: '/electronics/home-appliances',
+    href: '/categories/home-appliances',
     title: 'Home appliances',
     description: 'Cooling, laundry and air care with energy ratings made explicit.',
     gradient: 'from-[#e3d6c4] via-[#cbb59a] to-[#9c7d5c]',
   },
   {
-    href: '/furniture/tables-desks',
+    href: '/categories/tables-desks',
     title: 'Tables & desks',
     description: 'Dining, study and work tables measured to the centimetre.',
     gradient: 'from-[#d6c8b8] via-[#b8a48d] to-[#836d56]',
   },
   {
-    href: '/electronics/audio',
+    href: '/categories/audio',
     title: 'Audio',
     description: 'Speakers and headphones with connectivity and codec support listed.',
     gradient: 'from-[#c9c2d6] via-[#a49ab8] to-[#6c6284]',
@@ -124,13 +124,13 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg">
-                <Link href="/furniture">
+                <Link href="/categories/furniture">
                   Shop furniture
                   <ArrowRight aria-hidden="true" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link href="/electronics">Shop electronics</Link>
+                <Link href="/categories/electronics">Shop electronics</Link>
               </Button>
             </div>
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">

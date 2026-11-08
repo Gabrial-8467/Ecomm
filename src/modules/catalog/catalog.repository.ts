@@ -119,8 +119,32 @@ export async function listBrands(includeInactive = false) {
   })
 }
 
+/** Brands with a count of *published* products, for public pages. */
+export async function listPublicBrands() {
+  return prisma.brand.findMany({
+    where: { isActive: true },
+    orderBy: [{ isFeatured: 'desc' }, { name: 'asc' }],
+    include: {
+      _count: {
+        select: {
+          products: {
+            where: {
+              status: 'ACTIVE',
+              archivedAt: null,
+              category: { isActive: true, archivedAt: null },
+            },
+          },
+        },
+      },
+    },
+  })
+}
+
 export async function findBrandById(id: string) {
-  return prisma.brand.findUnique({ where: { id }, include: { _count: { select: { products: true } } } })
+  return prisma.brand.findUnique({
+    where: { id },
+    include: { _count: { select: { products: true } } },
+  })
 }
 
 export async function findBrandBySlug(slug: string) {
@@ -162,7 +186,12 @@ export async function findProductBySlug(slug: string): Promise<ProductDetail | n
 
 export async function findPublishedProductBySlug(slug: string): Promise<ProductDetail | null> {
   return prisma.product.findFirst({
-    where: { slug, status: 'ACTIVE', archivedAt: null, category: { isActive: true, archivedAt: null } },
+    where: {
+      slug,
+      status: 'ACTIVE',
+      archivedAt: null,
+      category: { isActive: true, archivedAt: null },
+    },
     include: productDetailInclude,
   })
 }
@@ -178,6 +207,20 @@ export async function getPlatformSeller() {
     )
   }
   return seller
+}
+
+/** Slugs and update timestamps for the XML sitemap; published products only. */
+export async function listPublishedProductsForSitemap(limit = 5_000) {
+  return prisma.product.findMany({
+    where: {
+      status: 'ACTIVE',
+      archivedAt: null,
+      category: { isActive: true, archivedAt: null },
+    },
+    orderBy: [{ publishedAt: 'desc' }, { id: 'asc' }],
+    take: limit,
+    select: { slug: true, updatedAt: true, publishedAt: true },
+  })
 }
 
 export async function getCatalogCounts() {

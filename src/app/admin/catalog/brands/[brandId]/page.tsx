@@ -77,11 +77,7 @@ export default async function BrandDetailPage({
             />
             <div className="flex flex-wrap gap-5">
               <CheckboxField label="Active" name="isActive" defaultChecked={brand.isActive} />
-              <CheckboxField
-                label="Featured"
-                name="isFeatured"
-                defaultChecked={brand.isFeatured}
-              />
+              <CheckboxField label="Featured" name="isFeatured" defaultChecked={brand.isFeatured} />
             </div>
           </ActionForm>
         </Card>

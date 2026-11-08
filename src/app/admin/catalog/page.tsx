@@ -117,7 +117,9 @@ export default async function CatalogOverviewPage() {
           <li>HSN code, GST rate, country of origin, packer and net quantity must be declared.</li>
           <li>Manufacturer/importer, unit sale price and consumer-care contact are required.</li>
           <li>Required category attributes must be present before publishing.</li>
-          <li>The seller legal name, registered address and consumer-care contact must be configured.</li>
+          <li>
+            The seller legal name, registered address and consumer-care contact must be configured.
+          </li>
         </ul>
       </Card>
     </div>

@@ -11,12 +11,7 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
     await requireCsrfHeader(request)
     const { productId } = await context.params
     const input = await parseJson(request, productAttributeValueInputSchema)
-    const value = await setProductAttribute(
-      productId,
-      input,
-      actor.userId,
-      requestContext(request),
-    )
+    const value = await setProductAttribute(productId, input, actor.userId, requestContext(request))
     return json({ value }, { status: 201 })
   })
 }

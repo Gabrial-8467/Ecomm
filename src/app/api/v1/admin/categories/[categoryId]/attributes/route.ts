@@ -1,10 +1,7 @@
 import { requirePermissionActor } from '@/lib/auth/guards'
 import { requireCsrfHeader } from '@/lib/auth/route-helpers'
 import { handleApi, json, parseJson, requestContext } from '@/lib/http'
-import {
-  categoryAttributeAssignmentSchema,
-  setCategoryAttributes,
-} from '@/modules/catalog'
+import { categoryAttributeAssignmentSchema, setCategoryAttributes } from '@/modules/catalog'
 
 type RouteContext = { params: Promise<{ categoryId: string }> }
 

@@ -2,19 +2,14 @@ import 'server-only'
 
 import { Prisma } from '@/generated/prisma/client'
 import { prisma } from '@/lib/prisma'
-import {
-  productCardSelect,
-  type ProductCard,
-  findCategoryBySlug,
-} from './catalog.repository'
+import { productCardSelect, type ProductCard, findCategoryBySlug } from './catalog.repository'
 import { productCardView } from './catalog.presenter'
 import type { PublicCatalogQuery } from './catalog.schema'
 
 let trigramPromise: Promise<boolean> | null = null
 
 async function hasTrigramExtension(): Promise<boolean> {
-  trigramPromise ??= prisma
-    .$queryRaw<{ exists: boolean }[]>`
+  trigramPromise ??= prisma.$queryRaw<{ exists: boolean }[]>`
       SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm') AS "exists"
     `
     .then((rows) => rows[0]?.exists === true)
@@ -43,9 +38,7 @@ function baseConditions(query: PublicCatalogQuery, options: { ignoreAttributes?:
 
   if (query.category) {
     const path = query.category.startsWith('/') ? query.category : `/${query.category}`
-    conditions.push(
-      Prisma.sql`(c."path" = ${path} OR c."path" LIKE ${`${path}/%`})`,
-    )
+    conditions.push(Prisma.sql`(c."path" = ${path} OR c."path" LIKE ${`${path}/%`})`)
   }
   if (query.brands.length > 0) {
     conditions.push(Prisma.sql`b."slug" = ANY(${query.brands}::text[])`)
@@ -178,7 +171,12 @@ async function fetchFacets(query: PublicCatalogQuery): Promise<CatalogFacets> {
 
   const grouped = new Map<
     string,
-    { code: string; name: string; unit: string | null; values: { value: string; label: string; count: number }[] }
+    {
+      code: string
+      name: string
+      unit: string | null
+      values: { value: string; label: string; count: number }[]
+    }
   >()
   for (const row of attributeRows) {
     if (!row.value) continue
@@ -372,7 +370,10 @@ export async function getRelatedProducts(slug: string, limit = 8) {
       status: 'ACTIVE',
       archivedAt: null,
       id: { not: product.id },
-      OR: [{ categoryId: product.categoryId }, ...(product.brandId ? [{ brandId: product.brandId }] : [])],
+      OR: [
+        { categoryId: product.categoryId },
+        ...(product.brandId ? [{ brandId: product.brandId }] : []),
+      ],
     },
     orderBy: [{ soldCount: 'desc' }, { ratingAvg: 'desc' }, { publishedAt: 'desc' }],
     take: limit,

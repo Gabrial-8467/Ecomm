@@ -2,10 +2,6 @@ import type { ProductCard, ProductDetail } from './catalog.repository'
 
 const DAY_MS = 24 * 60 * 60 * 1_000
 
-function decimalToNumber(value: { toString(): string } | null | undefined): number | null {
-  return value === null || value === undefined ? null : Number(value.toString())
-}
-
 function decimalToString(value: { toString(): string } | null | undefined): string | null {
   return value === null || value === undefined ? null : value.toString()
 }

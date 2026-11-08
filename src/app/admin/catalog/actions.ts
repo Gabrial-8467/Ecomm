@@ -77,7 +77,10 @@ function failure(error: unknown): ActionResult {
       ? Object.fromEntries(
           error.details.map((entry, index) => {
             if (entry && typeof entry === 'object' && 'field' in entry && 'message' in entry) {
-              return [String((entry as { field: unknown }).field), String((entry as { message: unknown }).message)]
+              return [
+                String((entry as { field: unknown }).field),
+                String((entry as { message: unknown }).message),
+              ]
             }
             return [`issue_${index}`, String(entry)]
           }),

@@ -6,7 +6,6 @@ import type { RequestContext } from '@/lib/http'
 import { prisma } from '@/lib/prisma'
 import { slugify, slugWithSuffix } from '@/lib/slug'
 import {
-  findCategoryById,
   findCategoryBySlug,
   findCategoryDetail,
   listCategories,
@@ -138,8 +137,7 @@ export async function updateCategory(
   const existing = await prisma.category.findUnique({ where: { id } })
   if (!existing) throw new NotFoundError('Category not found.')
 
-  const nextParentId =
-    input.parentId !== undefined ? (input.parentId ?? null) : existing.parentId
+  const nextParentId = input.parentId !== undefined ? (input.parentId ?? null) : existing.parentId
   const nextSlug = input.slug ?? existing.slug
 
   if (nextSlug !== existing.slug) await assertExplicitSlugAvailable(nextSlug, id)

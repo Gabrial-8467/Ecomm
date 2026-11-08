@@ -2,15 +2,15 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { AccessDenied } from '@/components/admin/access-denied'
-import {
-  AdminPageHeader,
-  Field,
-  StatusBadge,
-  inputClass,
-} from '@/components/admin/form-fields'
+import { AdminPageHeader, Field, StatusBadge, inputClass } from '@/components/admin/form-fields'
 import { getCurrentActor } from '@/lib/auth/guards'
 import { hasPermission } from '@/lib/permissions'
-import { getBrands, getCategoryTree, listAdminProducts, type CategoryTreeNode } from '@/modules/catalog'
+import {
+  getBrands,
+  getCategoryTree,
+  listAdminProducts,
+  type CategoryTreeNode,
+} from '@/modules/catalog'
 
 export const metadata: Metadata = { title: 'Products' }
 

@@ -92,7 +92,10 @@ export default async function CategoriesPage() {
         title="Categories"
         description="Categories carry return-policy defaults and determine which attributes a product must declare."
         actions={
-          <Link href="/admin/catalog" className="text-sm text-muted-foreground hover:text-foreground">
+          <Link
+            href="/admin/catalog"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
             ← Catalog
           </Link>
         }
@@ -173,11 +176,7 @@ export default async function CategoriesPage() {
             <div className="flex flex-wrap gap-5">
               <CheckboxField label="Active" name="isActive" defaultChecked />
               <CheckboxField label="Returnable" name="isReturnable" defaultChecked />
-              <CheckboxField
-                label="Replacement allowed"
-                name="replacementAllowed"
-                defaultChecked
-              />
+              <CheckboxField label="Replacement allowed" name="replacementAllowed" defaultChecked />
             </div>
           </ActionForm>
         </section>

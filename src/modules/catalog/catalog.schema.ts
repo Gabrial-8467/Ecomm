@@ -215,13 +215,10 @@ const variantObjectSchema = z
   })
   .strict()
 
-export const variantInputSchema = variantObjectSchema.refine(
-  (value) => value.mrp >= value.price,
-  {
-    path: ['mrp'],
-    message: 'MRP must be greater than or equal to the selling price.',
-  },
-)
+export const variantInputSchema = variantObjectSchema.refine((value) => value.mrp >= value.price, {
+  path: ['mrp'],
+  message: 'MRP must be greater than or equal to the selling price.',
+})
 
 export const variantUpdateSchema = variantObjectSchema.partial()
 
@@ -404,7 +401,10 @@ export function parsePublicCatalogQuery(params: URLSearchParams): PublicCatalogQ
     if (value.trim() !== '' && !list.includes(value.trim())) list.push(value.trim())
   }
 
-  const brands = params.getAll('brand').flatMap((value) => value.split(',')).filter(Boolean)
+  const brands = params
+    .getAll('brand')
+    .flatMap((value) => value.split(','))
+    .filter(Boolean)
 
   const sort = catalogSortSchema.safeParse(scalarParam(params.get('sort')))
   const page = Math.max(1, Math.floor(numberParam(params.get('page')) ?? 1))

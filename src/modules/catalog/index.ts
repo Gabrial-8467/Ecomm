@@ -62,18 +62,20 @@ export {
   type PriceSummary,
   type PublicProductView,
 } from './catalog.presenter'
-export {
-  buildCategoryTree,
-} from './category.service'
+export { buildCategoryTree } from './category.service'
 export {
   findPublishedProductBySlug,
   findProductById,
   findProductBySlug,
+  findBrandBySlug,
+  findCategoryBySlug,
   getCatalogCounts,
   getPlatformSeller,
   listCategories,
   listBrands,
+  listPublicBrands,
   listAttributes,
+  listPublishedProductsForSitemap,
   type ProductCard,
   type ProductDetail,
 } from './catalog.repository'
@@ -84,16 +86,8 @@ export {
   productJsonLd,
   productMetadata,
 } from './catalog.seo'
-export {
-  catalogEtag,
-  getCatalogVersion,
-  bumpCatalogVersion,
-} from './catalog.version'
-export {
-  formatPublishIssues,
-  validateProductForPublish,
-  type PublishIssue,
-} from './publish'
+export { catalogEtag, getCatalogVersion, bumpCatalogVersion } from './catalog.version'
+export { formatPublishIssues, validateProductForPublish, type PublishIssue } from './publish'
 export {
   generateVariantCombinations,
   matrixSkuSuffix,

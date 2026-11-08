@@ -85,7 +85,10 @@ export class ConflictError extends AppError {
 
 /** Business-rule failure that is well formed but cannot be processed. */
 export class UnprocessableError extends AppError {
-  constructor(message = 'The resource cannot be processed in its current state.', details?: unknown) {
+  constructor(
+    message = 'The resource cannot be processed in its current state.',
+    details?: unknown,
+  ) {
     super(message, { status: 422, code: 'UNPROCESSABLE', details })
     this.name = 'UnprocessableError'
   }

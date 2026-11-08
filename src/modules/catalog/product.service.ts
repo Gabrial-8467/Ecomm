@@ -4,12 +4,7 @@ import Decimal from 'decimal.js'
 
 import type { Prisma } from '@/generated/prisma/client'
 import { AUDIT_EVENTS, audit } from '@/lib/auth/audit'
-import {
-  ConflictError,
-  NotFoundError,
-  UnprocessableError,
-  ValidationError,
-} from '@/lib/errors'
+import { ConflictError, NotFoundError, UnprocessableError, ValidationError } from '@/lib/errors'
 import type { RequestContext } from '@/lib/http'
 import { roundMoney } from '@/lib/money'
 import { prisma } from '@/lib/prisma'
@@ -238,8 +233,7 @@ function baseProductData(input: ProductInput | ProductUpdateInput) {
     ...(input.unitOfMeasure !== undefined ? { unitOfMeasure: input.unitOfMeasure } : {}),
     ...(input.unitSalePrice !== undefined
       ? {
-          unitSalePrice:
-            input.unitSalePrice == null ? null : moneyString(input.unitSalePrice),
+          unitSalePrice: input.unitSalePrice == null ? null : moneyString(input.unitSalePrice),
         }
       : {}),
     ...(input.consumerCareEmail !== undefined
@@ -248,7 +242,9 @@ function baseProductData(input: ProductInput | ProductUpdateInput) {
     ...(input.consumerCarePhone !== undefined
       ? { consumerCarePhone: input.consumerCarePhone }
       : {}),
-    ...(input.bisRegistrationNo !== undefined ? { bisRegistrationNo: input.bisRegistrationNo } : {}),
+    ...(input.bisRegistrationNo !== undefined
+      ? { bisRegistrationNo: input.bisRegistrationNo }
+      : {}),
     ...(input.warrantyMonths !== undefined ? { warrantyMonths: input.warrantyMonths } : {}),
     ...(input.warrantyType !== undefined ? { warrantyType: input.warrantyType } : {}),
     ...(input.isReturnable !== undefined ? { isReturnable: input.isReturnable } : {}),
@@ -383,7 +379,10 @@ export async function createProduct(
       })),
     })
 
-    return tx.product.findUniqueOrThrow({ where: { id: created.id }, include: productDetailInclude })
+    return tx.product.findUniqueOrThrow({
+      where: { id: created.id },
+      include: productDetailInclude,
+    })
   })
 
   await bumpCatalogVersion()
@@ -1092,14 +1091,18 @@ export async function generateVariantMatrixForProduct(
 
   const attributes = await prisma.attributeDefinition.findMany({
     where: { code: { in: input.attributeCodes }, isActive: true },
-    include: { options: { where: { isActive: true }, orderBy: [{ sortOrder: 'asc' }, { label: 'asc' }] } },
+    include: {
+      options: { where: { isActive: true }, orderBy: [{ sortOrder: 'asc' }, { label: 'asc' }] },
+    },
   })
   if (attributes.length !== new Set(input.attributeCodes).size) {
     throw new ValidationError('One or more variant axes are invalid or inactive.')
   }
   for (const attribute of attributes) {
     if (!attribute.isVariantAxis) {
-      throw new ValidationError(`Attribute “${attribute.name}” is not configured as a variant axis.`)
+      throw new ValidationError(
+        `Attribute “${attribute.name}” is not configured as a variant axis.`,
+      )
     }
     if (attribute.options.length === 0) {
       throw new ValidationError(`Attribute “${attribute.name}” has no active options.`)
@@ -1125,7 +1128,10 @@ export async function generateVariantMatrixForProduct(
   const existingKeys = new Set(
     product.variants.map((variant) =>
       variant.attributeValues
-        .map((value) => `${codeById.get(value.attributeId) ?? value.attributeId}:${value.optionId ?? ''}`)
+        .map(
+          (value) =>
+            `${codeById.get(value.attributeId) ?? value.attributeId}:${value.optionId ?? ''}`,
+        )
         .sort()
         .join('|'),
     ),
@@ -1144,9 +1150,7 @@ export async function generateVariantMatrixForProduct(
     const base = `${prefix}-${suffix}`.slice(0, 76)
     let sku = base
     let attempt = 0
-    while (
-      await prisma.productVariant.findUnique({ where: { sku }, select: { id: true } })
-    ) {
+    while (await prisma.productVariant.findUnique({ where: { sku }, select: { id: true } })) {
       attempt += 1
       sku = `${base}-${attempt}`
     }

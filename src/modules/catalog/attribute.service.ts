@@ -4,11 +4,7 @@ import { AUDIT_EVENTS, audit } from '@/lib/auth/audit'
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors'
 import type { RequestContext } from '@/lib/http'
 import { prisma } from '@/lib/prisma'
-import {
-  findAttributeByCode,
-  findAttributeById,
-  listAttributes,
-} from './catalog.repository'
+import { findAttributeByCode, findAttributeById, listAttributes } from './catalog.repository'
 import type { AttributeInput, AttributeUpdateInput } from './catalog.schema'
 
 export async function getAttributes(options: { includeInactive?: boolean } = {}) {

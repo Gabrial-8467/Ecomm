@@ -67,9 +67,7 @@ export default async function CategoryDetailPage({
     getCategoryTree(),
   ])
   const parentOptions = flatten(tree).filter((option) => option.id !== category.id)
-  const assigned = new Map(
-    category.categoryAttributes.map((entry) => [entry.attributeId, entry]),
-  )
+  const assigned = new Map(category.categoryAttributes.map((entry) => [entry.attributeId, entry]))
 
   return (
     <div className="space-y-6">
@@ -119,7 +117,11 @@ export default async function CategoryDetailPage({
               <TextField label="Name" name="name" defaultValue={category.name} required />
               <TextField label="Slug" name="slug" defaultValue={category.slug} required />
               <Field label="Parent category">
-                <select name="parentId" className={inputClass} defaultValue={category.parentId ?? ''}>
+                <select
+                  name="parentId"
+                  className={inputClass}
+                  defaultValue={category.parentId ?? ''}
+                >
                   <option value="">None (root category)</option>
                   {parentOptions.map((option) => (
                     <option key={option.id} value={option.id}>
@@ -237,7 +239,10 @@ export default async function CategoryDetailPage({
       ) : null}
 
       {canDelete ? (
-        <Card title="Danger zone" description="Categories with products or children cannot be deleted.">
+        <Card
+          title="Danger zone"
+          description="Categories with products or children cannot be deleted."
+        >
           <ActionForm
             action={deleteCategoryAction}
             submitLabel="Delete category"

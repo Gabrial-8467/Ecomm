@@ -37,7 +37,10 @@ export default async function BrandsPage() {
         title="Brands"
         description="Brands are optional on a product but improve facets, SEO and trust."
         actions={
-          <Link href="/admin/catalog" className="text-sm text-muted-foreground hover:text-foreground">
+          <Link
+            href="/admin/catalog"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
             ← Catalog
           </Link>
         }

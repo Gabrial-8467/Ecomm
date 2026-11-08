@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { LayoutDashboard, LogOut, ShieldCheck } from 'lucide-react'
+import { Boxes, LayoutDashboard, LogOut, ShieldCheck } from 'lucide-react'
 
 import { getCurrentActor } from '@/lib/auth/guards'
 import { getEnv } from '@/lib/env'
@@ -13,7 +13,10 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic'
 
-const NAV = [{ href: '/admin', label: 'Dashboard', icon: LayoutDashboard }]
+const NAV = [
+  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/catalog', label: 'Catalog', icon: Boxes },
+]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const actor = await getCurrentActor()
@@ -101,7 +104,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             ))}
           </nav>
           <p className="mt-6 px-3 text-xs text-muted-foreground">
-            Additional modules appear as their phases ship.
+            Inventory, orders and reporting follow in later phases.
           </p>
         </aside>
         <main className="min-w-0 flex-1">{children}</main>

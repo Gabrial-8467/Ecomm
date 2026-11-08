@@ -7,10 +7,10 @@ const COLUMNS = [
   {
     title: 'Shop',
     links: [
-      { href: '/furniture', label: 'Furniture' },
-      { href: '/electronics', label: 'Electronics' },
-      { href: '/collections/new-arrivals', label: 'New arrivals' },
-      { href: '/collections/deals', label: 'Deals' },
+      { href: '/categories/furniture', label: 'Furniture' },
+      { href: '/categories/electronics', label: 'Electronics' },
+      { href: '/products?sort=newest', label: 'New arrivals' },
+      { href: '/products?sort=discount', label: 'Deals' },
       { href: '/brands', label: 'Brands' },
     ],
   },

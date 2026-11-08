@@ -8,7 +8,6 @@ import {
   CheckboxField,
   Field,
   SelectField,
-  TextAreaField,
   TextField,
   inputClass,
 } from '@/components/admin/form-fields'
@@ -48,7 +47,10 @@ export default async function AttributesPage() {
         title="Attributes"
         description="Attributes power filters and variant axes. Select attributes carry their own options."
         actions={
-          <Link href="/admin/catalog" className="text-sm text-muted-foreground hover:text-foreground">
+          <Link
+            href="/admin/catalog"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
             ← Catalog
           </Link>
         }
@@ -120,7 +122,12 @@ export default async function AttributesPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField label="Name" name="name" required />
               <TextField label="Code" name="code" placeholder="screen_size_inch" required />
-              <SelectField label="Data type" name="dataType" options={DATA_TYPES} defaultValue="SELECT" />
+              <SelectField
+                label="Data type"
+                name="dataType"
+                options={DATA_TYPES}
+                defaultValue="SELECT"
+              />
               <TextField label="Unit" name="unit" placeholder="inch, kg, W" />
               <TextField label="Sort order" name="sortOrder" type="number" defaultValue={0} />
               <Field label="Options">

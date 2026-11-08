@@ -8,7 +8,9 @@ import { slugify, slugWithSuffix } from '@/lib/slug'
 import { findBrandById, findBrandBySlug, listBrands } from './catalog.repository'
 import type { BrandInput, BrandUpdateInput } from './catalog.schema'
 
-export async function getBrands(options: { includeInactive?: boolean; featuredOnly?: boolean } = {}) {
+export async function getBrands(
+  options: { includeInactive?: boolean; featuredOnly?: boolean } = {},
+) {
   const rows = await listBrands(options.includeInactive)
   return options.featuredOnly ? rows.filter((brand) => brand.isFeatured) : rows
 }
@@ -29,7 +31,10 @@ async function ensureUniqueSlug(base: string, excludeId?: string): Promise<strin
   const root = slugify(base, 'brand')
   for (let attempt = 0; attempt < 100; attempt += 1) {
     const candidate = slugWithSuffix(root, attempt)
-    const existing = await prisma.brand.findUnique({ where: { slug: candidate }, select: { id: true } })
+    const existing = await prisma.brand.findUnique({
+      where: { slug: candidate },
+      select: { id: true },
+    })
     if (!existing || existing.id === excludeId) return candidate
   }
   throw new ConflictError('Could not allocate a unique brand slug.')
@@ -81,7 +86,10 @@ export async function updateBrand(
   if (!existing) throw new NotFoundError('Brand not found.')
 
   if (input.slug && input.slug !== existing.slug) {
-    const duplicate = await prisma.brand.findUnique({ where: { slug: input.slug }, select: { id: true } })
+    const duplicate = await prisma.brand.findUnique({
+      where: { slug: input.slug },
+      select: { id: true },
+    })
     if (duplicate) throw new ConflictError('A brand with this slug already exists.')
   }
 
