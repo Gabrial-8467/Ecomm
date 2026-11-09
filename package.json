@@ -1,0 +1,32 @@
+{
+  "name": "retail-platform-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Single-owner retail e-commerce platform for Furniture, Electronics, and Mobile Phones",
+  "workspaces": [
+    "storefront",
+    "admin-dashboard",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"BACKEND,STOREFRONT,ADMIN\" -c \"blue,green,magenta\" \"npm run dev:backend\" \"npm run dev:storefront\" \"npm run dev:admin\"",
+    "dev:backend": "npm run --prefix backend dev",
+    "dev:storefront": "npm run --prefix storefront dev",
+    "dev:admin": "npm run --prefix admin-dashboard dev",
+    "build": "npm run build:backend && npm run build:storefront && npm run build:admin",
+    "build:backend": "npm run --prefix backend build",
+    "build:storefront": "npm run --prefix storefront build",
+    "build:admin": "npm run --prefix admin-dashboard build",
+    "test": "npm run --prefix backend test",
+    "prisma:generate": "npm run --prefix backend prisma:generate",
+    "prisma:migrate": "npm run --prefix backend prisma:migrate",
+    "prisma:seed": "npm run --prefix backend prisma:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
