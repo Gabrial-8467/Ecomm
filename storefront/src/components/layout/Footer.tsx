@@ -6,7 +6,7 @@ import { MapPin, Phone, Mail, Clock, ShieldCheck, Truck, RefreshCcw, ArrowUpRigh
 export const Footer: React.FC = () => {
   return (
     <footer className="bg-neutral-950 text-neutral-400 pt-16 pb-12 border-t border-neutral-900 font-sans">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
         {/* Value Proposition Highlights */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-14 border-b border-neutral-900">
           <div className="flex items-start gap-4">

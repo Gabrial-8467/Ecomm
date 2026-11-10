@@ -21,7 +21,7 @@ export const LegalPage: React.FC = () => {
   }, [location.pathname]);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-10">
+    <div className="max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-10 sm:py-16 space-y-10">
       {/* Page Header */}
       <div className="text-center max-w-2xl mx-auto space-y-2">
         <span className="text-[10px] font-semibold tracking-widest text-neutral-400 uppercase">

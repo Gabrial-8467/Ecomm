@@ -4,7 +4,7 @@ import { Truck, PhoneCall, ShieldCheck, MapPin } from 'lucide-react';
 export const AnnouncementBar: React.FC = () => {
   return (
     <div className="bg-neutral-950 text-neutral-300 text-[11px] tracking-wide border-b border-neutral-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 py-2.5">
+      <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 flex flex-col sm:flex-row justify-between items-center gap-2 py-2.5">
         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-6 gap-y-1">
           <span className="flex items-center gap-1.5 font-normal text-neutral-300">
             <Truck className="w-3.5 h-3.5 text-neutral-400" strokeWidth={1.5} />

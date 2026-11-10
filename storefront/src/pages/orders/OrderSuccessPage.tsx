@@ -157,7 +157,7 @@ export const OrderSuccessPage: React.FC = () => {
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.key === order.status);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-10">
+    <div className="max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-10 sm:py-16 space-y-10">
       {/* Top Banner */}
       <div className="bg-white rounded-3xl border border-neutral-200/80 p-8 sm:p-10 shadow-xs text-center space-y-4">
         <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-neutral-200 bg-neutral-50 text-neutral-900">

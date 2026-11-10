@@ -185,7 +185,7 @@ export const CheckoutPage: React.FC = () => {
   const total = Math.max(0, subtotal - discount + deliveryFee + tax);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-10">
+    <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-10 sm:py-16 space-y-10">
       <div className="flex items-center gap-4 pb-6 border-b border-neutral-200">
         <Link to="/cart" className="p-2 text-neutral-400 hover:text-neutral-900 rounded-full hover:bg-neutral-100 transition-colors">
           <ArrowLeft className="w-5 h-5" />

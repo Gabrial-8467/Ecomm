@@ -123,7 +123,7 @@ export const ProductDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-16 animate-pulse space-y-8">
+      <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-16 animate-pulse space-y-8">
         <div className="h-6 bg-stone-200 rounded w-48" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           <div className="aspect-square bg-stone-200 rounded-2xl" />
@@ -139,7 +139,7 @@ export const ProductDetailPage: React.FC = () => {
 
   if (!product || !selectedVariant) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+      <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-20 text-center">
         <h2 className="font-serif text-2xl font-bold text-stone-900 mb-4">Product Not Found</h2>
         <Link
           to="/products"
@@ -195,7 +195,7 @@ export const ProductDetailPage: React.FC = () => {
   }, {} as Record<string, typeof product.specifications>);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12">
+    <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 sm:py-12 space-y-12">
       {/* Dynamic SEO & WhatsApp / Social Media Rich Card Preview */}
       <Helmet>
         <title>{`${product.name} | ₹${price.toLocaleString('en-IN')} | Grand Living Mohali`}</title>

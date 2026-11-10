@@ -73,7 +73,7 @@ export const HomePage: React.FC = () => {
       </Helmet>
 
       {/* 1. Main Hero Banner */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 sm:pt-4">
+      <section className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 pt-2 sm:pt-4">
         <div className="relative overflow-hidden rounded-3xl bg-neutral-950 text-white min-h-[540px] sm:min-h-[640px] flex items-center shadow-xl border border-neutral-800/60">
           {/* Background image & gradient overlay */}
           <div className="absolute inset-0 z-0">
@@ -170,7 +170,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 2. Showroom Trust Pillars */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white border border-neutral-200/70 p-6 rounded-2xl space-y-2 shadow-2xs hover:border-neutral-400/80 transition-all">
             <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 mb-3">
@@ -215,7 +215,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 3. Shop By Department */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-3 border-b border-neutral-200/60 pb-4">
           <div>
             <span className="text-[10px] uppercase font-semibold tracking-[0.25em] text-neutral-400">
@@ -264,7 +264,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 4. Featured Showroom Products */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-3 border-b border-neutral-200/60 pb-4">
           <div>
             <span className="text-[10px] uppercase font-semibold tracking-[0.25em] text-neutral-400">
@@ -302,7 +302,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 5. Physical Studio Showcase Experience */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
         <div className="rounded-3xl bg-neutral-900 text-white overflow-hidden grid grid-cols-1 lg:grid-cols-12 border border-neutral-800 shadow-xl">
           <div className="lg:col-span-6 p-8 sm:p-14 lg:p-16 flex flex-col justify-between space-y-8">
             <div className="space-y-4">
@@ -354,7 +354,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 6. Customer Testimonials */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
         <div className="text-center max-w-xl mx-auto mb-10 space-y-1">
           <span className="text-[10px] uppercase font-semibold tracking-[0.25em] text-neutral-400">
             Client Voices

@@ -81,7 +81,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-neutral-200/70 transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
         <div className="flex items-center justify-between h-20 gap-4">
           {/* Mobile menu trigger */}
           <div className="flex items-center lg:hidden">
@@ -132,7 +132,7 @@ export const Navbar: React.FC = () => {
           </nav>
 
           {/* Search bar with instant autocomplete */}
-          <div ref={searchContainerRef} className="hidden md:block relative flex-1 max-w-xs lg:max-w-sm">
+          <div ref={searchContainerRef} className="hidden md:block relative flex-1 max-w-sm lg:max-w-md xl:max-w-lg">
             <form onSubmit={handleSearch} className="relative flex items-center">
               <input
                 type="text"
