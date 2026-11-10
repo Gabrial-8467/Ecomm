@@ -87,13 +87,40 @@ export const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        <div className="p-3.5 bg-slate-800/60 rounded-xl border border-slate-700/60 text-xs text-slate-400 space-y-1">
-          <div className="flex items-center gap-1.5 text-amber-400 font-semibold">
-            <Shield className="w-3.5 h-3.5" />
-            Seed Admin Credentials
+        <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700/60 text-xs text-slate-400 space-y-2.5">
+          <div className="flex items-center justify-between text-amber-400 font-semibold">
+            <span className="flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5" />
+              Demo Staff Credentials
+            </span>
+            <span className="text-[10px] text-slate-400 font-normal">Click to autofill</span>
           </div>
-          <p>Login: <code className="text-slate-200">admin@furniturestore.local</code></p>
-          <p>Pass: <code className="text-slate-200">Admin@12345</code></p>
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setIdentifier('admin@store.com');
+                setPassword('Admin@12345');
+              }}
+              className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-left transition-colors"
+            >
+              <div className="font-semibold text-slate-200">Store Admin</div>
+              <div className="text-[11px] text-slate-400 truncate">admin@store.com</div>
+              <div className="text-[10px] text-amber-500/80 mt-0.5">Admin@12345</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIdentifier('staff@furniturestore.local');
+                setPassword('Staff@12345');
+              }}
+              className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-left transition-colors"
+            >
+              <div className="font-semibold text-slate-200">Staff Lead</div>
+              <div className="text-[11px] text-slate-400 truncate">staff@furniturestore.local</div>
+              <div className="text-[10px] text-amber-500/80 mt-0.5">Staff@12345</div>
+            </button>
+          </div>
         </div>
       </div>
     </div>

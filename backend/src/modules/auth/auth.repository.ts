@@ -3,9 +3,13 @@ import { User, UserRole } from '@prisma/client';
 
 export class AuthRepository {
   async findByPhoneOrEmail(identifier: string): Promise<User | null> {
+    const clean = identifier.trim();
     return prisma.user.findFirst({
       where: {
-        OR: [{ phone: identifier }, { email: identifier }],
+        OR: [
+          { phone: clean },
+          { email: { equals: clean, mode: 'insensitive' } },
+        ],
       },
     });
   }

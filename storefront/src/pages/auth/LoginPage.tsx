@@ -85,7 +85,25 @@ export const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        <div className="pt-4 border-t border-stone-100 text-center text-xs text-stone-600">
+        <div className="p-3 bg-amber-50/60 rounded-2xl border border-amber-200/60 text-xs text-stone-600 space-y-1.5">
+          <div className="flex items-center justify-between text-amber-900 font-semibold">
+            <span>Demo Customer Credentials</span>
+            <span className="text-[10px] text-amber-700 font-normal">Click to fill</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setIdentifier('customer@example.com');
+              setPassword('Customer@12345');
+            }}
+            className="w-full text-left p-2 bg-white/80 hover:bg-white rounded-xl border border-amber-200/70 transition-colors"
+          >
+            <div className="font-semibold text-stone-900">Rahul Sharma</div>
+            <div className="text-[11px] text-stone-500">Email: customer@example.com | Pass: Customer@12345</div>
+          </button>
+        </div>
+
+        <div className="pt-2 border-t border-stone-100 text-center text-xs text-stone-600">
           Don't have an account yet?{' '}
           <Link to={`/register?redirect=${encodeURIComponent(redirect)}`} className="text-amber-800 font-bold hover:underline">
             Register here
