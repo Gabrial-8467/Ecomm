@@ -73,123 +73,173 @@ export const HomePage: React.FC = () => {
       </Helmet>
 
       {/* 1. Main Hero Banner */}
-      <section className="relative overflow-hidden bg-stone-900 text-white min-h-[520px] sm:min-h-[600px] flex items-center transition-all duration-700">
-        <div className="absolute inset-0 z-0 opacity-40">
-          <img
-            src={
-              activeBanner?.imageUrl ||
-              'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=2000&q=80'
-            }
-            alt={activeBanner?.title || 'Luxury Furniture Showroom'}
-            className="w-full h-full object-cover transition-all duration-700"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/80 to-transparent" />
-        </div>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 sm:pt-4">
+        <div className="relative overflow-hidden rounded-3xl bg-neutral-950 text-white min-h-[540px] sm:min-h-[640px] flex items-center shadow-xl border border-neutral-800/60">
+          {/* Background image & gradient overlay */}
+          <div className="absolute inset-0 z-0">
+            <img
+              src={
+                activeBanner?.imageUrl ||
+                'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=2000&q=80'
+              }
+              alt={activeBanner?.title || 'Grand Living Furniture Showroom'}
+              className="w-full h-full object-cover transition-all duration-700 brightness-[0.72]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/60 to-transparent sm:bg-gradient-to-r sm:from-neutral-950 sm:via-neutral-950/75 sm:to-transparent" />
+          </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 w-full">
-          <div className="max-w-2xl space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold tracking-wide uppercase">
-              <Sparkles className="w-3.5 h-3.5" />
-              Direct From Physical Showroom
-            </div>
-
-            <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-              {activeBanner?.title || 'Handcrafted Wood Furniture & Branded Electronics.'}
+          <div className="relative z-10 max-w-2xl px-6 sm:px-12 lg:px-16 py-16 sm:py-24 space-y-6">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-light tracking-tighter leading-[1.06] text-white">
+              {activeBanner?.title ? (
+                <span>{activeBanner.title}</span>
+              ) : (
+                <>
+                  Solid Wood Living. <br />
+                  <span className="font-medium text-neutral-100">Certified Brands.</span>
+                </>
+              )}
             </h1>
 
-            <p className="text-stone-300 text-base sm:text-lg leading-relaxed font-light">
+            <p className="text-neutral-300 text-sm sm:text-base leading-relaxed font-normal max-w-xl">
               {activeBanner?.subtitle ||
-                'Experience the luxury of premium solid Sheesham wood wardrobes, sofas, and office furniture alongside energy-efficient Samsung & LG home electronics. Delivered safely by our dedicated local fleet with Cash on Delivery.'}
+                'Handcrafted Sheesham & Teak wood furniture and energy-efficient Samsung & LG appliances. Delivered in-person across the Tricity with inspection on delivery.'}
             </p>
 
-            <div className="flex flex-wrap items-center gap-4 pt-4">
+            <div className="flex flex-wrap items-center gap-3.5 pt-2">
               {activeBanner?.linkUrl ? (
                 <Link
                   to={activeBanner.linkUrl}
-                  className="px-7 py-3.5 bg-amber-800 hover:bg-amber-900 text-white font-medium rounded-xl transition-all shadow-lg shadow-amber-950/40 flex items-center gap-2 group"
+                  className="px-8 py-3.5 bg-white hover:bg-neutral-100 text-neutral-950 text-xs font-semibold uppercase tracking-widest rounded-full transition-all flex items-center gap-2 group shadow-lg"
                 >
-                  <span>Explore Offer</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <span>Explore Collection</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               ) : (
                 <>
                   <Link
                     to="/products?category=living-room"
-                    className="px-7 py-3.5 bg-amber-800 hover:bg-amber-900 text-white font-medium rounded-xl transition-all shadow-lg shadow-amber-950/40 flex items-center gap-2 group"
+                    className="px-8 py-3.5 bg-white hover:bg-neutral-100 text-neutral-950 text-xs font-semibold uppercase tracking-widest rounded-full transition-all flex items-center gap-2 group shadow-lg"
                   >
-                    <span>Explore Furniture</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <span>Shop Furniture</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                   <Link
                     to="/products?category=home-appliances"
-                    className="px-7 py-3.5 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl border border-white/20 transition-all backdrop-blur-md"
+                    className="px-8 py-3.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium uppercase tracking-widest rounded-full border border-white/25 transition-all backdrop-blur-md"
                   >
-                    Shop Electronics
+                    Appliances
                   </Link>
                 </>
               )}
             </div>
           </div>
+
+          {/* Carousel Navigation Arrows & Segmented Bars */}
+          {banners.length > 1 && (
+            <>
+              <button
+                onClick={() => setCurrentBannerIdx((prev) => (prev - 1 + banners.length) % banners.length)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-neutral-950/40 hover:bg-neutral-950/80 text-white flex items-center justify-center border border-white/20 backdrop-blur-md transition-colors"
+                aria-label="Previous Banner"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setCurrentBannerIdx((prev) => (prev + 1) % banners.length)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-neutral-950/40 hover:bg-neutral-950/80 text-white flex items-center justify-center border border-white/20 backdrop-blur-md transition-colors"
+                aria-label="Next Banner"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+                {banners.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentBannerIdx(i)}
+                    className={`h-1 transition-all rounded-full ${
+                      i === currentBannerIdx ? 'w-8 bg-white' : 'w-2 bg-white/40 hover:bg-white/70'
+                    }`}
+                    aria-label={`Go to slide ${i + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
-
-        {/* Carousel Navigation Arrows & Indicators if multiple banners */}
-        {banners.length > 1 && (
-          <>
-            <button
-              onClick={() => setCurrentBannerIdx((prev) => (prev - 1 + banners.length) % banners.length)}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-stone-900/60 hover:bg-stone-900 text-white flex items-center justify-center border border-white/20 transition-colors"
-              aria-label="Previous Banner"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setCurrentBannerIdx((prev) => (prev + 1) % banners.length)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-stone-900/60 hover:bg-stone-900 text-white flex items-center justify-center border border-white/20 transition-colors"
-              aria-label="Next Banner"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-              {banners.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentBannerIdx(i)}
-                  className={`h-2 transition-all rounded-full ${
-                    i === currentBannerIdx ? 'w-8 bg-amber-500' : 'w-2 bg-white/40 hover:bg-white/70'
-                  }`}
-                  aria-label={`Go to banner ${i + 1}`}
-                />
-              ))}
-            </div>
-          </>
-        )}
       </section>
 
-      {/* 2. Shop By Category */}
+      {/* 2. Showroom Trust Pillars */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white border border-neutral-200/70 p-6 rounded-2xl space-y-2 shadow-2xs hover:border-neutral-400/80 transition-all">
+            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 mb-3">
+              <Truck className="w-4 h-4" strokeWidth={1.5} />
+            </div>
+            <h3 className="font-semibold text-neutral-950 text-sm tracking-tight">Direct Local Delivery</h3>
+            <p className="text-neutral-500 text-xs leading-relaxed">
+              Showroom vehicle dispatch across Mohali, Chandigarh &amp; Panchkula. No parcel transit damage.
+            </p>
+          </div>
+
+          <div className="bg-white border border-neutral-200/70 p-6 rounded-2xl space-y-2 shadow-2xs hover:border-neutral-400/80 transition-all">
+            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 mb-3">
+              <CheckCircle2 className="w-4 h-4" strokeWidth={1.5} />
+            </div>
+            <h3 className="font-semibold text-neutral-950 text-sm tracking-tight">Inspect on Delivery (COD)</h3>
+            <p className="text-neutral-500 text-xs leading-relaxed">
+              Check the solid wood finish and fitment at your doorstep before completing payment.
+            </p>
+          </div>
+
+          <div className="bg-white border border-neutral-200/70 p-6 rounded-2xl space-y-2 shadow-2xs hover:border-neutral-400/80 transition-all">
+            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 mb-3">
+              <ShieldCheck className="w-4 h-4" strokeWidth={1.5} />
+            </div>
+            <h3 className="font-semibold text-neutral-950 text-sm tracking-tight">Authorised Brand Warranties</h3>
+            <p className="text-neutral-500 text-xs leading-relaxed">
+              Genuine manufacturer stamped warranty on Samsung, LG, Godrej and 5-year solid wood guarantee.
+            </p>
+          </div>
+
+          <div className="bg-white border border-neutral-200/70 p-6 rounded-2xl space-y-2 shadow-2xs hover:border-neutral-400/80 transition-all">
+            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 mb-3">
+              <MapPin className="w-4 h-4" strokeWidth={1.5} />
+            </div>
+            <h3 className="font-semibold text-neutral-950 text-sm tracking-tight">Physical Showroom</h3>
+            <p className="text-neutral-500 text-xs leading-relaxed">
+              Experience the pieces in person at SCO 45-48, Sector 70, Mohali. Open daily 10:00 – 21:00.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Shop By Department */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-3 border-b border-neutral-200/60 pb-4">
           <div>
-            <span className="text-xs uppercase font-bold tracking-widest text-amber-800">
-              Curated Collections
+            <span className="text-[10px] uppercase font-semibold tracking-[0.25em] text-neutral-400">
+              Department Architecture
             </span>
-            <h2 className="font-serif text-3xl font-bold text-stone-900 mt-1">Shop By Department</h2>
+            <h2 className="text-2xl sm:text-3xl font-semibold text-neutral-950 tracking-tight mt-1">
+              Curated Living Spaces
+            </h2>
           </div>
           <Link
             to="/products"
-            className="text-sm font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1 group"
+            className="text-xs uppercase tracking-widest font-semibold text-neutral-900 hover:text-neutral-600 flex items-center gap-1 group"
           >
-            <span>View All Departments</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <span>All Departments</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-5">
           {categories.map((category) => (
             <Link
               key={category.id}
               to={`/products?category=${category.slug}`}
-              className="group relative rounded-2xl overflow-hidden aspect-[3/4] bg-stone-100 border border-stone-200/80 shadow-xs hover:shadow-lg transition-all"
+              className="group relative rounded-2xl overflow-hidden aspect-[3/4] bg-neutral-100 border border-neutral-200/70 shadow-2xs hover:border-neutral-400/80 transition-all"
             >
               <img
                 src={
@@ -197,15 +247,15 @@ export const HomePage: React.FC = () => {
                   'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80'
                 }
                 alt={category.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-700 ease-out brightness-[0.88]"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/85 via-neutral-950/20 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 text-white">
-                <h3 className="font-serif text-base sm:text-lg font-bold leading-tight group-hover:text-amber-300 transition-colors">
+                <h3 className="text-sm sm:text-base font-semibold leading-tight tracking-tight group-hover:text-neutral-200 transition-colors">
                   {category.name}
                 </h3>
-                <span className="text-[11px] text-stone-300 mt-1 inline-block">
-                  Explore Collection →
+                <span className="text-[10px] uppercase tracking-wider text-neutral-400 mt-0.5 inline-block font-medium">
+                  Discover →
                 </span>
               </div>
             </Link>
@@ -213,35 +263,37 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. Featured Showroom Products */}
+      {/* 4. Featured Showroom Products */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-3 border-b border-neutral-200/60 pb-4">
           <div>
-            <span className="text-xs uppercase font-bold tracking-widest text-amber-800">
-              In-Stock Showroom Units
+            <span className="text-[10px] uppercase font-semibold tracking-[0.25em] text-neutral-400">
+              Immediate Dispatch
             </span>
-            <h2 className="font-serif text-3xl font-bold text-stone-900 mt-1">Featured Best Sellers</h2>
-            <p className="text-stone-500 text-sm mt-1">
-              Top rated by our local homeowners and ready for immediate delivery.
+            <h2 className="text-2xl sm:text-3xl font-semibold text-neutral-950 tracking-tight mt-1">
+              Featured Pieces
+            </h2>
+            <p className="text-neutral-500 text-xs sm:text-sm mt-1">
+              Selected handcrafted solid wood furniture and certified electronics ready in Mohali warehouse.
             </p>
           </div>
           <Link
             to="/products"
-            className="text-sm font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1 group"
+            className="text-xs uppercase tracking-widest font-semibold text-neutral-900 hover:text-neutral-600 flex items-center gap-1 group"
           >
-            <span>Browse Full Catalog</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <span>Complete Catalogue ({featuredProducts.length})</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
 
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse bg-white p-4 rounded-2xl h-80 border border-stone-200" />
+              <div key={i} className="animate-pulse bg-white p-4 rounded-2xl h-80 border border-neutral-200" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -249,113 +301,113 @@ export const HomePage: React.FC = () => {
         )}
       </section>
 
-      {/* 4. Why Buy From Our Physical Store */}
-      <section className="bg-stone-100 py-16 border-y border-stone-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-xs uppercase font-bold tracking-widest text-amber-800">
-              The Physical Store Advantage
-            </span>
-            <h2 className="font-serif text-3xl font-bold text-stone-900 mt-1">Why Local Shoppers Trust Us</h2>
-            <p className="text-stone-600 text-sm mt-2">
-              Unlike nameless online marketplaces, we are an established showroom in Sector 70, Mohali.
-            </p>
+      {/* 5. Physical Studio Showcase Experience */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-3xl bg-neutral-900 text-white overflow-hidden grid grid-cols-1 lg:grid-cols-12 border border-neutral-800 shadow-xl">
+          <div className="lg:col-span-6 p-8 sm:p-14 lg:p-16 flex flex-col justify-between space-y-8">
+            <div className="space-y-4">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-400 font-semibold">
+                Studio Experience
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-white leading-tight">
+                Touch the wood grain. <br />
+                <span className="font-medium text-neutral-100">Test the comfort.</span>
+              </h2>
+              <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed max-w-md font-normal">
+                Online photos can’t convey the weight of solid seasoned Sheesham or the cooling efficiency of an LG Inverter AC. Visit our Sector 70 showroom to touch, sit, inspect, and consult with our master woodworkers.
+              </p>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-neutral-800">
+              <div className="flex items-start gap-3">
+                <MapPin className="w-4 h-4 text-neutral-400 mt-1 shrink-0" strokeWidth={1.5} />
+                <div className="text-xs">
+                  <p className="font-semibold text-white">Grand Living Flagship Studio</p>
+                  <p className="text-neutral-400 mt-0.5">SCO 45-48, Sector 70, Mohali, Punjab 160071</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-4 pt-2">
+                <a
+                  href="tel:+919876543210"
+                  className="px-6 py-2.5 rounded-full bg-white text-neutral-950 text-xs font-semibold uppercase tracking-widest hover:bg-neutral-100 transition-colors"
+                >
+                  Call Showroom
+                </a>
+                <Link
+                  to="/products"
+                  className="px-6 py-2.5 rounded-full border border-neutral-700 text-white text-xs font-medium uppercase tracking-widest hover:bg-neutral-800 transition-colors"
+                >
+                  Browse Catalogue
+                </Link>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="bg-white p-6 rounded-2xl border border-stone-200/80 shadow-xs space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-800">
-                <Truck className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-stone-900 text-lg">Safe Showroom Delivery</h3>
-              <p className="text-stone-600 text-sm leading-relaxed">
-                Our own trained staff deliver your almirahs, beds, and ACs safely to your room, avoiding courier mishandling.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-2xl border border-stone-200/80 shadow-xs space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-800">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-stone-900 text-lg">Cash on Delivery</h3>
-              <p className="text-stone-600 text-sm leading-relaxed">
-                Inspect your furniture or appliances at your doorstep before handing over cash or paying via UPI to our delivery staff.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-2xl border border-stone-200/80 shadow-xs space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-800">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-stone-900 text-lg">Authentic Brand Warranties</h3>
-              <p className="text-stone-600 text-sm leading-relaxed">
-                Direct official dealer stamped warranty on Samsung, LG, and Godrej appliances + 5-year wood guarantee.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-2xl border border-stone-200/80 shadow-xs space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-800">
-                <MapPin className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-stone-900 text-lg">Visit & Try Before Order</h3>
-              <p className="text-stone-600 text-sm leading-relaxed">
-                Want to touch the wood finish or sit on the sofa? Visit our Sector 70 showroom anytime between 10am - 9pm!
-              </p>
-            </div>
+          <div className="lg:col-span-6 relative min-h-[340px] lg:min-h-full">
+            <img
+              src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1200&q=80"
+              alt="Grand Living Showroom Interior"
+              className="w-full h-full object-cover brightness-90"
+            />
           </div>
         </div>
       </section>
 
-      {/* 5. Customer Testimonials */}
+      {/* 6. Customer Testimonials */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-xl mx-auto mb-10">
-          <h2 className="font-serif text-3xl font-bold text-stone-900">What Our Customers Say</h2>
-          <p className="text-stone-500 text-sm mt-1">Verified local buyers in Mohali and Chandigarh.</p>
+        <div className="text-center max-w-xl mx-auto mb-10 space-y-1">
+          <span className="text-[10px] uppercase font-semibold tracking-[0.25em] text-neutral-400">
+            Client Voices
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-semibold text-neutral-950 tracking-tight">
+            Verified Homeowners
+          </h2>
+          <p className="text-neutral-500 text-xs">Residents across Mohali, Chandigarh &amp; Panchkula.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-2xl border border-stone-200/80 shadow-xs space-y-4">
-            <div className="flex text-amber-500">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="bg-white p-7 rounded-2xl border border-neutral-200/70 shadow-2xs space-y-4">
+            <div className="flex text-neutral-900 gap-0.5">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-amber-500" />
+                <Star key={i} className="w-3.5 h-3.5 fill-neutral-950 text-neutral-950" />
               ))}
             </div>
-            <p className="text-stone-700 text-sm italic">
-              "Ordered the 3-Door Royal Almirah yesterday afternoon. The store called within an hour to confirm, and their delivery team set it up in our 2nd floor bedroom this morning. Outstanding finish!"
+            <p className="text-neutral-700 text-xs sm:text-sm leading-relaxed font-normal">
+              "Ordered the 3-Door Royal Solid Wood Almirah yesterday afternoon. The showroom confirmed by phone, and their team carried it up to our 2nd floor room this morning. Impeccable teak finish."
             </p>
-            <div>
-              <p className="font-bold text-stone-900 text-sm">Gurpreet Singh</p>
-              <p className="text-stone-400 text-xs">Sector 69, Mohali</p>
+            <div className="pt-2 border-t border-neutral-100">
+              <p className="font-semibold text-neutral-950 text-xs">Gurpreet Singh</p>
+              <p className="text-neutral-400 text-[11px]">Sector 69, Mohali</p>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-stone-200/80 shadow-xs space-y-4">
-            <div className="flex text-amber-500">
+          <div className="bg-white p-7 rounded-2xl border border-neutral-200/70 shadow-2xs space-y-4">
+            <div className="flex text-neutral-900 gap-0.5">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-amber-500" />
+                <Star key={i} className="w-3.5 h-3.5 fill-neutral-950 text-neutral-950" />
               ))}
             </div>
-            <p className="text-stone-700 text-sm italic">
-              "Got the LG 1.5 Ton AC with Cash on Delivery. The price was better than online marketplaces and it was delivered within 24 hours with an original GST bill and warranty stamp."
+            <p className="text-neutral-700 text-xs sm:text-sm leading-relaxed font-normal">
+              "Got the LG 1.5 Ton AC with Cash on Delivery. Better price than online platforms, delivered within 24 hours with original GST invoice and authorized company warranty stamp."
             </p>
-            <div>
-              <p className="font-bold text-stone-900 text-sm">Dr. Ananya Verma</p>
-              <p className="text-stone-400 text-xs">Sector 35, Chandigarh</p>
+            <div className="pt-2 border-t border-neutral-100">
+              <p className="font-semibold text-neutral-950 text-xs">Dr. Ananya Verma</p>
+              <p className="text-neutral-400 text-[11px]">Sector 35, Chandigarh</p>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-stone-200/80 shadow-xs space-y-4">
-            <div className="flex text-amber-500">
+          <div className="bg-white p-7 rounded-2xl border border-neutral-200/70 shadow-2xs space-y-4">
+            <div className="flex text-neutral-900 gap-0.5">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-amber-500" />
+                <Star key={i} className="w-3.5 h-3.5 fill-neutral-950 text-neutral-950" />
               ))}
             </div>
-            <p className="text-stone-700 text-sm italic">
-              "The ergonomic Matrix chair is top tier. Being able to order online with Cash on Delivery made it completely risk free. Highly recommend Grand Living for your home office!"
+            <p className="text-neutral-700 text-xs sm:text-sm leading-relaxed font-normal">
+              "The ergonomic Matrix desk chair is top tier. Being able to inspect before paying cash made it completely risk-free. Highly recommend Grand Living for your home office."
             </p>
-            <div>
-              <p className="font-bold text-stone-900 text-sm">Vikram Sethi</p>
-              <p className="text-stone-400 text-xs">Phase 7, Mohali</p>
+            <div className="pt-2 border-t border-neutral-100">
+              <p className="font-semibold text-neutral-950 text-xs">Vikram Sethi</p>
+              <p className="text-neutral-400 text-[11px]">Phase 7, Mohali</p>
             </div>
           </div>
         </div>

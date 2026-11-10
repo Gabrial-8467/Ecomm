@@ -44,21 +44,21 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-3xl border border-stone-200/80 p-8 sm:p-10 max-w-md w-full shadow-lg space-y-6">
-        <div className="text-center space-y-1">
-          <span className="text-[10px] tracking-widest uppercase font-bold text-amber-800">
-            Showroom Registration
+    <div className="min-h-[75vh] flex items-center justify-center px-4 py-16">
+      <div className="bg-white rounded-3xl border border-neutral-200/80 p-8 sm:p-10 max-w-md w-full shadow-xs space-y-6">
+        <div className="text-center space-y-1.5">
+          <span className="text-[10px] tracking-widest uppercase font-semibold text-neutral-400">
+            Client Registration
           </span>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">Create Account</h1>
-          <p className="text-stone-500 text-xs">
-            Join to checkout with Cash on Delivery and track your showroom orders
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Create Account</h1>
+          <p className="text-neutral-500 text-xs">
+            Join to checkout with Cash on Delivery and manage your orders
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
               Full Name
             </label>
             <input
@@ -67,13 +67,13 @@ export const RegisterPage: React.FC = () => {
               placeholder="e.g. Rahul Sharma"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full text-sm px-4 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+              className="w-full text-xs px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all text-neutral-900"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
-              Mobile Number (Required for COD)
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
+              Mobile Number (Required for Delivery)
             </label>
             <input
               type="tel"
@@ -81,12 +81,12 @@ export const RegisterPage: React.FC = () => {
               placeholder="+919876543210"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full text-sm px-4 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+              className="w-full text-xs px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all text-neutral-900 font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
               Email Address (Optional)
             </label>
             <input
@@ -94,12 +94,12 @@ export const RegisterPage: React.FC = () => {
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full text-sm px-4 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+              className="w-full text-xs px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all text-neutral-900"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
               Password (Min 6 characters)
             </label>
             <input
@@ -109,22 +109,22 @@ export const RegisterPage: React.FC = () => {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full text-sm px-4 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+              className="w-full text-xs px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all text-neutral-900"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3.5 bg-amber-800 hover:bg-amber-900 text-white font-bold rounded-xl text-sm transition-all shadow-md disabled:bg-stone-300"
+            className="w-full py-3.5 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-full text-xs uppercase tracking-wider transition-all shadow-sm disabled:bg-neutral-200 disabled:text-neutral-400"
           >
             {isLoading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 
-        <div className="pt-4 border-t border-stone-100 text-center text-xs text-stone-600">
+        <div className="pt-4 border-t border-neutral-100 text-center text-xs text-neutral-500">
           Already have an account?{' '}
-          <Link to={`/login?redirect=${encodeURIComponent(redirect)}`} className="text-amber-800 font-bold hover:underline">
+          <Link to={`/login?redirect=${encodeURIComponent(redirect)}`} className="text-neutral-900 font-semibold hover:underline">
             Sign in here
           </Link>
         </div>
@@ -132,3 +132,5 @@ export const RegisterPage: React.FC = () => {
     </div>
   );
 };
+
+export default RegisterPage;

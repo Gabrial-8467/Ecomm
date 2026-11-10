@@ -38,12 +38,12 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   const isFurniture = selectedCategory?.includes('living') || selectedCategory?.includes('bedroom') || selectedCategory?.includes('office');
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-stone-200/80 space-y-6">
-      <div className="flex items-center justify-between pb-4 border-b border-stone-100">
-        <h3 className="font-semibold text-stone-900 text-base">Filters</h3>
+    <div className="bg-white p-5 sm:p-6 rounded-2xl border border-neutral-200/70 space-y-6 shadow-2xs">
+      <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+        <h3 className="font-semibold text-neutral-950 text-sm uppercase tracking-wider">Refine Pieces</h3>
         <button
           onClick={onClearAll}
-          className="text-xs font-semibold text-amber-800 hover:underline"
+          className="text-xs font-medium text-neutral-400 hover:text-neutral-950 transition-colors"
         >
           Reset All
         </button>
@@ -51,13 +51,13 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
 
       {/* Sort selection */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">
-          Sort By
+        <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400 mb-2">
+          Sort Order
         </label>
         <select
           value={sortBy}
           onChange={(e) => onSortChange(e.target.value)}
-          className="w-full text-sm py-2 px-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+          className="w-full text-xs py-2 px-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:border-neutral-400 text-neutral-800 font-medium"
         >
           <option value="newest">New Arrivals</option>
           <option value="bestseller">Best Sellers</option>
@@ -68,29 +68,27 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
 
       {/* Categories */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">
-          Category
+        <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400 mb-2">
+          Department
         </label>
-        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+        <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
           <button
             onClick={() => onCategoryChange(undefined)}
-            className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-colors ${
-              !selectedCategory
-                ? 'bg-amber-800 text-white font-medium'
-                : 'text-stone-600 hover:bg-stone-100'
-            }`}
+            className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-colors ${!selectedCategory
+                ? 'bg-neutral-950 text-white font-medium'
+                : 'text-neutral-600 hover:bg-neutral-50'
+              }`}
           >
-            All Categories
+            All Departments
           </button>
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => onCategoryChange(cat.slug)}
-              className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-colors ${
-                selectedCategory === cat.slug
-                  ? 'bg-amber-800 text-white font-medium'
-                  : 'text-stone-600 hover:bg-stone-100'
-              }`}
+              className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-colors ${selectedCategory === cat.slug
+                  ? 'bg-neutral-950 text-white font-medium'
+                  : 'text-neutral-600 hover:bg-neutral-50'
+                }`}
             >
               {cat.name}
             </button>
@@ -100,30 +98,29 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
 
       {/* Category context indicator */}
       {isFurniture && (
-        <div className="p-3 bg-amber-50/80 rounded-xl text-xs text-amber-900 border border-amber-200/50">
-          Showing furniture attributes: Solid woods, engineered panels, ergonomics & dimensions.
+        <div className="p-3 bg-neutral-50 rounded-xl text-[11px] text-neutral-600 border border-neutral-200/60 leading-relaxed">
+          Showing furniture attributes: Solid woods, seasoned grain &amp; ergonomics.
         </div>
       )}
 
       {isElectronics && (
-        <div className="p-3 bg-blue-50/80 rounded-xl text-xs text-blue-900 border border-blue-200/50">
-          Showing electronics attributes: BEE Energy Star Ratings, Inverter Compressors, and Official Warranty.
+        <div className="p-3 bg-neutral-50 rounded-xl text-[11px] text-neutral-600 border border-neutral-200/60 leading-relaxed">
+          Showing certified electronics: Inverter compressors, BEE star ratings &amp; manufacturer warranty.
         </div>
       )}
 
       {/* Brands */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">
-          Brand
+        <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400 mb-2">
+          Manufacturer
         </label>
-        <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+        <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
           <button
             onClick={() => onBrandChange(undefined)}
-            className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-colors ${
-              !selectedBrand
-                ? 'bg-amber-800 text-white font-medium'
-                : 'text-stone-600 hover:bg-stone-100'
-            }`}
+            className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-colors ${!selectedBrand
+                ? 'bg-neutral-950 text-white font-medium'
+                : 'text-neutral-600 hover:bg-neutral-50'
+              }`}
           >
             All Brands
           </button>
@@ -131,11 +128,10 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
             <button
               key={b.id}
               onClick={() => onBrandChange(b.slug)}
-              className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-colors ${
-                selectedBrand === b.slug
-                  ? 'bg-amber-800 text-white font-medium'
-                  : 'text-stone-600 hover:bg-stone-100'
-              }`}
+              className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-colors ${selectedBrand === b.slug
+                  ? 'bg-neutral-950 text-white font-medium'
+                  : 'text-neutral-600 hover:bg-neutral-50'
+                }`}
             >
               {b.name}
             </button>
@@ -145,8 +141,8 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
 
       {/* Price Range */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">
-          Price Range (₹)
+        <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400 mb-2">
+          Price Window (₹)
         </label>
         <div className="grid grid-cols-2 gap-2">
           <input
@@ -154,28 +150,28 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
             placeholder="Min"
             value={minPrice || ''}
             onChange={(e) => onPriceChange(e.target.value, maxPrice || '')}
-            className="text-xs p-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-800"
+            className="text-xs p-2 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-400"
           />
           <input
             type="number"
             placeholder="Max"
             value={maxPrice || ''}
             onChange={(e) => onPriceChange(minPrice || '', e.target.value)}
-            className="text-xs p-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-800"
+            className="text-xs p-2 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-400"
           />
         </div>
       </div>
 
       {/* Availability */}
-      <div className="pt-2 border-t border-stone-100">
-        <label className="flex items-center gap-2.5 cursor-pointer text-sm text-stone-700 select-none">
+      <div className="pt-2 border-t border-neutral-100">
+        <label className="flex items-center gap-2.5 cursor-pointer text-xs text-neutral-700 select-none font-medium">
           <input
             type="checkbox"
             checked={inStockOnly}
             onChange={(e) => onStockChange(e.target.checked)}
-            className="w-4 h-4 text-amber-800 rounded border-stone-300 focus:ring-amber-800"
+            className="w-4 h-4 text-neutral-950 rounded border-neutral-300 focus:ring-neutral-950"
           />
-          In Local Stock Only
+          In Showroom Stock Only
         </label>
       </div>
     </div>

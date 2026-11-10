@@ -80,57 +80,54 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200">
+    <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-neutral-200/70 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 gap-4">
           {/* Mobile menu trigger */}
           <div className="flex items-center lg:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-stone-600 hover:text-stone-900 focus:outline-none"
+              className="p-2 text-neutral-700 hover:text-neutral-950 focus:outline-none rounded-lg hover:bg-neutral-100/60 transition-colors"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
 
           {/* Brand Logo */}
-          <Link to="/" className="flex flex-col">
-            <span className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-stone-900">
+          <Link to="/" className="flex flex-col group">
+            <span className="font-semibold text-lg sm:text-xl tracking-[0.22em] text-neutral-950 uppercase group-hover:text-neutral-700 transition-colors">
               GRAND LIVING
             </span>
-            <span className="text-[10px] tracking-[0.25em] uppercase font-semibold text-amber-800 -mt-1">
-              Furniture & Electronics Showroom
+            <span className="text-[9px] tracking-[0.3em] uppercase font-medium text-neutral-400 -mt-0.5">
+              Studio &amp; Showroom
             </span>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center space-x-8">
+          <nav className="hidden lg:flex items-center space-x-7">
             <Link
               to="/products"
-              className="text-sm font-medium text-stone-700 hover:text-amber-800 transition-colors flex items-center gap-1.5"
+              className="text-xs uppercase tracking-widest font-medium text-neutral-600 hover:text-neutral-950 transition-colors"
             >
-              <Sparkles className="w-4 h-4 text-amber-600" />
-              All Collections
+              All Pieces
             </Link>
             <Link
               to="/products?category=living-room"
-              className="text-sm font-medium text-stone-700 hover:text-amber-800 transition-colors flex items-center gap-1.5"
+              className="text-xs uppercase tracking-widest font-medium text-neutral-600 hover:text-neutral-950 transition-colors"
             >
-              <Armchair className="w-4 h-4 text-amber-600" />
               Furniture
             </Link>
             <Link
               to="/products?category=home-appliances"
-              className="text-sm font-medium text-stone-700 hover:text-amber-800 transition-colors flex items-center gap-1.5"
+              className="text-xs uppercase tracking-widest font-medium text-neutral-600 hover:text-neutral-950 transition-colors"
             >
-              <Tv className="w-4 h-4 text-amber-600" />
-              Electronics
+              Appliances
             </Link>
             <Link
               to="/products?category=bedroom"
-              className="text-sm font-medium text-stone-700 hover:text-amber-800 transition-colors"
+              className="text-xs uppercase tracking-widest font-medium text-neutral-600 hover:text-neutral-950 transition-colors"
             >
-              Wardrobes & Almirahs
+              Wardrobes
             </Link>
           </nav>
 
@@ -139,24 +136,24 @@ export const Navbar: React.FC = () => {
             <form onSubmit={handleSearch} className="relative flex items-center">
               <input
                 type="text"
-                placeholder="Search almirah, sofa, AC, fridge..."
+                placeholder="Search collection, AC, almirah..."
                 value={searchQuery}
                 onFocus={() => {
                   if (searchResults.length > 0) setShowSearchDropdown(true);
                 }}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 text-sm bg-stone-100 border border-stone-300 rounded-full focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-800/30 focus:border-amber-800 transition-all placeholder:text-stone-400"
+                className="w-full pl-9 pr-8 py-2 text-xs bg-neutral-100/70 hover:bg-neutral-100 border border-transparent focus:border-neutral-300 focus:bg-white rounded-full focus:outline-none transition-all placeholder:text-neutral-400 text-neutral-900"
               />
-              <Search className="w-4 h-4 text-stone-400 absolute left-3 pointer-events-none" />
+              <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 pointer-events-none" />
               {isSearching && (
-                <Loader2 className="w-4 h-4 text-amber-700 animate-spin absolute right-3 pointer-events-none" />
+                <Loader2 className="w-3.5 h-3.5 text-neutral-700 animate-spin absolute right-3 pointer-events-none" />
               )}
             </form>
 
             {/* Instant Suggestions Dropdown */}
             {showSearchDropdown && searchResults.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-stone-200 overflow-hidden z-50 divide-y divide-stone-100">
-                <div className="p-2 text-[10px] font-bold uppercase tracking-wider text-stone-400 bg-stone-50">
+              <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-neutral-200/80 overflow-hidden z-50 divide-y divide-neutral-100">
+                <div className="p-2.5 text-[9px] font-bold uppercase tracking-widest text-neutral-400 bg-neutral-50/70">
                   Instant Suggestions
                 </div>
                 {searchResults.map((prod: any) => {
@@ -170,18 +167,18 @@ export const Navbar: React.FC = () => {
                         setShowSearchDropdown(false);
                         navigate(`/products/${prod.slug}`);
                       }}
-                      className="w-full p-2.5 flex items-center gap-3 hover:bg-stone-50 transition-colors text-left"
+                      className="w-full p-2.5 flex items-center gap-3 hover:bg-neutral-50 transition-colors text-left"
                     >
                       <img
                         src={thumb}
                         alt={prod.name}
-                        className="w-10 h-10 rounded-lg object-cover bg-stone-100 shrink-0 border border-stone-200"
+                        className="w-10 h-10 rounded-lg object-cover bg-neutral-100 shrink-0 border border-neutral-200/60"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-stone-900 truncate">{prod.name}</p>
-                        <p className="text-[10px] text-stone-500">{prod.category?.name || 'Showroom Exclusive'}</p>
+                        <p className="text-xs font-semibold text-neutral-900 truncate">{prod.name}</p>
+                        <p className="text-[10px] text-neutral-400 tracking-wide">{prod.category?.name || 'Showroom Exclusive'}</p>
                       </div>
-                      <span className="text-xs font-bold text-amber-900 shrink-0 font-mono">
+                      <span className="text-xs font-bold text-neutral-950 shrink-0 font-mono">
                         ₹{defaultPrice.toLocaleString('en-IN')}
                       </span>
                     </button>
@@ -190,25 +187,25 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleSearch}
-                  className="w-full py-2.5 px-3 text-center text-xs font-bold text-amber-800 hover:bg-amber-50 transition-colors block"
+                  className="w-full py-2.5 px-3 text-center text-xs font-semibold text-neutral-950 hover:bg-neutral-50 transition-colors block tracking-wide"
                 >
-                  View all results for "{searchQuery}"
+                  View all results for "{searchQuery}" →
                 </button>
               </div>
             )}
           </div>
 
           {/* Right Action Icons: Wishlist, Account & Cart */}
-          <div className="flex items-center space-x-3 sm:space-x-5">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Wishlist Link */}
             <Link
               to="/wishlist"
-              className="relative p-2 text-stone-700 hover:text-rose-600 transition-colors flex items-center"
+              className="relative p-2 text-neutral-700 hover:text-neutral-950 transition-colors rounded-full hover:bg-neutral-100/60 flex items-center"
               title="Saved Wishlist"
             >
-              <Heart className="w-5 h-5" />
+              <Heart className="w-4 h-4" strokeWidth={1.75} />
               {wishlistCount > 0 && (
-                <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-rose-600 rounded-full shadow-xs">
+                <span className="absolute top-1 right-1 inline-flex items-center justify-center w-4 h-4 text-[9px] font-bold text-white bg-neutral-950 rounded-full shadow-2xs">
                   {wishlistCount}
                 </span>
               )}
@@ -220,46 +217,46 @@ export const Navbar: React.FC = () => {
                 <div>
                   <button
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="flex items-center gap-1 text-sm font-medium text-stone-700 hover:text-stone-900 py-1"
+                    className="flex items-center gap-1.5 text-xs font-medium text-neutral-700 hover:text-neutral-950 py-1.5 px-2.5 rounded-full hover:bg-neutral-100/60 transition-colors"
                   >
-                    <User className="w-5 h-5 text-stone-700" />
+                    <User className="w-4 h-4 text-neutral-700" strokeWidth={1.75} />
                     <span className="hidden sm:inline max-w-[100px] truncate">{user.name.split(' ')[0]}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-stone-500" />
+                    <ChevronDown className="w-3 h-3 text-neutral-400" />
                   </button>
 
                   {userDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-stone-200 py-2 z-50">
-                      <div className="px-4 py-2 border-b border-stone-100">
-                        <p className="text-[10px] text-stone-500 font-medium">Logged in as</p>
-                        <p className="text-sm font-bold text-stone-900 truncate">{user.name}</p>
+                    <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-neutral-200/80 py-2 z-50">
+                      <div className="px-4 py-2.5 border-b border-neutral-100">
+                        <p className="text-[10px] text-neutral-400 uppercase tracking-widest font-medium">Logged in as</p>
+                        <p className="text-xs font-bold text-neutral-900 truncate mt-0.5">{user.name}</p>
                       </div>
                       <Link
                         to="/account"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="block px-4 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+                        className="block px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
                       >
-                        My Profile & Addresses
+                        Profile &amp; Addresses
                       </Link>
                       <Link
                         to="/orders"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="block px-4 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+                        className="block px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
                       >
-                        My Orders
+                        Orders History
                       </Link>
                       <Link
                         to="/wishlist"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="block px-4 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+                        className="block px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
                       >
-                        My Wishlist ({wishlistCount})
+                        Saved Pieces ({wishlistCount})
                       </Link>
                       <button
                         onClick={() => {
                           setUserDropdownOpen(false);
                           logout();
                         }}
-                        className="w-full text-left px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors border-t border-stone-100 mt-1"
+                        className="w-full text-left px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors border-t border-neutral-100 mt-1"
                       >
                         Sign Out
                       </button>
@@ -269,9 +266,9 @@ export const Navbar: React.FC = () => {
               ) : (
                 <Link
                   to="/login"
-                  className="flex items-center gap-1.5 text-sm font-medium text-stone-700 hover:text-amber-800 transition-colors"
+                  className="flex items-center gap-1.5 text-xs uppercase tracking-widest font-medium text-neutral-700 hover:text-neutral-950 px-2 py-1.5 rounded-full hover:bg-neutral-100/60 transition-colors"
                 >
-                  <User className="w-5 h-5" />
+                  <User className="w-4 h-4" strokeWidth={1.75} />
                   <span className="hidden sm:inline">Sign In</span>
                 </Link>
               )}
@@ -280,11 +277,12 @@ export const Navbar: React.FC = () => {
             {/* Cart Trigger */}
             <Link
               to="/cart"
-              className="relative p-2 text-stone-700 hover:text-amber-900 transition-colors flex items-center"
+              className="relative p-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-full transition-all flex items-center shadow-2xs group"
+              title="Cart"
             >
-              <ShoppingBag className="w-6 h-6" />
+              <ShoppingBag className="w-4 h-4 group-hover:scale-105 transition-transform" strokeWidth={1.75} />
               {totalCartCount > 0 && (
-                <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/3 -translate-y-1/3 bg-amber-800 rounded-full shadow-sm">
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-4 h-4 px-1 text-[9px] font-bold text-neutral-950 bg-white border border-neutral-300 rounded-full shadow-2xs">
                   {totalCartCount}
                 </span>
               )}
@@ -295,66 +293,66 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-stone-200 bg-white px-4 pt-3 pb-6 space-y-3">
+        <div className="lg:hidden border-t border-neutral-200 bg-white px-4 pt-4 pb-8 space-y-3">
           <form onSubmit={handleSearch} className="relative w-full mb-3">
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder="Search pieces..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm bg-stone-100 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-800"
+              className="w-full pl-9 pr-4 py-2 text-xs bg-neutral-100 border border-neutral-200 rounded-full focus:outline-none focus:border-neutral-400"
             />
-            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-2.5 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-2.5 pointer-events-none" />
           </form>
           <Link
             to="/products"
             onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-base font-medium text-stone-800"
+            className="block py-2 text-xs uppercase tracking-widest font-medium text-neutral-800 hover:text-neutral-950"
           >
-            All Products
+            All Pieces
           </Link>
           <Link
             to="/products?category=living-room"
             onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-base font-medium text-stone-800"
+            className="block py-2 text-xs uppercase tracking-widest font-medium text-neutral-800 hover:text-neutral-950"
           >
-            Living Room Furniture
+            Furniture Collection
           </Link>
           <Link
             to="/products?category=bedroom"
             onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-base font-medium text-stone-800"
+            className="block py-2 text-xs uppercase tracking-widest font-medium text-neutral-800 hover:text-neutral-950"
           >
-            Wardrobes & Bedroom
+            Bedroom &amp; Wardrobes
           </Link>
           <Link
             to="/products?category=home-appliances"
             onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-base font-medium text-stone-800"
+            className="block py-2 text-xs uppercase tracking-widest font-medium text-neutral-800 hover:text-neutral-950"
           >
-            Refrigerators & ACs
+            Branded Appliances
           </Link>
           <Link
             to="/orders"
             onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-base font-medium text-stone-800"
+            className="block py-2 text-xs uppercase tracking-widest font-medium text-neutral-800 hover:text-neutral-950"
           >
             My Orders
           </Link>
           <Link
             to="/wishlist"
             onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-base font-medium text-stone-800"
+            className="block py-2 text-xs uppercase tracking-widest font-medium text-neutral-800 hover:text-neutral-950"
           >
-            My Wishlist ({wishlistCount})
+            Saved Pieces ({wishlistCount})
           </Link>
           {isAuthenticated && (
             <Link
               to="/account"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-stone-800"
+              className="block py-2 text-xs uppercase tracking-widest font-medium text-neutral-800 hover:text-neutral-950"
             >
-              My Account & Addresses
+              Account &amp; Addresses
             </Link>
           )}
         </div>

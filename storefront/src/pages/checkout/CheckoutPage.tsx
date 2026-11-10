@@ -4,7 +4,7 @@ import { api } from '../../services/api/client.js';
 import { useCartStore } from '../../store/cartStore.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { Address, DeliveryCheckResult } from '../../types/index.js';
-import { Truck, CheckCircle2, ShieldCheck, Tag, Plus, AlertCircle, ArrowLeft, Calendar, Clock, Wrench } from 'lucide-react';
+import { Truck, CheckCircle2, Tag, Plus, AlertCircle, ArrowLeft, Calendar, Clock, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const CheckoutPage: React.FC = () => {
@@ -144,7 +144,6 @@ export const CheckoutPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      // Idempotency-Key generation (prevents duplicate orders upon network retries)
       const idempotencyKey = 'key_' + Math.random().toString(36).substring(2) + Date.now();
 
       const structuredNote = [
@@ -186,70 +185,70 @@ export const CheckoutPage: React.FC = () => {
   const total = Math.max(0, subtotal - discount + deliveryFee + tax);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
-      <div className="flex items-center gap-4 pb-4 border-b border-stone-200">
-        <Link to="/cart" className="p-2 text-stone-500 hover:text-stone-900 rounded-lg">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-10">
+      <div className="flex items-center gap-4 pb-6 border-b border-neutral-200">
+        <Link to="/cart" className="p-2 text-neutral-400 hover:text-neutral-900 rounded-full hover:bg-neutral-100 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">Checkout</h1>
-          <p className="text-stone-500 text-sm">Cash on Delivery (Local Showroom Direct Delivery)</p>
+          <span className="text-[10px] uppercase tracking-widest text-neutral-400 font-semibold">White-Glove Delivery</span>
+          <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">Checkout</h1>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
         {/* Left: Address Selection & Customer Note */}
         <div className="lg:col-span-2 space-y-8">
           {/* 1. Address Section */}
-          <div className="bg-white rounded-2xl border border-stone-200/80 p-6 space-y-6 shadow-xs">
-            <div className="flex items-center justify-between pb-4 border-b border-stone-100">
-              <h2 className="font-serif text-lg font-bold text-stone-900">
-                1. Delivery Address (Local Tri-City Only)
+          <div className="bg-white rounded-3xl border border-neutral-200/80 p-7 sm:p-8 space-y-6 shadow-xs">
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+              <h2 className="text-base font-semibold tracking-tight text-neutral-900">
+                1. Delivery Destination (Local Service Only)
               </h2>
               {!isAddingAddress && (
                 <button
                   type="button"
                   onClick={() => setIsAddingAddress(true)}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 hover:text-amber-900"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-900 hover:text-neutral-600 transition-colors"
                 >
-                  <Plus className="w-4 h-4" /> Add New Address
+                  <Plus className="w-3.5 h-3.5" /> Add New Address
                 </button>
               )}
             </div>
 
             {loadingAddresses ? (
               <div className="animate-pulse space-y-3">
-                <div className="h-16 bg-stone-100 rounded-xl" />
-                <div className="h-16 bg-stone-100 rounded-xl" />
+                <div className="h-16 bg-neutral-100 rounded-2xl" />
+                <div className="h-16 bg-neutral-100 rounded-2xl" />
               </div>
             ) : isAddingAddress ? (
               <form onSubmit={handleCreateAddress} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">Full Name</label>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">Full Name</label>
                     <input
                       type="text"
                       required
                       value={newFullName}
                       onChange={(e) => setNewFullName(e.target.value)}
-                      className="w-full text-sm px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+                      className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">Phone Number (Required for COD)</label>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">Phone Number (Required for COD)</label>
                     <input
                       type="tel"
                       required
                       placeholder="+919876543210"
                       value={newPhone}
                       onChange={(e) => setNewPhone(e.target.value)}
-                      className="w-full text-sm px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+                      className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
                     House / Flat No., Building, Street
                   </label>
                   <input
@@ -257,63 +256,63 @@ export const CheckoutPage: React.FC = () => {
                     required
                     value={newLine1}
                     onChange={(e) => setNewLine1(e.target.value)}
-                    className="w-full text-sm px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+                    className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
                       Sector / Colony / Area
                     </label>
                     <input
                       type="text"
                       value={newLine2}
                       onChange={(e) => setNewLine2(e.target.value)}
-                      className="w-full text-sm px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+                      className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">Landmark</label>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">Landmark</label>
                     <input
                       type="text"
                       value={newLandmark}
                       onChange={(e) => setNewLandmark(e.target.value)}
-                      className="w-full text-sm px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+                      className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">City</label>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">City</label>
                     <input
                       type="text"
                       required
                       value={newCity}
                       onChange={(e) => setNewCity(e.target.value)}
-                      className="w-full text-sm px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+                      className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">State</label>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">State</label>
                     <input
                       type="text"
                       required
                       value={newState}
                       onChange={(e) => setNewState(e.target.value)}
-                      className="w-full text-sm px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+                      className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">PIN Code</label>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">PIN Code</label>
                     <input
                       type="text"
                       required
                       maxLength={6}
                       value={newPincode}
                       onChange={(e) => setNewPincode(e.target.value.replace(/\D/g, ''))}
-                      className="w-full text-sm px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+                      className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all font-mono"
                     />
                   </div>
                 </div>
@@ -321,7 +320,7 @@ export const CheckoutPage: React.FC = () => {
                 <div className="flex gap-3 pt-2">
                   <button
                     type="submit"
-                    className="px-6 py-2.5 bg-amber-800 text-white rounded-xl text-sm font-medium hover:bg-amber-900"
+                    className="px-6 py-2.5 bg-neutral-900 text-white rounded-full text-xs font-medium uppercase tracking-wider hover:bg-neutral-800 transition-colors"
                   >
                     Save Address
                   </button>
@@ -329,7 +328,7 @@ export const CheckoutPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setIsAddingAddress(false)}
-                      className="px-6 py-2.5 bg-stone-100 text-stone-700 rounded-xl text-sm font-medium hover:bg-stone-200"
+                      className="px-6 py-2.5 bg-neutral-100 text-neutral-700 rounded-full text-xs font-medium uppercase tracking-wider hover:bg-neutral-200 transition-colors"
                     >
                       Cancel
                     </button>
@@ -344,26 +343,28 @@ export const CheckoutPage: React.FC = () => {
                     <div
                       key={addr.id}
                       onClick={() => handleSelectAddress(addr)}
-                      className={`p-4 rounded-xl border cursor-pointer transition-all relative ${
+                      className={`p-5 rounded-2xl border cursor-pointer transition-all relative ${
                         isSelected
-                          ? 'border-amber-800 bg-amber-50/40 ring-2 ring-amber-800/20'
-                          : 'border-stone-200 hover:border-stone-400 bg-white'
+                          ? 'border-neutral-900 bg-neutral-50/80 ring-1 ring-neutral-900'
+                          : 'border-neutral-200 hover:border-neutral-300 bg-white'
                       }`}
                     >
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="font-bold text-stone-900 text-sm">{addr.fullName}</p>
-                          <p className="text-xs text-stone-500">{addr.phone}</p>
-                          <p className="text-xs text-stone-700 mt-2 leading-relaxed">
+                          <p className="font-semibold text-neutral-900 text-sm tracking-tight">{addr.fullName}</p>
+                          <p className="text-xs text-neutral-500 font-mono mt-0.5">{addr.phone}</p>
+                          <p className="text-xs text-neutral-600 mt-2.5 leading-relaxed">
                             {addr.addressLine1}
                             {addr.addressLine2 ? `, ${addr.addressLine2}` : ''}
                             <br />
                             {addr.landmark ? `Near ${addr.landmark}, ` : ''}
-                            {addr.city}, {addr.state} - <strong>{addr.pincode}</strong>
+                            {addr.city}, {addr.state} - <strong className="text-neutral-900">{addr.pincode}</strong>
                           </p>
                         </div>
                         {isSelected && (
-                          <CheckCircle2 className="w-5 h-5 text-amber-800 shrink-0" />
+                          <div className="w-5 h-5 rounded-full bg-neutral-900 text-white flex items-center justify-center shrink-0">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          </div>
                         )}
                       </div>
                     </div>
@@ -375,19 +376,19 @@ export const CheckoutPage: React.FC = () => {
             {/* Delivery Serviceability Banner */}
             {deliveryInfo && (
               <div
-                className={`p-4 rounded-xl text-xs flex items-start gap-3 ${
+                className={`p-4 rounded-2xl text-xs flex items-start gap-3 border ${
                   deliveryInfo.serviceable
-                    ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
-                    : 'bg-rose-50 text-rose-900 border border-rose-200'
+                    ? 'bg-neutral-50 text-neutral-900 border-neutral-200'
+                    : 'bg-rose-50 text-rose-900 border-rose-200'
                 }`}
               >
                 {deliveryInfo.serviceable ? (
                   <>
-                    <Truck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="font-bold text-sm">Local Delivery Serviceable: {deliveryInfo.zone?.name}</p>
-                      <p>
-                        Delivered in {deliveryInfo.zone?.estimatedDays} days by showroom fleet. Delivery fee: ₹
+                    <Truck className="w-5 h-5 text-neutral-900 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-semibold text-xs tracking-tight">Verified Fleet Zone: {deliveryInfo.zone?.name}</p>
+                      <p className="text-neutral-500">
+                        Dispatched in {deliveryInfo.zone?.estimatedDays} days by dedicated local team. Delivery fee: ₹
                         {deliveryInfo.zone?.deliveryCharge}.
                       </p>
                     </div>
@@ -396,8 +397,8 @@ export const CheckoutPage: React.FC = () => {
                   <>
                     <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-sm">Non-Serviceable Delivery Pincode</p>
-                      <p>
+                      <p className="font-semibold text-xs text-rose-900">Non-Serviceable Delivery Pincode</p>
+                      <p className="text-rose-700 mt-0.5">
                         Our showroom currently serves local pincodes in Mohali, Chandigarh, and Panchkula only.
                       </p>
                     </div>
@@ -408,37 +409,37 @@ export const CheckoutPage: React.FC = () => {
           </div>
 
           {/* 2. Preferred Delivery Slot & Assembly Service */}
-          <div className="bg-white rounded-2xl border border-stone-200/80 p-6 space-y-5 shadow-xs">
-            <div className="pb-3 border-b border-stone-100 flex items-center justify-between">
+          <div className="bg-white rounded-3xl border border-neutral-200/80 p-7 sm:p-8 space-y-6 shadow-xs">
+            <div className="pb-4 border-b border-neutral-100 flex items-center justify-between">
               <div>
-                <h2 className="font-serif text-lg font-bold text-stone-900 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-amber-800" />
-                  2. Delivery Schedule & Installation
+                <h2 className="text-base font-semibold tracking-tight text-neutral-900 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-neutral-900" />
+                  2. Schedule & White-Glove Staging
                 </h2>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  Select your preferred local showroom delivery day and time window
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Select your preferred arrival date and delivery window
                 </p>
               </div>
             </div>
 
             {/* Date selection */}
             <div>
-              <label className="block text-xs font-bold uppercase text-stone-700 mb-2">
+              <label className="block text-[10px] font-semibold uppercase tracking-widest text-neutral-500 mb-2.5">
                 Preferred Delivery Date
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {availableDates.map((item) => (
                   <button
                     key={item.iso}
                     type="button"
                     onClick={() => setSelectedDate(item.label)}
-                    className={`p-2.5 rounded-xl border text-center transition-all ${
+                    className={`p-3 rounded-2xl border text-center transition-all ${
                       selectedDate === item.label
-                        ? 'border-amber-800 bg-amber-50 text-amber-900 font-bold shadow-xs'
-                        : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
+                        ? 'border-neutral-900 bg-neutral-900 text-white font-medium shadow-xs'
+                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
                     }`}
                   >
-                    <span className="text-xs block">{item.label}</span>
+                    <span className="text-xs block tracking-tight">{item.label}</span>
                   </button>
                 ))}
               </div>
@@ -446,11 +447,11 @@ export const CheckoutPage: React.FC = () => {
 
             {/* Time Slot Selection */}
             <div>
-              <label className="block text-xs font-bold uppercase text-stone-700 mb-2 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-stone-500" />
+              <label className="block text-[10px] font-semibold uppercase tracking-widest text-neutral-500 mb-2.5 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
                 Delivery Time Slot
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {[
                   'Morning (10:00 AM – 01:00 PM)',
                   'Afternoon (01:00 PM – 05:00 PM)',
@@ -460,34 +461,34 @@ export const CheckoutPage: React.FC = () => {
                     key={slot}
                     type="button"
                     onClick={() => setSelectedSlot(slot)}
-                    className={`p-2.5 rounded-xl border text-center transition-all ${
+                    className={`p-3 rounded-2xl border text-center transition-all ${
                       selectedSlot === slot
-                        ? 'border-amber-800 bg-amber-50 text-amber-900 font-bold shadow-xs'
-                        : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
+                        ? 'border-neutral-900 bg-neutral-900 text-white font-medium shadow-xs'
+                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
                     }`}
                   >
-                    <span className="text-xs block">{slot}</span>
+                    <span className="text-xs block tracking-tight">{slot}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Assembly & Installation Checkbox */}
-            <div className="p-4 rounded-xl bg-stone-50 border border-stone-200/80">
+            <div className="p-4 rounded-2xl bg-neutral-50/70 border border-neutral-200/80">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={assemblyRequired}
                   onChange={(e) => setAssemblyRequired(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-stone-300 text-amber-800 focus:ring-amber-800"
+                  className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
                 />
                 <div className="space-y-0.5">
-                  <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-                    <Wrench className="w-3.5 h-3.5 text-amber-800" />
-                    Complimentary Technician Assembly & Room Placement
+                  <span className="text-xs font-semibold text-neutral-900 flex items-center gap-1.5">
+                    <Wrench className="w-3.5 h-3.5 text-neutral-900" />
+                    Complimentary Technician Assembly & Placement
                   </span>
-                  <p className="text-[11px] text-stone-600 leading-relaxed">
-                    Our local logistics technicians will unbox, assemble, and set up your furniture or electronic appliance in your room of choice at no extra charge.
+                  <p className="text-[11px] text-neutral-500 leading-relaxed">
+                    Our local logistics technicians will unbox, assemble, and set up your furniture or electronic appliance in your room of choice at zero charge.
                   </p>
                 </div>
               </label>
@@ -495,70 +496,72 @@ export const CheckoutPage: React.FC = () => {
           </div>
 
           {/* 3. Payment Method: Cash on Delivery */}
-          <div className="bg-white rounded-2xl border border-stone-200/80 p-6 space-y-4 shadow-xs">
-            <h2 className="font-serif text-lg font-bold text-stone-900 pb-3 border-b border-stone-100">
+          <div className="bg-white rounded-3xl border border-neutral-200/80 p-7 sm:p-8 space-y-4 shadow-xs">
+            <h2 className="text-base font-semibold tracking-tight text-neutral-900 pb-3 border-b border-neutral-100">
               3. Payment Method
             </h2>
 
-            <div className="p-4 rounded-xl border-2 border-amber-800 bg-amber-50/50 flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-amber-800 shrink-0 mt-0.5" />
+            <div className="p-5 rounded-2xl border border-neutral-900 bg-neutral-50/60 flex items-start gap-3.5">
+              <div className="w-5 h-5 rounded-full bg-neutral-900 text-white flex items-center justify-center shrink-0 mt-0.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              </div>
               <div>
-                <p className="font-bold text-stone-900 text-sm">Cash on Delivery (COD)</p>
-                <p className="text-xs text-stone-600 mt-1">
-                  Inspect your almirah, sofa, or appliance upon arrival. Pay cash or scan QR / UPI directly to our delivery staff.
+                <p className="font-semibold text-neutral-900 text-sm tracking-tight">Cash on Delivery (COD) & UPI on Inspection</p>
+                <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
+                  Inspect your furniture or appliances thoroughly upon arrival. Pay via cash or instant UPI scan directly to our logistics concierge.
                 </p>
               </div>
             </div>
           </div>
 
           {/* 4. Delivery Instructions & Notes */}
-          <div className="bg-white rounded-2xl border border-stone-200/80 p-6 space-y-3 shadow-xs">
-            <h2 className="font-serif text-base font-bold text-stone-900">
-              4. Additional Delivery Instructions (Optional)
+          <div className="bg-white rounded-3xl border border-neutral-200/80 p-7 sm:p-8 space-y-3 shadow-xs">
+            <h2 className="text-base font-semibold tracking-tight text-neutral-900">
+              4. Special Delivery Notes (Optional)
             </h2>
             <textarea
-              placeholder="e.g. Please call 15 minutes before arrival. 2nd floor flat, elevator available."
+              placeholder="e.g. 2nd floor, elevator available. Please call 15 minutes prior to arrival."
               value={customerNote}
               onChange={(e) => setCustomerNote(e.target.value)}
               rows={3}
-              className="w-full text-sm p-3 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+              className="w-full text-xs p-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all text-neutral-800"
             />
           </div>
         </div>
 
         {/* Right: Checkout Summary Box */}
-        <div className="bg-white rounded-2xl border border-stone-200/80 p-6 space-y-6 shadow-xs sticky top-28">
-          <h3 className="font-serif text-lg font-bold text-stone-900 pb-3 border-b border-stone-100">
+        <div className="bg-white rounded-3xl border border-neutral-200/80 p-7 space-y-6 shadow-xs sticky top-28">
+          <h3 className="text-base font-semibold tracking-tight text-neutral-900 pb-3 border-b border-neutral-100">
             Order Review
           </h3>
 
           {/* Coupon Code Input */}
           <form onSubmit={handleApplyCoupon} className="flex gap-2">
             <div className="relative flex-1">
-              <Tag className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
+              <Tag className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-3.5" />
               <input
                 type="text"
-                placeholder="Coupon (e.g. WELCOME10)"
+                placeholder="PROMO CODE"
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                className="w-full text-xs pl-9 pr-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-800"
+                className="w-full text-xs pl-8 pr-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 font-mono"
               />
             </div>
             <button
               type="submit"
-              className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded-xl"
+              className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-[11px] font-semibold rounded-xl uppercase tracking-wider transition-colors"
             >
               Apply
             </button>
           </form>
 
           {appliedCoupon && (
-            <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex justify-between items-center">
-              <span>Coupon {appliedCoupon.code} applied</span>
+            <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 flex justify-between items-center">
+              <span>Code <strong>{appliedCoupon.code}</strong> applied</span>
               <button
                 type="button"
                 onClick={() => setAppliedCoupon(null)}
-                className="text-stone-400 hover:text-stone-600 font-bold"
+                className="text-neutral-400 hover:text-neutral-900 font-bold"
               >
                 ✕
               </button>
@@ -566,34 +569,34 @@ export const CheckoutPage: React.FC = () => {
           )}
 
           {/* Calculation breakdown */}
-          <div className="space-y-3 text-sm divide-y divide-stone-100">
-            <div className="flex justify-between text-stone-600 pt-2">
+          <div className="space-y-3.5 text-xs divide-y divide-neutral-100">
+            <div className="flex justify-between text-neutral-600 pt-2">
               <span>Subtotal ({cart?.itemCount} items)</span>
-              <span className="font-semibold text-stone-900">₹{subtotal.toLocaleString('en-IN')}</span>
+              <span className="font-medium text-neutral-900">₹{subtotal.toLocaleString('en-IN')}</span>
             </div>
 
             {discount > 0 && (
-              <div className="flex justify-between text-emerald-700 pt-2 font-medium">
-                <span>Coupon Discount</span>
+              <div className="flex justify-between text-emerald-800 pt-2 font-medium">
+                <span>Promotional Discount</span>
                 <span>- ₹{discount.toLocaleString('en-IN')}</span>
               </div>
             )}
 
-            <div className="flex justify-between text-stone-600 pt-2">
-              <span>Local Delivery Fee</span>
-              <span className="font-semibold text-stone-900">
-                {deliveryFee > 0 ? `₹${deliveryFee.toLocaleString('en-IN')}` : 'Free'}
+            <div className="flex justify-between text-neutral-600 pt-2">
+              <span>Fleet Delivery Fee</span>
+              <span className="font-medium text-neutral-900">
+                {deliveryFee > 0 ? `₹${deliveryFee.toLocaleString('en-IN')}` : 'Complimentary'}
               </span>
             </div>
 
-            <div className="flex justify-between text-stone-600 pt-2">
+            <div className="flex justify-between text-neutral-600 pt-2">
               <span>GST (18% Included)</span>
-              <span className="font-semibold text-stone-900">₹{tax.toLocaleString('en-IN')}</span>
+              <span className="font-medium text-neutral-900">₹{tax.toLocaleString('en-IN')}</span>
             </div>
 
             <div className="pt-4 flex justify-between items-baseline">
-              <span className="font-bold text-stone-900 text-base">Total Due (COD)</span>
-              <span className="text-2xl font-extrabold text-stone-900">
+              <span className="font-semibold text-neutral-900 text-sm">Total Due (COD)</span>
+              <span className="text-2xl font-bold tracking-tight text-neutral-900">
                 ₹{total.toLocaleString('en-IN')}
               </span>
             </div>
@@ -603,20 +606,22 @@ export const CheckoutPage: React.FC = () => {
             type="button"
             onClick={handlePlaceOrder}
             disabled={isSubmitting || !deliveryInfo?.serviceable || !selectedAddressId}
-            className="w-full py-4 bg-amber-800 hover:bg-amber-900 disabled:bg-stone-300 text-white font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2"
+            className="w-full py-4 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium rounded-full text-xs uppercase tracking-wider transition-all shadow-sm flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <span>Reserving Stock & Placing Order...</span>
             ) : (
-              <span>Confirm Order with Cash on Delivery</span>
+              <span>Confirm Order (Pay on Delivery)</span>
             )}
           </button>
 
-          <div className="text-[11px] text-stone-500 text-center leading-relaxed">
-            By placing this order, you confirm that you will be available at the delivery location to receive the items and inspect them before payment.
+          <div className="text-[11px] text-neutral-400 text-center leading-relaxed">
+            By placing this order, you confirm availability at the destination to inspect and accept the objects.
           </div>
         </div>
       </div>
     </div>
   );
 };
+
+export default CheckoutPage;

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useCompareStore } from '../../store/compareStore.js';
 import { useCartStore } from '../../store/cartStore.js';
-import { Scale, Trash2, ShoppingBag, ArrowRight, Star, CheckCircle2, X } from 'lucide-react';
+import { Scale, Trash2, ShoppingBag, ArrowRight, CheckCircle2, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const ComparePage: React.FC = () => {
@@ -12,20 +12,23 @@ export const ComparePage: React.FC = () => {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center space-y-6">
-        <div className="w-16 h-16 bg-stone-100 text-stone-400 rounded-full flex items-center justify-center mx-auto">
-          <Scale className="w-8 h-8" />
+      <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-6">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-neutral-200 bg-neutral-100 text-neutral-400">
+          <Scale className="w-7 h-7 stroke-[1.5]" />
         </div>
-        <h1 className="font-serif text-3xl font-bold text-stone-900">Product Comparison</h1>
-        <p className="text-stone-500 text-sm max-w-md mx-auto leading-relaxed">
-          You haven't selected any furniture or electronic items to compare yet. Browse our collections and click the compare icon to inspect specifications side-by-side.
-        </p>
+        <div className="space-y-2">
+          <span className="text-[10px] uppercase tracking-widest text-neutral-400 font-semibold">Technical Comparison</span>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">No Objects to Compare</h1>
+          <p className="text-neutral-500 text-sm max-w-sm mx-auto leading-relaxed">
+            Select furniture or appliances across our showroom to evaluate specifications, dimensions, and materials side-by-side.
+          </p>
+        </div>
         <Link
           to="/products"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-amber-800 text-white rounded-xl text-xs font-bold hover:bg-amber-900 transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-6 py-3.5 bg-neutral-900 text-white rounded-full text-xs font-semibold uppercase tracking-wider hover:bg-neutral-800 transition-colors shadow-sm"
         >
-          <span>Explore Showroom Collections</span>
-          <ArrowRight className="w-4 h-4" />
+          <span>Explore Collections</span>
+          <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
     );
@@ -50,9 +53,9 @@ export const ComparePage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-10">
       <Helmet>
-        <title>{`Compare Products (${items.length}) | Grand Living Showroom`}</title>
+        <title>{`Compare Objects (${items.length}) | Grand Living`}</title>
         <meta
           name="description"
           content="Compare dimensions, solid wood finish, warranty, and electrical specifications side-by-side at Grand Living."
@@ -60,30 +63,27 @@ export const ComparePage: React.FC = () => {
       </Helmet>
 
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-200">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-neutral-200">
         <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-amber-800">
-            Side-By-Side Analysis
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
+            Side-By-Side Evaluation
           </span>
-          <h1 className="font-serif text-3xl font-bold text-stone-900 mt-0.5">
-            Compare Showroom Products ({items.length} items)
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-900 mt-1">
+            Compare Objects ({items.length})
           </h1>
-          <p className="text-xs text-stone-500 mt-1">
-            Compare dimensions, materials, brand warranties, and energy efficiency.
-          </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <Link
             to="/products"
-            className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-semibold transition-colors"
+            className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-full text-xs font-medium tracking-tight transition-colors"
           >
-            + Add Another Product
+            + Add Another
           </Link>
           <button
             type="button"
             onClick={clearItems}
-            className="px-4 py-2 bg-white hover:bg-rose-50 text-rose-700 border border-stone-300 hover:border-rose-200 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5"
+            className="px-4 py-2 bg-white hover:bg-neutral-50 text-neutral-500 hover:text-neutral-900 border border-neutral-200 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Clear All</span>
@@ -92,14 +92,14 @@ export const ComparePage: React.FC = () => {
       </div>
 
       {/* Comparison Matrix Table */}
-      <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-3xl border border-neutral-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[700px]">
             {/* 1. Product Cards Header Row */}
             <thead>
-              <tr className="border-b border-stone-200 bg-stone-50/50">
-                <th className="p-4 sm:p-6 w-48 text-xs font-bold text-stone-500 uppercase tracking-wider align-top">
-                  Product Details
+              <tr className="border-b border-neutral-200 bg-neutral-50/50">
+                <th className="p-6 w-48 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider align-top">
+                  Product
                 </th>
                 {items.map((prod) => {
                   const primaryVariant = prod.variants?.[0];
@@ -107,43 +107,43 @@ export const ComparePage: React.FC = () => {
                   const comparePrice = primaryVariant?.compareAtPrice ? Number(primaryVariant.compareAtPrice) : null;
 
                   return (
-                    <th key={prod.id} className="p-4 sm:p-6 w-64 align-top border-l border-stone-200">
-                      <div className="space-y-3 relative group">
+                    <th key={prod.id} className="p-6 w-64 align-top border-l border-neutral-200">
+                      <div className="space-y-3.5 relative group">
                         <button
                           type="button"
                           onClick={() => removeItem(prod.id)}
-                          className="absolute -top-2 -right-2 p-1.5 bg-stone-100 hover:bg-rose-100 text-stone-400 hover:text-rose-600 rounded-full transition-colors"
+                          className="absolute -top-2 -right-2 p-1.5 bg-white border border-neutral-200 text-neutral-400 hover:text-neutral-900 rounded-full transition-colors shadow-xs"
                           title="Remove from comparison"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
 
-                        <div className="w-full h-44 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200">
+                        <div className="w-full h-44 rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200/70">
                           <img
-                            src={prod.images?.[0]?.url || 'https://via.placeholder.com/300'}
+                            src={prod.images?.[0]?.url || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=400&q=80'}
                             alt={prod.name}
                             className="w-full h-full object-cover"
                           />
                         </div>
 
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
-                            {prod.brand?.name || 'Showroom Exclusive'}
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
+                            {prod.brand?.name || 'Grand Living'}
                           </p>
                           <Link
                             to={`/products/${prod.slug}`}
-                            className="font-serif font-bold text-stone-900 text-sm hover:text-amber-800 transition-colors line-clamp-2 mt-0.5"
+                            className="font-semibold text-neutral-900 text-sm hover:text-neutral-600 transition-colors line-clamp-2 mt-0.5 tracking-tight"
                           >
                             {prod.name}
                           </Link>
                         </div>
 
                         <div className="flex items-baseline gap-2">
-                          <span className="text-lg font-black text-stone-900">
+                          <span className="text-lg font-bold text-neutral-900 tracking-tight">
                             ₹{price.toLocaleString('en-IN')}
                           </span>
                           {comparePrice && comparePrice > price && (
-                            <span className="text-xs text-stone-400 line-through">
+                            <span className="text-xs text-neutral-400 line-through">
                               ₹{comparePrice.toLocaleString('en-IN')}
                             </span>
                           )}
@@ -153,16 +153,17 @@ export const ComparePage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleAddToCart(prod)}
-                            className="w-full py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                            className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full text-xs font-semibold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-xs"
                           >
                             <ShoppingBag className="w-3.5 h-3.5" />
-                            <span>Add to Cart</span>
+                            <span>Add to Bag</span>
                           </button>
+
                           <Link
                             to={`/products/${prod.slug}`}
-                            className="w-full py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-medium text-center block transition-colors"
+                            className="w-full py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-full text-xs font-medium text-center block transition-colors tracking-tight"
                           >
-                            View Full Details
+                            View Details
                           </Link>
                         </div>
                       </div>
@@ -173,41 +174,41 @@ export const ComparePage: React.FC = () => {
             </thead>
 
             {/* 2. Key Attributes Body */}
-            <tbody className="divide-y divide-stone-200 text-xs">
+            <tbody className="divide-y divide-neutral-100 text-xs">
               {/* Category */}
               <tr>
-                <td className="p-4 sm:p-5 font-bold text-stone-600 bg-stone-50/40">Category / Department</td>
+                <td className="p-5 font-semibold text-neutral-500 bg-neutral-50/30">Category</td>
                 {items.map((prod) => (
-                  <td key={prod.id} className="p-4 sm:p-5 border-l border-stone-200 text-stone-800 font-medium">
-                    {prod.category?.name || 'Home Furniture'}
+                  <td key={prod.id} className="p-5 border-l border-neutral-100 text-neutral-800 font-medium">
+                    {prod.category?.name || 'Furniture'}
                   </td>
                 ))}
               </tr>
 
               {/* Brand */}
               <tr>
-                <td className="p-4 sm:p-5 font-bold text-stone-600 bg-stone-50/40">Brand / Maker</td>
+                <td className="p-5 font-semibold text-neutral-500 bg-neutral-50/30">Brand / Maker</td>
                 {items.map((prod) => (
-                  <td key={prod.id} className="p-4 sm:p-5 border-l border-stone-200 text-stone-800 font-medium">
-                    {prod.brand?.name || 'Grand Living Solid Wood'}
+                  <td key={prod.id} className="p-5 border-l border-neutral-100 text-neutral-800 font-medium">
+                    {prod.brand?.name || 'Grand Living'}
                   </td>
                 ))}
               </tr>
 
               {/* Stock Status */}
               <tr>
-                <td className="p-4 sm:p-5 font-bold text-stone-600 bg-stone-50/40">Stock & Delivery</td>
+                <td className="p-5 font-semibold text-neutral-500 bg-neutral-50/30">Availability</td>
                 {items.map((prod) => {
                   const inStock = (prod.variants?.[0]?.inventory?.availableQuantity || 0) > 0;
                   return (
-                    <td key={prod.id} className="p-4 sm:p-5 border-l border-stone-200">
+                    <td key={prod.id} className="p-5 border-l border-neutral-100">
                       {inStock ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-700 font-bold text-xs">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1.5 text-neutral-900 font-medium text-xs">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
                           <span>In Stock (Mohali Showroom)</span>
                         </span>
                       ) : (
-                        <span className="text-rose-600 font-bold text-xs">Made to Order (3-5 Days)</span>
+                        <span className="text-neutral-400 font-medium text-xs">Made to Order (3-5 Days)</span>
                       )}
                     </td>
                   );
@@ -216,18 +217,18 @@ export const ComparePage: React.FC = () => {
 
               {/* Short Description */}
               <tr>
-                <td className="p-4 sm:p-5 font-bold text-stone-600 bg-stone-50/40">Overview</td>
+                <td className="p-5 font-semibold text-neutral-500 bg-neutral-50/30">Overview</td>
                 {items.map((prod) => (
-                  <td key={prod.id} className="p-4 sm:p-5 border-l border-stone-200 text-stone-600 leading-relaxed text-[11px]">
-                    {prod.shortDescription || prod.description || 'Premium craftsmanship with solid build.'}
+                  <td key={prod.id} className="p-5 border-l border-neutral-100 text-neutral-600 leading-relaxed text-[11px]">
+                    {prod.shortDescription || prod.description || 'Architectural design with solid build.'}
                   </td>
                 ))}
               </tr>
 
               {/* Section Header: Detailed Specifications */}
               {allSpecNames.length > 0 && (
-                <tr className="bg-stone-100/70">
-                  <td colSpan={items.length + 1} className="p-3 px-4 font-bold text-stone-800 uppercase tracking-wider text-[10px]">
+                <tr className="bg-neutral-100/70">
+                  <td colSpan={items.length + 1} className="p-3.5 px-6 font-semibold text-neutral-900 uppercase tracking-wider text-[10px]">
                     Technical & Material Specifications
                   </td>
                 </tr>
@@ -236,14 +237,14 @@ export const ComparePage: React.FC = () => {
               {/* Dynamic Specification Rows */}
               {allSpecNames.map((specName) => (
                 <tr key={specName}>
-                  <td className="p-4 sm:p-5 font-bold text-stone-600 bg-stone-50/40">{specName}</td>
+                  <td className="p-5 font-semibold text-neutral-500 bg-neutral-50/30">{specName}</td>
                   {items.map((prod) => {
                     const matchedSpec = prod.specifications?.find(
                       (s) => s.name.toLowerCase() === specName.toLowerCase()
                     );
                     return (
-                      <td key={prod.id} className="p-4 sm:p-5 border-l border-stone-200 text-stone-900 font-medium">
-                        {matchedSpec?.value || <span className="text-stone-300">—</span>}
+                      <td key={prod.id} className="p-5 border-l border-neutral-100 text-neutral-900 font-medium">
+                        {matchedSpec?.value || <span className="text-neutral-300">—</span>}
                       </td>
                     );
                   })}
@@ -256,3 +257,5 @@ export const ComparePage: React.FC = () => {
     </div>
   );
 };
+
+export default ComparePage;

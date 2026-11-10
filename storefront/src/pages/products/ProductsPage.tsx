@@ -84,26 +84,26 @@ export const ProductsPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-8 border-b border-stone-200 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-8 border-b border-neutral-200/60 gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-neutral-950 tracking-tight">
             {searchParam
-              ? `Results for "${searchParam}"`
+              ? `Search: "${searchParam}"`
               : categoryParam
-              ? categories.find((c) => c.slug === categoryParam)?.name || 'Collection'
-              : 'All Showroom Products'}
+              ? categories.find((c) => c.slug === categoryParam)?.name || 'Curated Collection'
+              : 'Showroom Collection'}
           </h1>
-          <p className="text-stone-500 text-sm mt-1">
-            Showing {products.length} of {total} in-stock furniture & electronics units
+          <p className="text-neutral-500 text-xs sm:text-sm mt-1">
+            Displaying {products.length} of {total} pieces available for immediate Tricity dispatch
           </p>
         </div>
 
         {/* Mobile filter toggle */}
         <button
           onClick={() => setMobileFilterOpen(true)}
-          className="lg:hidden inline-flex items-center gap-2 px-4 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 text-sm font-medium rounded-xl border border-stone-300 transition-colors w-fit"
+          className="lg:hidden inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-neutral-50 text-neutral-900 text-xs font-semibold uppercase tracking-wider rounded-full border border-neutral-200 transition-colors w-fit shadow-2xs"
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="w-3.5 h-3.5" />
           <span>Filters</span>
         </button>
       </div>
@@ -138,24 +138,24 @@ export const ProductsPage: React.FC = () => {
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="animate-pulse bg-white rounded-2xl h-96 border border-stone-200" />
+                <div key={i} className="animate-pulse bg-white rounded-2xl h-96 border border-neutral-200" />
               ))}
             </div>
           ) : products.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-stone-300 p-8">
-              <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">No Products Found</h3>
-              <p className="text-stone-500 text-sm max-w-md mx-auto mb-6">
-                We couldn't find any items matching your selected criteria. Try adjusting your filters or search keywords.
+            <div className="text-center py-20 bg-white rounded-2xl border border-neutral-200/80 p-8 shadow-2xs">
+              <h3 className="text-lg font-semibold text-neutral-950 mb-1 tracking-tight">No Pieces Match Filter</h3>
+              <p className="text-neutral-500 text-xs max-w-sm mx-auto mb-6">
+                Try selecting a different department, price range, or search term.
               </p>
               <button
                 onClick={handleClearAll}
-                className="px-6 py-2.5 bg-amber-800 text-white font-medium text-sm rounded-xl hover:bg-amber-900 transition-colors"
+                className="px-6 py-2.5 bg-neutral-950 text-white font-medium text-xs uppercase tracking-widest rounded-full hover:bg-neutral-800 transition-colors"
               >
-                Clear All Filters
+                Reset All Filters
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -168,15 +168,15 @@ export const ProductsPage: React.FC = () => {
       {mobileFilterOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
-            className="fixed inset-0 bg-stone-950/60 backdrop-blur-xs"
+            className="fixed inset-0 bg-neutral-950/60 backdrop-blur-xs"
             onClick={() => setMobileFilterOpen(false)}
           />
           <div className="relative ml-auto w-full max-w-xs bg-white h-full shadow-2xl p-6 overflow-y-auto flex flex-col">
-            <div className="flex items-center justify-between pb-4 border-b border-stone-200 mb-4">
-              <h2 className="font-serif text-lg font-bold text-stone-900">Filters</h2>
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-200 mb-4">
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-neutral-950">Refine Pieces</h2>
               <button
                 onClick={() => setMobileFilterOpen(false)}
-                className="p-1 text-stone-500 hover:text-stone-900"
+                className="p-1 text-neutral-500 hover:text-neutral-900"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -200,10 +200,10 @@ export const ProductsPage: React.FC = () => {
               onSortChange={(sort) => updateParam('sort', sort)}
               onClearAll={handleClearAll}
             />
-            <div className="mt-6 pt-4 border-t border-stone-200">
+            <div className="mt-6 pt-4 border-t border-neutral-200">
               <button
                 onClick={() => setMobileFilterOpen(false)}
-                className="w-full py-3 bg-amber-800 text-white rounded-xl font-medium text-sm"
+                className="w-full py-3 bg-neutral-950 text-white rounded-full font-medium text-xs uppercase tracking-widest hover:bg-neutral-800 transition-colors"
               >
                 Apply Filters
               </button>
