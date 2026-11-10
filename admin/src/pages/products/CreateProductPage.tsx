@@ -199,7 +199,7 @@ export const CreateProductPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-16">
+    <div className="w-full max-w-5xl space-y-8 pb-16">
       <div className="flex items-center gap-4">
         <Link to="/products" className="p-2 text-slate-500 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition-colors">
           <ArrowLeft className="w-5 h-5" />
