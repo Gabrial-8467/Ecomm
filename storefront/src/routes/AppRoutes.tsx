@@ -11,6 +11,8 @@ import { WishlistPage } from '../pages/wishlist/WishlistPage.js';
 import { AccountPage } from '../pages/account/AccountPage.js';
 import { LoginPage } from '../pages/auth/LoginPage.js';
 import { RegisterPage } from '../pages/auth/RegisterPage.js';
+import { LegalPage } from '../pages/legal/LegalPage.js';
+import { ComparePage } from '../pages/products/ComparePage.js';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -18,6 +20,7 @@ export const AppRoutes: React.FC = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/products/:slug" element={<ProductDetailPage />} />
+      <Route path="/compare" element={<ComparePage />} />
       <Route path="/cart" element={<CartPage />} />
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/wishlist" element={<WishlistPage />} />
@@ -26,6 +29,10 @@ export const AppRoutes: React.FC = () => {
       <Route path="/orders" element={<MyOrdersPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/privacy" element={<LegalPage />} />
+      <Route path="/terms" element={<LegalPage />} />
+      <Route path="/shipping-returns" element={<LegalPage />} />
+      <Route path="/warranty" element={<LegalPage />} />
     </Routes>
   );
 };

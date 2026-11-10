@@ -269,9 +269,18 @@ export class OrderService {
       throw new BadRequestError('You do not have permission to cancel this order');
     }
 
-    // Only allow cancelling if not dispatched or already delivered/cancelled
-    const cancellableStatuses: OrderStatus[] = ['PLACED', 'CONFIRMED', 'PROCESSING', 'READY_FOR_DISPATCH'];
-    if (!cancellableStatuses.includes(order.status)) {
+    // Customers can only cancel while order is PLACED, CONFIRMED, or PROCESSING.
+    // Once READY_FOR_DISPATCH or OUT_FOR_DELIVERY, customer must contact showroom support.
+    const customerCancellable: OrderStatus[] = ['PLACED', 'CONFIRMED', 'PROCESSING'];
+    const adminCancellable: OrderStatus[] = ['PLACED', 'CONFIRMED', 'PROCESSING', 'READY_FOR_DISPATCH'];
+    const allowed = isCustomer ? customerCancellable : adminCancellable;
+
+    if (!allowed.includes(order.status)) {
+      if (isCustomer && (order.status === 'READY_FOR_DISPATCH' || order.status === 'OUT_FOR_DELIVERY')) {
+        throw new BadRequestError(
+          'This order is already packed or out with our delivery van. Please call our showroom support directly at +91 98765 43210 for immediate assistance.'
+        );
+      }
       throw new UnprocessableEntityError(`Order cannot be cancelled in its current status: ${order.status}`);
     }
 

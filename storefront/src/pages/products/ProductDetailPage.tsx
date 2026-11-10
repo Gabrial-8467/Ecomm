@@ -4,6 +4,7 @@ import { api } from '../../services/api/client.js';
 import { Product, ProductVariant, DeliveryCheckResult } from '../../types/index.js';
 import { useCartStore } from '../../store/cartStore.js';
 import { useWishlistStore } from '../../store/wishlistStore.js';
+import { useCompareStore } from '../../store/compareStore.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { toast } from 'sonner';
 import {
@@ -19,6 +20,7 @@ import {
   Star,
   MessageSquare,
   Send,
+  Scale,
 } from 'lucide-react';
 
 export const ProductDetailPage: React.FC = () => {
@@ -28,6 +30,7 @@ export const ProductDetailPage: React.FC = () => {
 
   const { user, isAuthenticated } = useAuthStore();
   const { toggleWishlist, isInWishlist } = useWishlistStore();
+  const { addItem: toggleCompare, isInCompare } = useCompareStore();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -420,6 +423,19 @@ export const ProductDetailPage: React.FC = () => {
                 title={isInWishlist(product.id) ? 'Remove from Wishlist' : 'Save to Wishlist'}
               >
                 <Heart className={`w-5 h-5 ${isInWishlist(product.id) ? 'fill-rose-500 text-rose-500' : ''}`} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => toggleCompare(product)}
+                className={`p-3.5 rounded-xl border transition-all flex items-center justify-center shadow-xs ${
+                  isInCompare(product.id)
+                    ? 'bg-amber-800 border-amber-800 text-white'
+                    : 'bg-white border-stone-200 text-stone-600 hover:text-amber-800 hover:border-amber-800'
+                }`}
+                title={isInCompare(product.id) ? 'Remove from Comparison' : 'Compare with Other Products'}
+              >
+                <Scale className="w-5 h-5" />
               </button>
             </div>
           </div>

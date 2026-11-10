@@ -128,10 +128,19 @@ export const Footer: React.FC = () => {
 
         <div className="pt-8 border-t border-stone-800 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-500 gap-4">
           <p>© {new Date().getFullYear()} Grand Living Furniture & Electronics. All rights reserved.</p>
-          <div className="flex gap-6">
-            <span className="hover:text-stone-400 cursor-pointer">Privacy Policy</span>
-            <span className="hover:text-stone-400 cursor-pointer">Terms & Conditions</span>
-            <span className="hover:text-stone-400 cursor-pointer">Delivery & Returns</span>
+          <div className="flex flex-wrap gap-6">
+            <Link to="/privacy" className="hover:text-amber-400 transition-colors">
+              Privacy Policy
+            </Link>
+            <Link to="/terms" className="hover:text-amber-400 transition-colors">
+              Terms & Conditions
+            </Link>
+            <Link to="/shipping-returns" className="hover:text-amber-400 transition-colors">
+              Delivery & Returns
+            </Link>
+            <Link to="/warranty" className="hover:text-amber-400 transition-colors">
+              Warranty & Guarantee
+            </Link>
           </div>
         </div>
       </div>

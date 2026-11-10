@@ -20,6 +20,21 @@ export interface DashboardMetrics {
     lowStockCount: number;
   };
   recentOrders: Order[];
+  salesTrend?: Array<{
+    date: string;
+    label: string;
+    revenue: number;
+    orders: number;
+  }>;
+  statusBreakdown?: Array<{
+    status: string;
+    count: number;
+  }>;
+  topSellingProducts?: Array<{
+    name: string;
+    quantitySold: number;
+    revenueGenerated: number;
+  }>;
 }
 
 export interface Category {

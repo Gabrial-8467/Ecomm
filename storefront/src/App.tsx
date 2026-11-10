@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import { AnnouncementBar } from './components/layout/AnnouncementBar.js';
 import { Navbar } from './components/layout/Navbar.js';
 import { Footer } from './components/layout/Footer.js';
+import { CompareFloatingBar } from './components/product/CompareFloatingBar.js';
 import { AppRoutes } from './routes/AppRoutes.js';
 import { useAuthStore } from './store/authStore.js';
 import { useCartStore } from './store/cartStore.js';
@@ -44,6 +45,7 @@ export const App: React.FC = () => {
               <AppRoutes />
             </main>
             <Footer />
+            <CompareFloatingBar />
             <Toaster position="top-right" richColors closeButton />
           </div>
         </BrowserRouter>

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../types/index.js';
-import { ShoppingBag, Eye, CheckCircle2, Heart } from 'lucide-react';
+import { ShoppingBag, Eye, CheckCircle2, Heart, Scale } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore.js';
 import { useWishlistStore } from '../../store/wishlistStore.js';
+import { useCompareStore } from '../../store/compareStore.js';
 import { toast } from 'sonner';
 
 interface ProductCardProps {
@@ -13,7 +14,9 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addItem } = useCartStore();
   const { toggleWishlist, isInWishlist } = useWishlistStore();
+  const { addItem: toggleCompare, isInCompare } = useCompareStore();
   const isWishlisted = isInWishlist(product.id);
+  const isCompared = isInCompare(product.id);
 
   const primaryImage =
     product.images.find((img) => img.isPrimary)?.url ||
@@ -88,19 +91,38 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           )}
         </div>
 
-        {/* Wishlist Button */}
-        <button
-          type="button"
-          onClick={handleToggleWishlist}
-          title={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
-          className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white text-stone-700 shadow-sm transition-all hover:scale-110 z-10"
-        >
-          <Heart
-            className={`w-4 h-4 transition-colors ${
-              isWishlisted ? 'fill-rose-500 text-rose-500' : 'text-stone-500 hover:text-rose-500'
+        {/* Top-Right Quick Action Icons (Wishlist & Compare) */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleCompare(product);
+            }}
+            title={isCompared ? 'Remove from comparison' : 'Compare specifications'}
+            className={`p-2 rounded-full shadow-sm transition-all hover:scale-110 ${
+              isCompared
+                ? 'bg-amber-800 text-white'
+                : 'bg-white/90 hover:bg-white text-stone-700'
             }`}
-          />
-        </button>
+          >
+            <Scale className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleToggleWishlist}
+            title={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
+            className="p-2 rounded-full bg-white/90 hover:bg-white text-stone-700 shadow-sm transition-all hover:scale-110"
+          >
+            <Heart
+              className={`w-3.5 h-3.5 transition-colors ${
+                isWishlisted ? 'fill-rose-500 text-rose-500' : 'text-stone-500 hover:text-rose-500'
+              }`}
+            />
+          </button>
+        </div>
 
         {/* Stock indicator badge */}
         <div className="absolute bottom-3 left-3">

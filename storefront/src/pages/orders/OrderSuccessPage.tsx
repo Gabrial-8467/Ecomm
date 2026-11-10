@@ -14,8 +14,13 @@ import {
   Wrench,
   AlertCircle,
   AlertTriangle,
+  FileText,
+  Download,
+  Loader2,
+  Phone,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import html2pdf from 'html2pdf.js';
 
 const STATUS_STEPS = [
   { key: 'PLACED', label: 'Order Received', icon: Clock },
@@ -39,6 +44,7 @@ export const OrderSuccessPage: React.FC = () => {
   const [returnReason, setReturnReason] = useState('Transit Damage (Scratched, chipped wood, or dent)');
   const [returnDetails, setReturnDetails] = useState('');
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
 
   useEffect(() => {
     async function fetchOrder() {
@@ -95,6 +101,32 @@ export const OrderSuccessPage: React.FC = () => {
     }
   };
 
+  const handleDownloadInvoice = async () => {
+    const element = document.getElementById('customer-tax-invoice');
+    if (!element || !order) return;
+
+    setIsDownloadingInvoice(true);
+    toast.info('Generating official GST tax invoice PDF...');
+
+    try {
+      const opt = {
+        margin: [10, 10, 10, 10] as [number, number, number, number],
+        filename: `Tax-Invoice-${order.orderNumber}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+      };
+
+      await html2pdf().set(opt).from(element).save();
+      toast.success('Tax invoice downloaded successfully!');
+    } catch (err) {
+      console.error('Invoice download failed:', err);
+      toast.error('Failed to generate PDF. You can also print via browser Ctrl+P.');
+    } finally {
+      setIsDownloadingInvoice(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 animate-pulse space-y-6">
@@ -119,8 +151,9 @@ export const OrderSuccessPage: React.FC = () => {
   }
 
   const isCancelled = order.status === 'CANCELLED';
-  const cancellableStatuses = ['PLACED', 'CONFIRMED', 'PROCESSING', 'READY_FOR_DISPATCH'];
+  const cancellableStatuses = ['PLACED', 'CONFIRMED', 'PROCESSING'];
   const canCancel = cancellableStatuses.includes(order.status);
+  const isDispatched = order.status === 'READY_FOR_DISPATCH' || order.status === 'OUT_FOR_DELIVERY';
 
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.key === order.status);
 
@@ -291,6 +324,36 @@ export const OrderSuccessPage: React.FC = () => {
             </button>
           )}
 
+          {isDispatched && !isCancelled && (
+            <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-950 space-y-1">
+              <p className="font-bold flex items-center gap-1.5 text-blue-900">
+                <Truck className="w-4 h-4 text-blue-700" />
+                <span>Order Dispatched / On Delivery Van</span>
+              </p>
+              <p className="text-[11px] text-blue-800 leading-relaxed">
+                Your order is packed or out for delivery with our local showroom van. To reschedule or make urgent changes, please call showroom support directly at{' '}
+                <a href="tel:+919876543210" className="font-bold underline text-blue-900">
+                  +91 98765 43210
+                </a>.
+              </p>
+            </div>
+          )}
+
+          {/* Download Tax Invoice PDF */}
+          <button
+            type="button"
+            onClick={handleDownloadInvoice}
+            disabled={isDownloadingInvoice}
+            className="w-full py-3 bg-white hover:bg-amber-50 text-amber-900 border border-amber-300/80 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-2"
+          >
+            {isDownloadingInvoice ? (
+              <Loader2 className="w-4 h-4 animate-spin text-amber-800" />
+            ) : (
+              <Download className="w-4 h-4 text-amber-800" />
+            )}
+            <span>{isDownloadingInvoice ? 'Generating Tax Invoice...' : 'Download Tax Invoice (PDF)'}</span>
+          </button>
+
           {order.status === 'DELIVERED' && (
             <button
               onClick={() => setReturnModalOpen(true)}
@@ -446,6 +509,150 @@ export const OrderSuccessPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Hidden Container for Customer Tax Invoice PDF Rendering */}
+      <div className="hidden">
+        <div id="customer-tax-invoice" className="p-8 max-w-3xl mx-auto bg-white text-stone-900 font-sans text-xs space-y-6">
+          {/* Invoice Header */}
+          <div className="flex justify-between items-start border-b-2 border-stone-800 pb-4">
+            <div>
+              <h1 className="text-2xl font-black font-serif uppercase tracking-tight text-amber-900">
+                Grand Living Showroom
+              </h1>
+              <p className="text-[11px] text-stone-600 mt-0.5">
+                Handcrafted Solid Wood Furniture & Branded Home Electronics
+              </p>
+              <p className="text-[10px] text-stone-500">
+                SCO 45-48, Sector 70, Mohali, Punjab - 160071
+              </p>
+              <p className="text-[10px] text-stone-500">
+                GSTIN: 03ABCDE1234F1Z5 | Phone: +91 98765 43210
+              </p>
+            </div>
+            <div className="text-right space-y-0.5">
+              <span className="inline-block px-2.5 py-1 bg-amber-100 text-amber-900 font-bold rounded text-[11px] uppercase tracking-wider">
+                Official Tax Invoice
+              </span>
+              <p className="font-bold text-sm mt-1">Invoice #: INV-{order.orderNumber}</p>
+              <p className="text-stone-500 text-[10px]">
+                Date: {new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+              </p>
+              <p className="text-stone-500 text-[10px]">Order Ref: #{order.orderNumber}</p>
+            </div>
+          </div>
+
+          {/* Customer & Bill Details */}
+          <div className="grid grid-cols-2 gap-4 bg-stone-50 p-4 rounded-xl border border-stone-200">
+            <div>
+              <p className="font-bold text-stone-600 uppercase text-[9px] tracking-wider mb-1">
+                Billed & Shipped To:
+              </p>
+              <p className="font-bold text-stone-900">{order.deliveryAddress?.fullName || 'Valued Customer'}</p>
+              <p className="text-stone-600 text-[11px]">{order.deliveryAddress?.addressLine1}</p>
+              {order.deliveryAddress?.addressLine2 && (
+                <p className="text-stone-600 text-[11px]">{order.deliveryAddress.addressLine2}</p>
+              )}
+              <p className="text-stone-600 text-[11px]">
+                {order.deliveryAddress?.city}, {order.deliveryAddress?.state} - {order.deliveryAddress?.pincode}
+              </p>
+              <p className="text-stone-600 text-[11px] font-semibold mt-1">Phone: {order.deliveryAddress?.phone}</p>
+            </div>
+            <div className="text-right">
+              <p className="font-bold text-stone-600 uppercase text-[9px] tracking-wider mb-1">
+                Payment & Fulfillment:
+              </p>
+              <p className="text-stone-700">Payment Mode: <span className="font-bold">{order.paymentMethod}</span></p>
+              <p className="text-stone-700">Payment Status: <span className="font-bold">{order.paymentStatus}</span></p>
+              <p className="text-stone-700">Order Status: <span className="font-bold">{order.status}</span></p>
+              {order.customerNote && (
+                <p className="text-[10px] text-stone-500 italic mt-1 max-w-xs ml-auto">
+                  Note: {order.customerNote}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Itemized Table */}
+          <div>
+            <table className="w-full text-left border-collapse border border-stone-300">
+              <thead className="bg-stone-100 uppercase text-[9px] font-bold text-stone-700 border-b border-stone-300">
+                <tr>
+                  <th className="p-2 border-r border-stone-300 w-8">#</th>
+                  <th className="p-2 border-r border-stone-300">Item Description</th>
+                  <th className="p-2 border-r border-stone-300 w-24">HSN / SKU</th>
+                  <th className="p-2 border-r border-stone-300 w-12 text-center">Qty</th>
+                  <th className="p-2 border-r border-stone-300 w-24 text-right">Unit Price</th>
+                  <th className="p-2 w-24 text-right">Total (INR)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-200">
+                {order.items.map((item, idx) => (
+                  <tr key={item.id}>
+                    <td className="p-2 border-r border-stone-200 text-center font-semibold">{idx + 1}</td>
+                    <td className="p-2 border-r border-stone-200">
+                      <p className="font-bold text-stone-900">{item.productName}</p>
+                      <p className="text-[10px] text-stone-500">Variant: {item.variantName}</p>
+                    </td>
+                    <td className="p-2 border-r border-stone-200 font-mono text-[10px] text-stone-600">
+                      {item.sku}
+                    </td>
+                    <td className="p-2 border-r border-stone-200 text-center font-bold">{item.quantity}</td>
+                    <td className="p-2 border-r border-stone-200 text-right">
+                      ₹{Number(item.unitPrice).toLocaleString('en-IN')}
+                    </td>
+                    <td className="p-2 text-right font-bold text-stone-900">
+                      ₹{Number(item.totalPrice).toLocaleString('en-IN')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Totals Summary */}
+          <div className="flex justify-end">
+            <div className="w-64 space-y-1.5 text-xs bg-stone-50 p-4 rounded-xl border border-stone-200">
+              <div className="flex justify-between text-stone-600">
+                <span>Subtotal:</span>
+                <span>₹{Number(order.subtotal).toLocaleString('en-IN')}</span>
+              </div>
+              {Number(order.discountAmount) > 0 && (
+                <div className="flex justify-between text-emerald-700 font-medium">
+                  <span>Promo Discount:</span>
+                  <span>-₹{Number(order.discountAmount).toLocaleString('en-IN')}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-stone-600">
+                <span>Delivery Charges:</span>
+                <span>{Number(order.deliveryCharge) === 0 ? 'FREE' : `₹${Number(order.deliveryCharge).toLocaleString('en-IN')}`}</span>
+              </div>
+              <div className="flex justify-between text-stone-600">
+                <span>GST (Included 18%):</span>
+                <span>₹{Number(order.taxAmount).toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between font-black text-sm pt-2 border-t border-stone-300 text-amber-950">
+                <span>Grand Total:</span>
+                <span>₹{Number(order.totalAmount).toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Warranty Stamp & Showroom Terms */}
+          <div className="pt-4 border-t border-stone-300 flex justify-between items-end text-[10px] text-stone-500">
+            <div className="space-y-1 max-w-sm">
+              <p className="font-bold text-stone-700">Official Brand Warranty Verification:</p>
+              <p>• Retain this bill for official Samsung, LG & Godrej brand warranty claims.</p>
+              <p>• Handcrafted Teak & Sheesham wood furniture carries 5-year termite guarantee.</p>
+              <p>• For inquiries, call showroom at +91 98765 43210 (10:00 AM - 09:00 PM).</p>
+            </div>
+            <div className="text-center space-y-1">
+              <div className="w-32 h-10 border border-stone-300 rounded flex items-center justify-center text-[9px] text-stone-400">
+                Authorized Seal
+              </div>
+              <p className="font-bold text-stone-800">Grand Living Store</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

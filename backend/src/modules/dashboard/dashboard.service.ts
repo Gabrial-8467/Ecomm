@@ -5,6 +5,10 @@ export class DashboardService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 13);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
     const [
       totalOrders,
       pendingOrders,
@@ -16,6 +20,9 @@ export class DashboardService {
       lowStockCount,
       recentOrders,
       revenueResult,
+      recentOrdersForTrend,
+      allOrdersByStatus,
+      topOrderItems,
     ] = await Promise.all([
       prisma.order.count(),
       prisma.order.count({ where: { status: 'PLACED' } }),
@@ -30,7 +37,7 @@ export class DashboardService {
         },
       }),
       prisma.order.findMany({
-        take: 5,
+        take: 6,
         orderBy: { createdAt: 'desc' },
         include: {
           items: true,
@@ -38,15 +45,78 @@ export class DashboardService {
       }),
       prisma.order.aggregate({
         where: {
-          status: { not: 'CANCELLED' },
+          status: { notIn: ['CANCELLED', 'RETURNED'] },
         },
         _sum: {
           totalAmount: true,
         },
       }),
+      prisma.order.findMany({
+        where: {
+          createdAt: { gte: sevenDaysAgo },
+          status: { notIn: ['CANCELLED'] },
+        },
+        select: {
+          createdAt: true,
+          totalAmount: true,
+          status: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.order.groupBy({
+        by: ['status'],
+        _count: {
+          _all: true,
+        },
+      }),
+      prisma.orderItem.groupBy({
+        by: ['productName'],
+        _sum: {
+          quantity: true,
+          totalPrice: true,
+        },
+        orderBy: {
+          _sum: {
+            quantity: 'desc',
+          },
+        },
+        take: 5,
+      }),
     ]);
 
     const totalRevenue = Number(revenueResult._sum.totalAmount || 0);
+
+    // Build day-by-day sales trend for the last 14 days
+    const trendMap = new Map<string, { date: string; label: string; revenue: number; orders: number }>();
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      const label = d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+      trendMap.set(key, { date: key, label, revenue: 0, orders: 0 });
+    }
+
+    for (const ord of recentOrdersForTrend) {
+      const key = ord.createdAt.toISOString().split('T')[0];
+      const entry = trendMap.get(key);
+      if (entry) {
+        entry.revenue += Number(ord.totalAmount);
+        entry.orders += 1;
+      }
+    }
+
+    const salesTrend = Array.from(trendMap.values());
+
+    const statusBreakdown = allOrdersByStatus.map((item) => ({
+      status: item.status,
+      count: item._count._all,
+    }));
+
+    const topSellingProducts = topOrderItems.map((item) => ({
+      name: item.productName,
+      quantitySold: item._sum.quantity || 0,
+      revenueGenerated: Number(item._sum.totalPrice || 0),
+    }));
 
     return {
       kpis: {
@@ -61,6 +131,9 @@ export class DashboardService {
         lowStockCount,
       },
       recentOrders,
+      salesTrend,
+      statusBreakdown,
+      topSellingProducts,
     };
   }
 }
