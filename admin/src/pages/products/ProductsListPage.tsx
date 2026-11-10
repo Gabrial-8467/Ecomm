@@ -91,16 +91,37 @@ export const ProductsListPage: React.FC = () => {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
+      {/* Table Card */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
+        {/* Table Subheader Summary */}
+        <div className="px-6 py-3.5 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2 text-slate-500 font-semibold">
+            <span>Catalog Items:</span>
+            <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 font-bold text-slate-800 text-[11px]">
+              {products.length} products listed
+            </span>
+          </div>
+          {search && (
+            <button
+              onClick={() => {
+                setSearch('');
+                fetchProducts();
+              }}
+              className="text-amber-800 hover:underline text-[11px] font-semibold"
+            >
+              Clear search filter
+            </button>
+          )}
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-50 border-b border-slate-200 uppercase font-bold text-[10px] tracking-wider text-slate-500">
+            <thead className="bg-slate-50/80 border-b border-slate-200 uppercase font-bold text-[10px] tracking-wider text-slate-500">
               <tr>
-                <th className="py-3.5 px-6">Product & Image</th>
-                <th className="py-3.5 px-6">Category / Brand</th>
-                <th className="py-3.5 px-6">Variants & SKUs</th>
-                <th className="py-3.5 px-6">Available Stock</th>
+                <th className="py-3.5 px-6">Product Details</th>
+                <th className="py-3.5 px-6">Department & Brand</th>
+                <th className="py-3.5 px-6">Variants & Pricing</th>
+                <th className="py-3.5 px-6">Warehouse Stock</th>
                 <th className="py-3.5 px-6">Status</th>
                 <th className="py-3.5 px-6 text-right">Actions</th>
               </tr>
@@ -108,14 +129,18 @@ export const ProductsListPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100 font-medium">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
-                    Loading products...
+                  <td colSpan={6} className="py-16 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                      <span>Loading showroom catalog...</span>
+                    </div>
                   </td>
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
-                    No products found.
+                  <td colSpan={6} className="py-16 text-center text-slate-400">
+                    <p className="font-bold text-slate-700 text-sm">No products found</p>
+                    <p className="text-xs text-slate-400 mt-1">Try resetting search filters or add a new showroom item.</p>
                   </td>
                 </tr>
               ) : (
@@ -131,40 +156,47 @@ export const ProductsListPage: React.FC = () => {
                   );
 
                   return (
-                    <tr key={product.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={product.id} className="hover:bg-amber-50/20 transition-colors">
                       <td className="py-4 px-6">
-                        <Link to={`/products/${product.id}`} className="flex items-center gap-3 group">
+                        <Link to={`/products/${product.id}`} className="flex items-center gap-3.5 group">
                           <img
                             src={primaryImage}
                             alt={product.name}
                             className="w-12 h-12 object-cover rounded-xl bg-slate-100 border border-slate-200 shrink-0 shadow-2xs group-hover:border-amber-500 transition-colors"
                           />
-                          <div>
-                            <p className="font-bold text-slate-900 text-sm line-clamp-1 group-hover:text-amber-700 transition-colors">
+                          <div className="space-y-0.5">
+                            <p className="font-bold text-slate-900 text-sm line-clamp-1 group-hover:text-amber-800 transition-colors">
                               {product.name}
                             </p>
-                            <p className="text-[11px] text-slate-500">{product.variants?.length || 0} variant(s)</p>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                              <span>{product.variants?.length || 0} variant option(s)</span>
+                              {product.isFeatured && (
+                                <span className="px-1.5 py-0.2 bg-amber-50 text-amber-800 border border-amber-200/70 rounded text-[9px] font-bold uppercase tracking-wider">
+                                  Featured
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </Link>
                       </td>
 
                       <td className="py-4 px-6">
-                        <p className="font-semibold text-slate-800">{product.category?.name || 'General'}</p>
-                        <p className="text-[11px] text-slate-500">{product.brand?.name || 'In-House'}</p>
+                        <p className="font-semibold text-slate-900">{product.category?.name || 'General'}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{product.brand?.name || 'Grand Living Solid Wood'}</p>
                       </td>
 
                       <td className="py-4 px-6">
                         <div className="space-y-1">
                           {product.variants?.slice(0, 2).map((v) => (
-                            <div key={v.id} className="text-[11px]">
-                              <span className="text-slate-500 font-mono">{v.sku}</span> -{' '}
+                            <div key={v.id} className="text-[11px] flex items-center gap-2">
+                              <span className="font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">{v.sku}</span>
                               <span className="text-slate-900 font-bold">
                                 ₹{Number(v.price).toLocaleString('en-IN')}
                               </span>
                             </div>
                           ))}
                           {(product.variants?.length || 0) > 2 && (
-                            <span className="text-[10px] text-amber-700 font-semibold">
+                            <span className="text-[10px] text-amber-800 font-bold">
                               +{(product.variants?.length || 0) - 2} more options
                             </span>
                           )}
@@ -173,23 +205,32 @@ export const ProductsListPage: React.FC = () => {
 
                       <td className="py-4 px-6">
                         <span
-                          className={`font-bold px-2 py-0.5 rounded-full text-xs ${
+                          className={`inline-flex items-center gap-1.5 font-bold px-2.5 py-1 rounded-full text-xs ${
                             totalAvailable > 5
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                               : totalAvailable > 0
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : 'bg-rose-50 text-rose-700 border border-rose-200'
+                              ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                              : 'bg-rose-50 text-rose-800 border border-rose-200'
                           }`}
                         >
-                          {totalAvailable} units
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              totalAvailable > 5
+                                ? 'bg-emerald-500'
+                                : totalAvailable > 0
+                                ? 'bg-amber-500'
+                                : 'bg-rose-500'
+                            }`}
+                          />
+                          <span>{totalAvailable} units</span>
                         </span>
                       </td>
 
                       <td className="py-4 px-6">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${
                             product.status === 'ACTIVE'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                               : 'bg-slate-100 text-slate-600 border border-slate-200'
                           }`}
                         >
@@ -201,10 +242,10 @@ export const ProductsListPage: React.FC = () => {
                         <div className="flex items-center justify-end gap-2">
                           <Link
                             to={`/products/${product.id}`}
-                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-semibold inline-flex items-center gap-1 border border-slate-200 transition-colors"
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-900 border border-slate-200 hover:border-amber-300 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-2xs"
                             title="Inspect & Edit Product"
                           >
-                            <Eye className="w-3.5 h-3.5 text-slate-500" />
+                            <Eye className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-800" />
                             <span>Overview</span>
                           </Link>
                           <button

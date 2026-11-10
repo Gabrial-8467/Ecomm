@@ -94,34 +94,53 @@ export const OrdersListPage: React.FC = () => {
     switch (status) {
       case 'DELIVERED':
         return (
-          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold rounded-full">
-            Delivered
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Delivered</span>
           </span>
         );
       case 'CANCELLED':
         return (
-          <span className="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold rounded-full">
-            Cancelled
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 text-rose-800 border border-rose-200 text-[10px] font-bold rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+            <span>Cancelled</span>
+          </span>
+        );
+      case 'RETURN_REQUESTED':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-300 text-[10px] font-bold rounded-full animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+            <span>Return Requested</span>
+          </span>
+        );
+      case 'RETURNED':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 text-rose-800 border border-rose-200 text-[10px] font-bold rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+            <span>Returned & Restocked</span>
           </span>
         );
       case 'OUT_FOR_DELIVERY':
         return (
-          <span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold rounded-full">
-            Out for Delivery
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            <span>Out for Delivery</span>
           </span>
         );
       case 'CONFIRMED':
       case 'PROCESSING':
       case 'READY_FOR_DISPATCH':
         return (
-          <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold rounded-full">
-            {status.replace(/_/g, ' ')}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-bold rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span>{status.replace(/_/g, ' ')}</span>
           </span>
         );
       default:
         return (
-          <span className="px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold rounded-full">
-            Placed (Pending)
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+            <span>Placed (Pending)</span>
           </span>
         );
     }
@@ -185,51 +204,73 @@ export const OrdersListPage: React.FC = () => {
         </select>
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
+      {/* Orders Table Container */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        {/* Table Subheader */}
+        <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-sm font-bold text-slate-800">Recent Customer Orders</h2>
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+              {orders.length} {orders.length === 1 ? 'order' : 'orders'}
+            </span>
+          </div>
+          {statusFilter && (
+            <span className="text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 font-medium flex items-center gap-1.5">
+              Filtered by: <strong className="font-semibold uppercase tracking-wide">{statusFilter.replace(/_/g, ' ')}</strong>
+            </span>
+          )}
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-50 border-b border-slate-200 uppercase font-bold text-[10px] tracking-wider text-slate-500">
+            <thead className="bg-slate-50 border-b border-slate-200 uppercase font-semibold text-[11px] tracking-wider text-slate-500">
               <tr>
-                <th className="py-3.5 px-6">Order #</th>
-                <th className="py-3.5 px-6">Customer & Phone</th>
-                <th className="py-3.5 px-6">Delivery Area</th>
-                <th className="py-3.5 px-6">Due Amount</th>
-                <th className="py-3.5 px-6">Status</th>
-                <th className="py-3.5 px-6 text-right">Details</th>
+                <th className="py-3.5 px-6">Order ID & Date</th>
+                <th className="py-3.5 px-6">Customer & Contact</th>
+                <th className="py-3.5 px-6">Delivery Location</th>
+                <th className="py-3.5 px-6">Amount & Payment</th>
+                <th className="py-3.5 px-6">Fulfillment</th>
+                <th className="py-3.5 px-6 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
-                    Loading orders...
+                  <td colSpan={6} className="py-16 text-center text-slate-400">
+                    <div className="inline-block w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mb-2" />
+                    <p className="text-xs font-medium text-slate-500">Loading order records...</p>
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
-                    No orders found.
+                  <td colSpan={6} className="py-16 text-center text-slate-400">
+                    <p className="text-sm font-semibold text-slate-600 mb-1">No orders found</p>
+                    <p className="text-xs text-slate-400">Try adjusting your search query or status filter.</p>
                   </td>
                 </tr>
               ) : (
                 orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-4 px-6 font-bold text-slate-900">
-                      #{order.orderNumber}
-                      <p className="text-[10px] text-slate-500 font-normal">
+                  <tr key={order.id} className="hover:bg-slate-50/80 transition-colors group">
+                    <td className="py-4 px-6">
+                      <span className="inline-block font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                        #{order.orderNumber}
+                      </span>
+                      <p className="text-[11px] text-slate-400 font-normal mt-1">
                         {new Date(order.createdAt).toLocaleDateString('en-IN', {
                           day: 'numeric',
                           month: 'short',
+                          year: 'numeric',
                         })}
                       </p>
                     </td>
 
                     <td className="py-4 px-6">
-                      <p className="font-bold text-slate-900">{order.customerName}</p>
+                      <p className="font-bold text-slate-900 group-hover:text-amber-800 transition-colors">
+                        {order.customerName}
+                      </p>
                       <a
                         href={`tel:${order.customerPhone}`}
-                        className="text-amber-700 font-semibold hover:underline flex items-center gap-1 text-[11px] mt-0.5"
+                        className="text-amber-700 font-semibold hover:underline inline-flex items-center gap-1 text-[11px] mt-0.5"
                       >
                         <Phone className="w-3 h-3 text-amber-600" />
                         <span>{order.customerPhone}</span>
@@ -237,19 +278,30 @@ export const OrdersListPage: React.FC = () => {
                     </td>
 
                     <td className="py-4 px-6">
-                      <p className="text-slate-800 font-medium">
-                        {order.deliveryAddress?.city || 'Local Zone'}
+                      <p className="text-slate-800 font-semibold">
+                        {order.deliveryAddress?.city || 'Local Area'}
                       </p>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">
                         PIN: {order.deliveryAddress?.pincode}
                       </p>
                     </td>
 
-                    <td className="py-4 px-6 font-bold text-slate-900">
-                      ₹{Number(order.totalAmount).toLocaleString('en-IN')}
-                      <span className="block text-[10px] text-slate-500 font-normal">
-                        {order.paymentMethod} ({order.paymentStatus})
-                      </span>
+                    <td className="py-4 px-6">
+                      <p className="font-bold text-slate-900 text-sm">
+                        ₹{Number(order.totalAmount).toLocaleString('en-IN')}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className={`inline-block px-1.5 py-0.2 rounded text-[10px] font-bold uppercase tracking-wider ${
+                          order.paymentMethod === 'COD' 
+                            ? 'bg-amber-100 text-amber-800' 
+                            : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {order.paymentMethod}
+                        </span>
+                        <span className="text-[10px] text-slate-400 capitalize">
+                          {order.paymentStatus?.toLowerCase()}
+                        </span>
+                      </div>
                     </td>
 
                     <td className="py-4 px-6">{getStatusBadge(order.status)}</td>
@@ -257,10 +309,10 @@ export const OrdersListPage: React.FC = () => {
                     <td className="py-4 px-6 text-right">
                       <Link
                         to={`/orders/${order.orderNumber}`}
-                        className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 border border-slate-200 transition-colors"
+                        className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 border border-slate-200 shadow-2xs hover:border-slate-300 transition-all"
                       >
-                        <Eye className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Inspect</span>
+                        <Eye className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-600" />
+                        <span>View Order</span>
                       </Link>
                     </td>
                   </tr>

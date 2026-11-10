@@ -290,37 +290,49 @@ export const CategoriesBrandsPage: React.FC = () => {
 
       {/* Categories View */}
       {activeTab === 'categories' && (
-        <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          {/* Subheader */}
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-sm font-bold text-slate-800">Product Categories & Taxonomy</h2>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                {categories.length} {categories.length === 1 ? 'category' : 'categories'}
+              </span>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50 border-b border-slate-200 uppercase font-bold text-[10px] tracking-wider text-slate-500">
+              <thead className="bg-slate-50 border-b border-slate-200 uppercase font-semibold text-[11px] tracking-wider text-slate-500">
                 <tr>
                   <th className="py-3.5 px-6">Image</th>
-                  <th className="py-3.5 px-6">Category Name</th>
-                  <th className="py-3.5 px-6">Slug</th>
+                  <th className="py-3.5 px-6">Category Name & Details</th>
+                  <th className="py-3.5 px-6">URL Slug</th>
                   <th className="py-3.5 px-6">Parent Department</th>
-                  <th className="py-3.5 px-6">Sort Order</th>
+                  <th className="py-3.5 px-6">Display Order</th>
                   <th className="py-3.5 px-6 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
-                      Loading categories...
+                    <td colSpan={6} className="py-16 text-center text-slate-400">
+                      <div className="inline-block w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mb-2" />
+                      <p className="text-xs font-medium text-slate-500">Loading catalog categories...</p>
                     </td>
                   </tr>
                 ) : categories.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
-                      No categories found. Click "Add Category" to create one.
+                    <td colSpan={6} className="py-16 text-center text-slate-400">
+                      <p className="text-sm font-semibold text-slate-600 mb-1">No categories found</p>
+                      <p className="text-xs text-slate-400">Click "Add Category" above to create your first category.</p>
                     </td>
                   </tr>
                 ) : (
                   categories.map((c) => {
                     const parent = categories.find((p) => p.id === c.parentId);
                     return (
-                      <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={c.id} className="hover:bg-slate-50/80 transition-colors group">
                         <td className="py-3.5 px-6">
                           <img
                             src={
@@ -328,34 +340,50 @@ export const CategoriesBrandsPage: React.FC = () => {
                               'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=120&q=80'
                             }
                             alt={c.name}
-                            className="w-10 h-10 rounded-lg object-cover bg-slate-100 border border-slate-200"
+                            className="w-11 h-11 rounded-xl object-cover bg-slate-100 border border-slate-200 shadow-2xs group-hover:scale-105 transition-transform"
                           />
                         </td>
-                        <td className="py-3.5 px-6 font-bold text-slate-900">
-                          {c.name}
-                          {c.description && (
-                            <p className="text-[11px] text-slate-500 font-normal truncate max-w-xs">
+                        <td className="py-3.5 px-6">
+                          <p className="font-bold text-slate-900 group-hover:text-amber-800 transition-colors">
+                            {c.name}
+                          </p>
+                          {c.description ? (
+                            <p className="text-[11px] text-slate-500 font-normal truncate max-w-sm mt-0.5">
                               {c.description}
                             </p>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-normal italic">No description</span>
                           )}
                         </td>
-                        <td className="py-3.5 px-6 font-mono text-[11px] text-amber-800">{c.slug}</td>
-                        <td className="py-3.5 px-6 text-slate-600">
+                        <td className="py-3.5 px-6">
+                          <span className="font-mono text-[11px] font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80">
+                            /{c.slug}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-6">
                           {parent ? (
-                            <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold">
-                              {parent.name}
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[11px] font-semibold border border-slate-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                              <span>{parent.name}</span>
                             </span>
                           ) : (
-                            <span className="text-slate-400">Root Department</span>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-50 text-emerald-800 rounded-md text-[11px] font-semibold border border-emerald-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              <span>Root Department</span>
+                            </span>
                           )}
                         </td>
-                        <td className="py-3.5 px-6 font-mono text-slate-700">{c.sortOrder ?? 0}</td>
+                        <td className="py-3.5 px-6">
+                          <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                            #{c.sortOrder ?? 0}
+                          </span>
+                        </td>
                         <td className="py-3.5 px-6 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1.5">
                             <button
                               type="button"
                               onClick={() => openEditCategory(c)}
-                              className="p-1.5 text-slate-500 hover:text-amber-800 hover:bg-slate-100 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition-colors border border-transparent hover:border-amber-200 shadow-2xs"
                               title="Edit Category"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -363,7 +391,7 @@ export const CategoriesBrandsPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleDeleteCategory(c.id, c.name)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200 shadow-2xs"
                               title="Delete Category"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -382,54 +410,74 @@ export const CategoriesBrandsPage: React.FC = () => {
 
       {/* Brands View */}
       {activeTab === 'brands' && (
-        <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          {/* Subheader */}
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-sm font-bold text-slate-800">Showroom Brand Directory</h2>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                {brands.length} {brands.length === 1 ? 'brand' : 'brands'}
+              </span>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50 border-b border-slate-200 uppercase font-bold text-[10px] tracking-wider text-slate-500">
+              <thead className="bg-slate-50 border-b border-slate-200 uppercase font-semibold text-[11px] tracking-wider text-slate-500">
                 <tr>
-                  <th className="py-3.5 px-6">Brand Logo</th>
+                  <th className="py-3.5 px-6">Brand Identity & Logo</th>
                   <th className="py-3.5 px-6">Brand Name</th>
-                  <th className="py-3.5 px-6">Slug</th>
+                  <th className="py-3.5 px-6">URL Slug</th>
                   <th className="py-3.5 px-6 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={4} className="py-12 text-center text-slate-400">
-                      Loading brands...
+                    <td colSpan={4} className="py-16 text-center text-slate-400">
+                      <div className="inline-block w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mb-2" />
+                      <p className="text-xs font-medium text-slate-500">Loading showroom brands...</p>
                     </td>
                   </tr>
                 ) : brands.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-12 text-center text-slate-400">
-                      No brands found. Click "Add Brand" to create one.
+                    <td colSpan={4} className="py-16 text-center text-slate-400">
+                      <p className="text-sm font-semibold text-slate-600 mb-1">No brands registered</p>
+                      <p className="text-xs text-slate-400">Click "Add Brand" above to register manufacturer brands.</p>
                     </td>
                   </tr>
                 ) : (
                   brands.map((b) => (
-                    <tr key={b.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={b.id} className="hover:bg-slate-50/80 transition-colors group">
                       <td className="py-3.5 px-6">
                         {b.logo ? (
                           <img
                             src={b.logo}
                             alt={b.name}
-                            className="w-12 h-8 rounded object-contain bg-slate-50 p-1 border border-slate-200"
+                            className="w-14 h-9 rounded-lg object-contain bg-white p-1 border border-slate-200 shadow-2xs group-hover:scale-105 transition-transform"
                           />
                         ) : (
-                          <div className="w-12 h-8 rounded bg-slate-100 flex items-center justify-center font-bold text-slate-500 text-xs border border-slate-200">
-                            {b.name[0]}
+                          <div className="w-14 h-9 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs border border-slate-200 shadow-2xs">
+                            {b.name[0]?.toUpperCase()}
                           </div>
                         )}
                       </td>
-                      <td className="py-3.5 px-6 font-bold text-slate-900">{b.name}</td>
-                      <td className="py-3.5 px-6 font-mono text-[11px] text-amber-800">{b.slug}</td>
+                      <td className="py-3.5 px-6">
+                        <p className="font-bold text-slate-900 group-hover:text-amber-800 transition-colors text-sm">
+                          {b.name}
+                        </p>
+                      </td>
+                      <td className="py-3.5 px-6">
+                        <span className="font-mono text-[11px] font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80">
+                          /{b.slug}
+                        </span>
+                      </td>
                       <td className="py-3.5 px-6 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => openEditBrand(b)}
-                            className="p-1.5 text-slate-500 hover:text-amber-800 hover:bg-slate-100 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition-colors border border-transparent hover:border-amber-200 shadow-2xs"
                             title="Edit Brand"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -437,7 +485,7 @@ export const CategoriesBrandsPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleDeleteBrand(b.id, b.name)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200 shadow-2xs"
                             title="Delete Brand"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

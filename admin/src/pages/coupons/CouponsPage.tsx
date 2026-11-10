@@ -208,44 +208,76 @@ export const CouponsPage: React.FC = () => {
         </form>
       )}
 
-      {/* Coupons Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {coupons.map((coupon) => (
-          <div key={coupon.id} className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs">
-            <div className="flex items-start justify-between">
-              <div>
-                <span className="font-mono font-bold text-amber-800 text-lg flex items-center gap-2">
-                  <TicketPercent className="w-5 h-5 text-amber-600" />
-                  {coupon.code}
-                </span>
-                <p className="text-xs text-slate-600 mt-1">{coupon.description || 'General discount'}</p>
-              </div>
-              <button
-                onClick={() => handleDelete(coupon.id, coupon.code)}
-                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                title="Delete Coupon"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
+      {/* Coupons Subheader */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-sm font-bold text-slate-800">Active Promotional Coupons</h2>
+          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+            {coupons.length} {coupons.length === 1 ? 'coupon' : 'coupons'}
+          </span>
+        </div>
+      </div>
 
-            <div className="text-xs text-slate-600 space-y-1.5 pt-2 border-t border-slate-100">
-              <p>
-                Discount:{' '}
-                <strong className="text-slate-900">
-                  {coupon.discountType === 'PERCENTAGE'
-                    ? `${Number(coupon.discountValue)}% off`
-                    : `₹${Number(coupon.discountValue)} flat`}
-                </strong>
-                {coupon.maximumDiscount && ` (Capped at ₹${Number(coupon.maximumDiscount)})`}
-              </p>
-              <p>Minimum Order: <strong className="text-slate-800">₹{Number(coupon.minimumOrder)}</strong></p>
-              <p>
-                Redemptions: <strong className="text-slate-800">{coupon.usedCount} / {coupon.usageLimit || 'Unlimited'}</strong>
-              </p>
-            </div>
+      {/* Coupons Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {coupons.length === 0 ? (
+          <div className="col-span-full bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-400">
+            <TicketPercent className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-sm font-semibold text-slate-600">No active coupons</p>
+            <p className="text-xs text-slate-400 mt-1">Create a promotional code to attract showroom customers.</p>
           </div>
-        ))}
+        ) : (
+          coupons.map((coupon) => (
+            <div
+              key={coupon.id}
+              className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-xs hover:border-amber-300 transition-all group flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 flex items-center justify-center font-bold shrink-0">
+                      <TicketPercent className="w-5 h-5 text-amber-700" />
+                    </div>
+                    <div>
+                      <span className="font-mono font-bold text-slate-900 text-base tracking-wide group-hover:text-amber-800 transition-colors">
+                        {coupon.code}
+                      </span>
+                      <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                        {coupon.description || 'Promotional coupon code'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(coupon.id, coupon.code)}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200 shadow-2xs"
+                    title="Delete Coupon"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-dashed border-slate-200 flex items-center justify-between">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                    {coupon.discountType === 'PERCENTAGE'
+                      ? `${Number(coupon.discountValue)}% OFF`
+                      : `₹${Number(coupon.discountValue)} OFF`}
+                    {coupon.maximumDiscount && ` (up to ₹${Number(coupon.maximumDiscount)})`}
+                  </span>
+                  <span className="text-[11px] font-semibold text-slate-600">
+                    Min ₹{Number(coupon.minimumOrder).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-medium text-slate-500 bg-slate-50/60 -mx-5 -mb-5 px-5 py-3 rounded-b-2xl">
+                <span>Usage Redemptions:</span>
+                <span className="font-bold text-slate-800 font-mono">
+                  {coupon.usedCount} / {coupon.usageLimit ? coupon.usageLimit : '∞ Unlimited'}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
