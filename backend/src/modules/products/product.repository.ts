@@ -234,7 +234,30 @@ export class ProductRepository {
         });
       }
 
-      const { specifications, ...productFields } = data;
+      if (data.variants && data.variants.length > 0) {
+        for (const v of data.variants) {
+          if (v.id) {
+            await tx.productVariant.update({
+              where: { id: v.id },
+              data: {
+                name: v.name,
+                sku: v.sku,
+                price: v.price,
+                compareAtPrice: v.compareAtPrice,
+                weight: v.weight,
+              },
+            });
+            if (v.lowStockThreshold !== undefined) {
+              await tx.inventory.updateMany({
+                where: { variantId: v.id },
+                data: { lowStockThreshold: v.lowStockThreshold },
+              });
+            }
+          }
+        }
+      }
+
+      const { specifications, variants, ...productFields } = data;
       return tx.product.update({
         where: { id },
         data: productFields,

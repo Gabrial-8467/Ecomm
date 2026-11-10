@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api/client.js';
 import { Product } from '../../types/index.js';
-import { Plus, Search, Trash2 } from 'lucide-react';
+import { Plus, Search, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const ProductsListPage: React.FC = () => {
@@ -133,17 +133,19 @@ export const ProductsListPage: React.FC = () => {
                   return (
                     <tr key={product.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
+                        <Link to={`/products/${product.id}`} className="flex items-center gap-3 group">
                           <img
                             src={primaryImage}
                             alt={product.name}
-                            className="w-12 h-12 object-cover rounded-xl bg-slate-100 border border-slate-200 shrink-0 shadow-2xs"
+                            className="w-12 h-12 object-cover rounded-xl bg-slate-100 border border-slate-200 shrink-0 shadow-2xs group-hover:border-amber-500 transition-colors"
                           />
                           <div>
-                            <p className="font-bold text-slate-900 text-sm line-clamp-1">{product.name}</p>
+                            <p className="font-bold text-slate-900 text-sm line-clamp-1 group-hover:text-amber-700 transition-colors">
+                              {product.name}
+                            </p>
                             <p className="text-[11px] text-slate-500">{product.variants?.length || 0} variant(s)</p>
                           </div>
-                        </div>
+                        </Link>
                       </td>
 
                       <td className="py-4 px-6">
@@ -197,6 +199,14 @@ export const ProductsListPage: React.FC = () => {
 
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <Link
+                            to={`/products/${product.id}`}
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-semibold inline-flex items-center gap-1 border border-slate-200 transition-colors"
+                            title="Inspect & Edit Product"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Overview</span>
+                          </Link>
                           <button
                             onClick={() => handleDeactivate(product.id, product.name)}
                             className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"

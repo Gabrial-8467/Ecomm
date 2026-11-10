@@ -17,8 +17,11 @@ export class ProductService {
     return this.productRepo.findMany(filters);
   }
 
-  async getProductBySlug(slug: string) {
-    const product = await this.productRepo.findBySlug(slug);
+  async getProductBySlug(slugOrId: string) {
+    let product = await this.productRepo.findBySlug(slugOrId);
+    if (!product) {
+      product = await this.productRepo.findById(slugOrId);
+    }
     if (!product) {
       throw new NotFoundError('Product not found');
     }

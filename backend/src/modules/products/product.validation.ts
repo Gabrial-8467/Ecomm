@@ -50,6 +50,19 @@ export const updateProductSchema = z.object({
   isFeatured: z.boolean().optional(),
   isBestSeller: z.boolean().optional(),
   specifications: z.array(specificationSchema).optional(),
+  variants: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        name: z.string().default('Default'),
+        sku: z.string().min(2).toUpperCase(),
+        price: z.number().positive(),
+        compareAtPrice: z.number().positive().nullable().optional(),
+        weight: z.number().positive().nullable().optional(),
+        lowStockThreshold: z.number().int().nonnegative().optional(),
+      })
+    )
+    .optional(),
 });
 
 export const productQuerySchema = z.object({

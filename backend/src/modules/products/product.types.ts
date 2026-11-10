@@ -50,6 +50,15 @@ export interface UpdateProductInput {
   isFeatured?: boolean;
   isBestSeller?: boolean;
   specifications?: SpecificationInput[];
+  variants?: {
+    id?: string;
+    name: string;
+    sku: string;
+    price: number;
+    compareAtPrice?: number | null;
+    weight?: number | null;
+    lowStockThreshold?: number;
+  }[];
 }
 
 export interface ProductQueryFilter {
