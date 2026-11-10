@@ -15,4 +15,8 @@ export class InventoryService {
   async adjustStock(input: StockAdjustmentInput) {
     return this.inventoryRepo.adjustStock(input);
   }
+
+  async updateThreshold(variantId: string, lowStockThreshold: number) {
+    return this.inventoryRepo.updateThreshold(variantId, lowStockThreshold);
+  }
 }

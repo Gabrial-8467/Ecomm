@@ -43,5 +43,16 @@ export class InventoryController {
       next(error);
     }
   }
+
+  async updateThreshold(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const variantId = paramToString(req.params.variantId);
+      const { lowStockThreshold } = req.body;
+      const updated = await inventoryService.updateThreshold(variantId, Number(lowStockThreshold));
+      sendSuccess(res, updated, 'Low stock threshold updated successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 

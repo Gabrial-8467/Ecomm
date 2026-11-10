@@ -20,6 +20,7 @@ export const InventoryPage: React.FC = () => {
   const [adjustType, setAdjustType] = useState<'RESTOCK' | 'DAMAGE' | 'ADJUSTMENT'>('RESTOCK');
   const [quantityDelta, setQuantityDelta] = useState<number>(5);
   const [adjustReason, setAdjustReason] = useState('');
+  const [thresholdValue, setThresholdValue] = useState<number>(5);
   const [isAdjusting, setIsAdjusting] = useState(false);
 
   useEffect(() => {
@@ -49,25 +50,35 @@ export const InventoryPage: React.FC = () => {
 
   const handleAdjustSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedVariant || !adjustReason.trim()) return;
+    if (!selectedVariant) return;
 
     // For DAMAGE, delta is negative
     const finalDelta = adjustType === 'DAMAGE' ? -Math.abs(quantityDelta) : quantityDelta;
 
     setIsAdjusting(true);
     try {
-      await api.put(`/inventory/${selectedVariant.variantId}`, {
-        type: adjustType,
-        quantityDelta: finalDelta,
-        reason: adjustReason.trim(),
-      });
+      // 1. If quantity adjustment reason provided, adjust physical stock
+      if (adjustReason.trim() && quantityDelta !== 0) {
+        await api.put(`/inventory/${selectedVariant.variantId}`, {
+          type: adjustType,
+          quantityDelta: finalDelta,
+          reason: adjustReason.trim(),
+        });
+      }
 
-      toast.success('Inventory adjustment recorded with audit movement log');
+      // 2. If threshold changed, update low stock limit
+      if (thresholdValue !== selectedVariant.lowStockThreshold) {
+        await api.patch(`/inventory/${selectedVariant.variantId}/threshold`, {
+          lowStockThreshold: thresholdValue,
+        });
+      }
+
+      toast.success('Inventory & alert threshold updated successfully');
       setAdjustModalOpen(false);
       setAdjustReason('');
       fetchInventory();
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || 'Failed to adjust stock');
+      toast.error(err.response?.data?.error?.message || 'Failed to update inventory');
     } finally {
       setIsAdjusting(false);
     }
@@ -250,19 +261,38 @@ export const InventoryPage: React.FC = () => {
                           </td>
                           <td className="py-4 px-6">
                             {isLowStock ? (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full">
-                                <AlertTriangle className="w-3 h-3" /> Low Stock (Limit {item.lowStockThreshold})
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedVariant(item);
+                                  setThresholdValue(item.lowStockThreshold);
+                                  setAdjustModalOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 px-2.5 py-1 rounded-full transition-colors cursor-pointer"
+                                title="Click to adjust low stock limit"
+                              >
+                                <AlertTriangle className="w-3 h-3" /> Low Stock (Limit ≤ {item.lowStockThreshold})
+                              </button>
                             ) : (
-                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
-                                Healthy
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedVariant(item);
+                                  setThresholdValue(item.lowStockThreshold);
+                                  setAdjustModalOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1 rounded-full transition-colors cursor-pointer"
+                                title="Click to adjust low stock limit"
+                              >
+                                Healthy (Limit ≤ {item.lowStockThreshold})
+                              </button>
                             )}
                           </td>
                           <td className="py-4 px-6 text-right">
                             <button
                               onClick={() => {
                                 setSelectedVariant(item);
+                                setThresholdValue(item.lowStockThreshold);
                                 setAdjustModalOpen(true);
                               }}
                               className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-semibold inline-flex items-center gap-1 border border-slate-200 transition-colors"
@@ -379,16 +409,35 @@ export const InventoryPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                  Mandatory Audit Reason
+                  Movement Reason (Required if updating stock quantity)
                 </label>
                 <textarea
-                  required
                   rows={2}
-                  placeholder="e.g. Physical inventory reconciliation / new delivery shipment from factory"
+                  placeholder="e.g. Physical count reconciliation / stock shipment from factory"
                   value={adjustReason}
                   onChange={(e) => setAdjustReason(e.target.value)}
                   className="w-full text-xs p-3 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
                 />
+              </div>
+
+              {/* Low Stock Threshold Limit */}
+              <div className="pt-2 border-t border-slate-200">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Low Stock Warning Threshold Limit (Units)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    value={thresholdValue}
+                    onChange={(e) => setThresholdValue(Math.max(1, Number(e.target.value)))}
+                    className="w-full text-xs px-3.5 py-2 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white font-bold"
+                  />
+                  <span className="text-xs text-slate-500 shrink-0 font-medium">units</span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1 leading-normal">
+                  When available stock drops to or below this number, the system triggers a red Low Stock Warning on the Dashboard and Inventory filters.
+                </p>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">

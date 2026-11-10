@@ -14,5 +14,6 @@ router.use(requireAuth, requireRole('ADMIN', 'STAFF'));
 router.get('/', validate({ query: inventoryQuerySchema }), controller.getInventory);
 router.get('/movements', controller.getMovements);
 router.put('/:variantId', validate({ body: stockAdjustmentSchema }), controller.adjustStock);
+router.patch('/:variantId/threshold', controller.updateThreshold);
 
 export const inventoryRoutes = router;

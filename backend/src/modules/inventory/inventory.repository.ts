@@ -113,4 +113,18 @@ export class InventoryRepository {
       return updated;
     });
   }
+
+  async updateThreshold(variantId: string, lowStockThreshold: number) {
+    const record = await prisma.inventory.findUnique({
+      where: { variantId },
+    });
+    if (!record) {
+      throw new NotFoundError('Inventory record not found for variant');
+    }
+
+    return prisma.inventory.update({
+      where: { variantId },
+      data: { lowStockThreshold },
+    });
+  }
 }
