@@ -15,6 +15,9 @@ import {
   CheckCircle2,
   AlertTriangle,
   ArrowUpDown,
+  UploadCloud,
+  Loader2,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -55,6 +58,9 @@ export const EditProductPage: React.FC = () => {
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [variants, setVariants] = useState<EditVariantForm[]>([]);
   const [specs, setSpecs] = useState<EditSpecForm[]>([]);
+  const [images, setImages] = useState<string[]>([]);
+  const [imageUrl, setImageUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     fetchProductAndMeta();
@@ -103,6 +109,8 @@ export const EditProductPage: React.FC = () => {
           value: s.value,
         })) || []
       );
+
+      setImages(p.images?.map((img) => img.url) || []);
     } catch (err) {
       console.error('Failed to load product details:', err);
       toast.error('Failed to load product details');
@@ -110,6 +118,40 @@ export const EditProductPage: React.FC = () => {
       setIsLoading(false);
     }
   }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append('images', files[i]);
+    }
+
+    try {
+      const res = await api.post('/upload/images', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const uploadedData = res.data?.data;
+      if (Array.isArray(uploadedData)) {
+        const newUrls = uploadedData.map((item: any) => item.url);
+        setImages((prev) => [...prev, ...newUrls]);
+        toast.success(`Successfully uploaded ${newUrls.length} image(s)!`);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to upload images');
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleAddImageUrl = () => {
+    if (!imageUrl.trim()) return;
+    setImages((prev) => [...prev, imageUrl.trim()]);
+    setImageUrl('');
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +174,11 @@ export const EditProductPage: React.FC = () => {
         isFeatured,
         isBestSeller,
         specifications: specs.filter((s) => s.name.trim() && s.value.trim()),
+        images: images.map((url, idx) => ({
+          url,
+          sortOrder: idx,
+          isPrimary: idx === 0,
+        })),
         variants: variants.map((v) => ({
           id: v.id,
           name: v.name,
@@ -741,6 +788,76 @@ export const EditProductPage: React.FC = () => {
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 4. Images */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 lg:p-8 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-amber-600" />
+                  4. Product Photos
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Upload images directly from your device or paste existing image URLs
+                </p>
+              </div>
+              <label className="cursor-pointer px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-amber-200 transition-colors">
+                {isUploading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-700" />
+                ) : (
+                  <UploadCloud className="w-3.5 h-3.5 text-amber-700" />
+                )}
+                <span>{isUploading ? 'Uploading...' : 'Upload Photos'}</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  disabled={isUploading}
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="url"
+                placeholder="Or paste image URL (Cloudinary / CDN / web)..."
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                className="flex-1 text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
+              />
+              <button
+                type="button"
+                onClick={handleAddImageUrl}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl border border-slate-200 transition-colors"
+              >
+                Add URL
+              </button>
+            </div>
+
+            <div className="flex gap-3 flex-wrap">
+              {images.map((img, idx) => (
+                <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-2xs group">
+                  <img src={img} alt="preview" className="w-full h-full object-cover" />
+                  {idx === 0 && (
+                    <span className="absolute bottom-1 left-1 bg-amber-600 text-white text-[9px] font-bold px-1.5 rounded">
+                      Primary
+                    </span>
+                  )}
+                  {images.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setImages(images.filter((_, i) => i !== idx))}
+                      className="absolute top-1 right-1 p-1 bg-black/70 text-white rounded-full hover:bg-rose-600 transition-colors"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

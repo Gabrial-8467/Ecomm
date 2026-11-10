@@ -50,6 +50,7 @@ export const updateProductSchema = z.object({
   isFeatured: z.boolean().optional(),
   isBestSeller: z.boolean().optional(),
   specifications: z.array(specificationSchema).optional(),
+  images: z.array(imageSchema).optional(),
   variants: z
     .array(
       z.object({

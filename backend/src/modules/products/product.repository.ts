@@ -138,9 +138,14 @@ export class ProductRepository {
       include: {
         category: true,
         brand: true,
-        images: { orderBy: { sortOrder: 'asc' } },
+        images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }] },
         variants: { include: { inventory: true } },
         specifications: true,
+        reviews: {
+          where: { isApproved: true },
+          include: { user: { select: { name: true } } },
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
   }
@@ -234,6 +239,19 @@ export class ProductRepository {
         });
       }
 
+      if (data.images) {
+        await tx.productImage.deleteMany({ where: { productId: id } });
+        await tx.productImage.createMany({
+          data: data.images.map((img, idx) => ({
+            productId: id,
+            url: img.url,
+            altText: img.altText || null,
+            sortOrder: img.sortOrder ?? idx,
+            isPrimary: img.isPrimary ?? idx === 0,
+          })),
+        });
+      }
+
       if (data.variants && data.variants.length > 0) {
         for (const v of data.variants) {
           if (v.id) {
@@ -257,7 +275,7 @@ export class ProductRepository {
         }
       }
 
-      const { specifications, variants, ...productFields } = data;
+      const { specifications, variants, images, ...productFields } = data;
       return tx.product.update({
         where: { id },
         data: productFields,

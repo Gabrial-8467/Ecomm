@@ -50,6 +50,7 @@ export interface UpdateProductInput {
   isFeatured?: boolean;
   isBestSeller?: boolean;
   specifications?: SpecificationInput[];
+  images?: ImageInput[];
   variants?: {
     id?: string;
     name: string;

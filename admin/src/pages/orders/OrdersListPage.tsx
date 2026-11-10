@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api/client.js';
 import { Order } from '../../types/index.js';
-import { Search, Phone, Eye } from 'lucide-react';
+import { Search, Phone, Eye, Download } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const OrdersListPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -33,6 +34,54 @@ export const OrdersListPage: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchOrders();
+  };
+
+  const exportOrdersCSV = () => {
+    if (orders.length === 0) {
+      toast.info('No orders available to export');
+      return;
+    }
+
+    const headers = [
+      'Order Number',
+      'Date',
+      'Customer Name',
+      'Customer Phone',
+      'Delivery City',
+      'Pincode',
+      'Items Count',
+      'Total Amount (INR)',
+      'Payment Method',
+      'Payment Status',
+      'Fulfillment Status',
+      'Customer Note & Schedule',
+    ];
+
+    const rows = orders.map((o) => [
+      `"${o.orderNumber}"`,
+      `"${new Date(o.createdAt).toLocaleString('en-IN')}"`,
+      `"${o.deliveryAddress?.fullName || ''}"`,
+      `"${o.customerPhone || ''}"`,
+      `"${o.deliveryAddress?.city || ''}"`,
+      `"${o.deliveryAddress?.pincode || ''}"`,
+      o.items?.length || 0,
+      Number(o.totalAmount),
+      `"${o.paymentMethod || 'COD'}"`,
+      `"${o.paymentStatus}"`,
+      `"${o.status}"`,
+      `"${(o.customerNote || '').replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      encodeURIComponent([headers.join(','), ...rows.map((e) => e.join(','))].join('\n'));
+    const link = document.createElement('a');
+    link.setAttribute('href', csvContent);
+    link.setAttribute('download', `orders-export-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`Exported ${orders.length} orders to CSV`);
   };
 
   const getStatusBadge = (status: Order['status']) => {
@@ -81,6 +130,14 @@ export const OrdersListPage: React.FC = () => {
             Review customer orders, phone-confirm schedules, and update local dispatch status
           </p>
         </div>
+        <button
+          type="button"
+          onClick={exportOrdersCSV}
+          className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 self-start sm:self-auto"
+        >
+          <Download className="w-4 h-4 text-slate-500" />
+          <span>Export Orders CSV</span>
+        </button>
       </div>
 
       {/* Filter / Search Bar */}

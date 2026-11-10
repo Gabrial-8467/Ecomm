@@ -7,6 +7,8 @@ import { CartPage } from '../pages/cart/CartPage.js';
 import { CheckoutPage } from '../pages/checkout/CheckoutPage.js';
 import { OrderSuccessPage } from '../pages/orders/OrderSuccessPage.js';
 import { MyOrdersPage } from '../pages/orders/MyOrdersPage.js';
+import { WishlistPage } from '../pages/wishlist/WishlistPage.js';
+import { AccountPage } from '../pages/account/AccountPage.js';
 import { LoginPage } from '../pages/auth/LoginPage.js';
 import { RegisterPage } from '../pages/auth/RegisterPage.js';
 
@@ -18,6 +20,8 @@ export const AppRoutes: React.FC = () => {
       <Route path="/products/:slug" element={<ProductDetailPage />} />
       <Route path="/cart" element={<CartPage />} />
       <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/wishlist" element={<WishlistPage />} />
+      <Route path="/account" element={<AccountPage />} />
       <Route path="/orders/:orderNumber" element={<OrderSuccessPage />} />
       <Route path="/orders" element={<MyOrdersPage />} />
       <Route path="/login" element={<LoginPage />} />

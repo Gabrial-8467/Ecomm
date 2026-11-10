@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../../services/api/client.js';
 import { Category, Brand } from '../../types/index.js';
-import { Plus, Trash2, ArrowLeft, Layers, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, Layers, Image as ImageIcon, UploadCloud, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface VariantForm {
@@ -39,9 +39,38 @@ export const CreateProductPage: React.FC = () => {
 
   // Images
   const [imageUrl, setImageUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const [images, setImages] = useState<string[]>([
     'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
   ]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append('images', files[i]);
+    }
+
+    try {
+      const res = await api.post('/upload/images', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const uploadedData = res.data?.data;
+      if (Array.isArray(uploadedData)) {
+        const newUrls = uploadedData.map((item: any) => item.url);
+        setImages((prev) => [...prev, ...newUrls]);
+        toast.success(`Successfully uploaded ${newUrls.length} image(s)!`);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to upload images');
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
 
   // Variants (at least one is required)
   const [variants, setVariants] = useState<VariantForm[]>([
@@ -513,15 +542,38 @@ export const CreateProductPage: React.FC = () => {
 
         {/* 4. Images */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs">
-          <h2 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-100 flex items-center gap-2">
-            <ImageIcon className="w-4 h-4 text-amber-600" />
-            4. Product Photos
-          </h2>
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-amber-600" />
+                4. Product Photos
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Upload images directly from your device or paste existing image URLs
+              </p>
+            </div>
+            <label className="cursor-pointer px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-amber-200 transition-colors">
+              {isUploading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-700" />
+              ) : (
+                <UploadCloud className="w-3.5 h-3.5 text-amber-700" />
+              )}
+              <span>{isUploading ? 'Uploading...' : 'Upload Photos'}</span>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                disabled={isUploading}
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </label>
+          </div>
 
           <div className="flex gap-2">
             <input
               type="url"
-              placeholder="Paste Cloudinary or web image URL..."
+              placeholder="Or paste image URL (Cloudinary / CDN / web)..."
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
               className="flex-1 text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
@@ -537,7 +589,7 @@ export const CreateProductPage: React.FC = () => {
 
           <div className="flex gap-3 flex-wrap">
             {images.map((img, idx) => (
-              <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-2xs">
+              <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-2xs group">
                 <img src={img} alt="preview" className="w-full h-full object-cover" />
                 {idx === 0 && (
                   <span className="absolute bottom-1 left-1 bg-amber-600 text-white text-[9px] font-bold px-1.5 rounded">
@@ -548,7 +600,7 @@ export const CreateProductPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setImages(images.filter((_, i) => i !== idx))}
-                    className="absolute top-1 right-1 p-1 bg-black/70 text-white rounded-full hover:bg-rose-600"
+                    className="absolute top-1 right-1 p-1 bg-black/70 text-white rounded-full hover:bg-rose-600 transition-colors"
                   >
                     ✕
                   </button>

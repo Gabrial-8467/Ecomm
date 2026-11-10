@@ -11,6 +11,7 @@ import {
   Phone,
   AlertTriangle,
   History,
+  Wrench,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -291,9 +292,17 @@ export const OrderDetailPage: React.FC = () => {
             </div>
 
             {order.customerNote && (
-              <div className="pt-3 border-t border-slate-100">
-                <span className="text-[10px] font-bold uppercase text-slate-500">Customer Note:</span>
-                <p className="text-xs text-amber-900 bg-amber-50/60 p-2.5 rounded-xl border border-amber-200/50 mt-1 italic">
+              <div className="pt-3 border-t border-slate-100 space-y-2">
+                <span className="text-[10px] font-bold uppercase text-slate-500">
+                  Customer Delivery Preferences & Notes:
+                </span>
+                {order.customerNote.includes('Free Assembly: YES') && (
+                  <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-bold">
+                    <Wrench className="w-3.5 h-3.5" />
+                    <span>Free Room Assembly & Setup Requested</span>
+                  </div>
+                )}
+                <p className="text-xs text-amber-900 bg-amber-50/70 p-2.5 rounded-xl border border-amber-200/60 mt-1 font-medium">
                   "{order.customerNote}"
                 </p>
               </div>

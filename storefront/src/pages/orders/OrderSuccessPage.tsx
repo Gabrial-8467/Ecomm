@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../../services/api/client.js';
 import { Order } from '../../types/index.js';
-import { CheckCircle2, Clock, Truck, Package, XCircle, ArrowRight, ShieldCheck, MapPin } from 'lucide-react';
+import { CheckCircle2, Clock, Truck, Package, XCircle, ArrowRight, ShieldCheck, MapPin, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 
 const STATUS_STEPS = [
@@ -229,9 +229,17 @@ export const OrderSuccessPage: React.FC = () => {
             </div>
 
             {order.customerNote && (
-              <div className="pt-3 border-t border-stone-100">
-                <p className="text-[11px] font-bold text-stone-500 uppercase">Customer Note:</p>
-                <p className="text-xs text-stone-700 italic mt-0.5">{order.customerNote}</p>
+              <div className="pt-3 border-t border-stone-100 space-y-1.5">
+                <p className="text-[11px] font-bold text-stone-500 uppercase">Delivery Schedule & Notes:</p>
+                {order.customerNote.includes('Free Assembly: YES') && (
+                  <div className="flex items-center gap-1.5 p-2 bg-emerald-50 text-emerald-800 rounded-lg text-xs font-semibold border border-emerald-200">
+                    <Wrench className="w-3.5 h-3.5" />
+                    <span>Free Technician Assembly Confirmed</span>
+                  </div>
+                )}
+                <p className="text-xs text-stone-700 italic mt-0.5 bg-stone-50 p-2.5 rounded-xl border border-stone-200">
+                  {order.customerNote}
+                </p>
               </div>
             )}
           </div>

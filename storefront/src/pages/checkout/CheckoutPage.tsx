@@ -4,7 +4,7 @@ import { api } from '../../services/api/client.js';
 import { useCartStore } from '../../store/cartStore.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { Address, DeliveryCheckResult } from '../../types/index.js';
-import { Truck, CheckCircle2, ShieldCheck, Tag, Plus, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Truck, CheckCircle2, ShieldCheck, Tag, Plus, AlertCircle, ArrowLeft, Calendar, Clock, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const CheckoutPage: React.FC = () => {
@@ -31,6 +31,19 @@ export const CheckoutPage: React.FC = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
   const [customerNote, setCustomerNote] = useState('');
   const [deliveryInfo, setDeliveryInfo] = useState<DeliveryCheckResult | null>(null);
+
+  // Preferred Delivery & Assembly
+  const availableDates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i + 1);
+    return {
+      iso: d.toISOString().split('T')[0],
+      label: d.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' }),
+    };
+  });
+  const [selectedDate, setSelectedDate] = useState(availableDates[0].label);
+  const [selectedSlot, setSelectedSlot] = useState('Morning (10:00 AM – 01:00 PM)');
+  const [assemblyRequired, setAssemblyRequired] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
@@ -134,12 +147,20 @@ export const CheckoutPage: React.FC = () => {
       // Idempotency-Key generation (prevents duplicate orders upon network retries)
       const idempotencyKey = 'key_' + Math.random().toString(36).substring(2) + Date.now();
 
+      const structuredNote = [
+        `Preferred Slot: ${selectedDate} [${selectedSlot}]`,
+        assemblyRequired ? 'Free Assembly: YES (Technician Requested)' : 'Free Assembly: NO',
+        customerNote.trim() ? `Instructions: ${customerNote.trim()}` : '',
+      ]
+        .filter(Boolean)
+        .join(' | ');
+
       const response = await api.post(
         '/orders',
         {
           deliveryAddressId: selectedAddressId,
           couponCode: appliedCoupon?.code,
-          customerNote,
+          customerNote: structuredNote,
         },
         {
           headers: {
@@ -386,10 +407,97 @@ export const CheckoutPage: React.FC = () => {
             )}
           </div>
 
-          {/* 2. Payment Method: Cash on Delivery */}
+          {/* 2. Preferred Delivery Slot & Assembly Service */}
+          <div className="bg-white rounded-2xl border border-stone-200/80 p-6 space-y-5 shadow-xs">
+            <div className="pb-3 border-b border-stone-100 flex items-center justify-between">
+              <div>
+                <h2 className="font-serif text-lg font-bold text-stone-900 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-amber-800" />
+                  2. Delivery Schedule & Installation
+                </h2>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Select your preferred local showroom delivery day and time window
+                </p>
+              </div>
+            </div>
+
+            {/* Date selection */}
+            <div>
+              <label className="block text-xs font-bold uppercase text-stone-700 mb-2">
+                Preferred Delivery Date
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {availableDates.map((item) => (
+                  <button
+                    key={item.iso}
+                    type="button"
+                    onClick={() => setSelectedDate(item.label)}
+                    className={`p-2.5 rounded-xl border text-center transition-all ${
+                      selectedDate === item.label
+                        ? 'border-amber-800 bg-amber-50 text-amber-900 font-bold shadow-xs'
+                        : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
+                    }`}
+                  >
+                    <span className="text-xs block">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Time Slot Selection */}
+            <div>
+              <label className="block text-xs font-bold uppercase text-stone-700 mb-2 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-stone-500" />
+                Delivery Time Slot
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {[
+                  'Morning (10:00 AM – 01:00 PM)',
+                  'Afternoon (01:00 PM – 05:00 PM)',
+                  'Evening (05:00 PM – 08:00 PM)',
+                ].map((slot) => (
+                  <button
+                    key={slot}
+                    type="button"
+                    onClick={() => setSelectedSlot(slot)}
+                    className={`p-2.5 rounded-xl border text-center transition-all ${
+                      selectedSlot === slot
+                        ? 'border-amber-800 bg-amber-50 text-amber-900 font-bold shadow-xs'
+                        : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
+                    }`}
+                  >
+                    <span className="text-xs block">{slot}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Assembly & Installation Checkbox */}
+            <div className="p-4 rounded-xl bg-stone-50 border border-stone-200/80">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={assemblyRequired}
+                  onChange={(e) => setAssemblyRequired(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-stone-300 text-amber-800 focus:ring-amber-800"
+                />
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                    <Wrench className="w-3.5 h-3.5 text-amber-800" />
+                    Complimentary Technician Assembly & Room Placement
+                  </span>
+                  <p className="text-[11px] text-stone-600 leading-relaxed">
+                    Our local logistics technicians will unbox, assemble, and set up your furniture or electronic appliance in your room of choice at no extra charge.
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* 3. Payment Method: Cash on Delivery */}
           <div className="bg-white rounded-2xl border border-stone-200/80 p-6 space-y-4 shadow-xs">
             <h2 className="font-serif text-lg font-bold text-stone-900 pb-3 border-b border-stone-100">
-              2. Payment Method
+              3. Payment Method
             </h2>
 
             <div className="p-4 rounded-xl border-2 border-amber-800 bg-amber-50/50 flex items-start gap-3">
@@ -403,10 +511,10 @@ export const CheckoutPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Delivery Instructions & Notes */}
+          {/* 4. Delivery Instructions & Notes */}
           <div className="bg-white rounded-2xl border border-stone-200/80 p-6 space-y-3 shadow-xs">
             <h2 className="font-serif text-base font-bold text-stone-900">
-              3. Special Delivery Instructions (Optional)
+              4. Additional Delivery Instructions (Optional)
             </h2>
             <textarea
               placeholder="e.g. Please call 15 minutes before arrival. 2nd floor flat, elevator available."

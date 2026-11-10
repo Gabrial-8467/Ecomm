@@ -11,6 +11,8 @@ import { orderRoutes } from '../modules/orders/order.routes.js';
 import { couponRoutes } from '../modules/coupons/coupon.routes.js';
 import { customerRoutes } from '../modules/customers/customer.routes.js';
 import { dashboardRoutes } from '../modules/dashboard/dashboard.routes.js';
+import { uploadRouter } from '../modules/upload/upload.routes.js';
+import { reviewRoutes } from '../modules/reviews/review.routes.js';
 
 const apiRouter = Router();
 
@@ -26,5 +28,7 @@ apiRouter.use('/orders', orderRoutes);
 apiRouter.use('/coupons', couponRoutes);
 apiRouter.use('/customers', customerRoutes);
 apiRouter.use('/admin/dashboard', dashboardRoutes);
+apiRouter.use('/upload', uploadRouter);
+apiRouter.use('/reviews', reviewRoutes);
 
 export { apiRouter };

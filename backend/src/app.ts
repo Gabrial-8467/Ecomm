@@ -1,4 +1,5 @@
 import express, { Express, Request, Response } from 'express';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -57,6 +58,9 @@ app.use(
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(cookieParser());
+
+// Static files for uploads fallback
+app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
 // Rate Limiter for general endpoints
 app.use('/api', apiLimiter);

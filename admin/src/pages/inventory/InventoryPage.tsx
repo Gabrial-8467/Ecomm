@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api/client.js';
 import { InventoryItem, InventoryMovement } from '../../types/index.js';
-import { Search, AlertTriangle, ArrowUpDown, History } from 'lucide-react';
+import { Search, AlertTriangle, ArrowUpDown, History, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const InventoryPage: React.FC = () => {
@@ -73,6 +73,52 @@ export const InventoryPage: React.FC = () => {
     }
   };
 
+  const exportStockCSV = () => {
+    if (items.length === 0) {
+      toast.info('No inventory items to export');
+      return;
+    }
+
+    const headers = [
+      'Product Name',
+      'Variant Name',
+      'SKU',
+      'Unit Price (INR)',
+      'Available Stock',
+      'Reserved Stock',
+      'Low Stock Limit',
+      'Stock Status',
+    ];
+
+    const rows = items.map((item) => {
+      const isLow = item.availableQuantity <= item.lowStockThreshold;
+      const isOut = item.availableQuantity <= 0;
+      const status = isOut ? 'OUT OF STOCK' : isLow ? 'LOW STOCK ALERT' : 'HEALTHY';
+
+      return [
+        `"${item.variant?.product?.name || ''}"`,
+        `"${item.variant?.name || ''}"`,
+        `"${item.variant?.sku || ''}"`,
+        Number(item.variant?.price || 0),
+        item.availableQuantity,
+        item.reservedQuantity,
+        item.lowStockThreshold,
+        `"${status}"`,
+      ];
+    });
+
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      encodeURIComponent([headers.join(','), ...rows.map((e) => e.join(','))].join('\n'));
+    const link = document.createElement('a');
+    link.setAttribute('href', csvContent);
+    link.setAttribute('download', `inventory-stock-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`Exported ${items.length} inventory records to CSV`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Title */}
@@ -84,29 +130,40 @@ export const InventoryPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Tab switch */}
-        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+        {/* Right Actions: Export & Tab switch */}
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setActiveTab('stock')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeTab === 'stock'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            type="button"
+            onClick={exportStockCSV}
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
           >
-            Live Stock Table
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span>Export CSV</span>
           </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              activeTab === 'history'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Audit Movements ({movements.length})</span>
-          </button>
+
+          <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button
+              onClick={() => setActiveTab('stock')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'stock'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Live Stock Table
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                activeTab === 'history'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Audit Movements ({movements.length})</span>
+            </button>
+          </div>
         </div>
       </div>
 
