@@ -269,94 +269,6 @@ export const HomePage: React.FC = () => {
             </>
           )}
         </div>
-
-        {/* Live Showroom Performance Stats Bar */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-          <div className="p-4 bg-white rounded-2xl border border-neutral-200/80 flex items-center gap-3 shadow-2xs">
-            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 shrink-0 font-bold">
-              450+
-            </div>
-            <div>
-              <p className="font-semibold text-neutral-900">Designs in Stock</p>
-              <p className="text-[11px] text-neutral-400">Ready in Mohali warehouse</p>
-            </div>
-          </div>
-
-          <div className="p-4 bg-white rounded-2xl border border-neutral-200/80 flex items-center gap-3 shadow-2xs">
-            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 shrink-0">
-              <Truck className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="font-semibold text-neutral-900">24-48 Hr Fleet Delivery</p>
-              <p className="text-[11px] text-neutral-400">Direct dedicated van dispatch</p>
-            </div>
-          </div>
-
-          <div className="p-4 bg-white rounded-2xl border border-neutral-200/80 flex items-center gap-3 shadow-2xs">
-            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 shrink-0">
-              <Wrench className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="font-semibold text-neutral-900">Complimentary Setup</p>
-              <p className="text-[11px] text-neutral-400">Room-of-choice technician assembly</p>
-            </div>
-          </div>
-
-          <div className="p-4 bg-white rounded-2xl border border-neutral-200/80 flex items-center gap-3 shadow-2xs">
-            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 shrink-0">
-              <PackageCheck className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="font-semibold text-neutral-900">Inspect Before Paying</p>
-              <p className="text-[11px] text-neutral-400">Cash on Delivery &amp; UPI supported</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. Showroom Trust Pillars */}
-      <section className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white border border-neutral-200/70 p-6 rounded-2xl space-y-2 shadow-2xs hover:border-neutral-400/80 transition-all">
-            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 mb-3">
-              <Truck className="w-4 h-4" strokeWidth={1.5} />
-            </div>
-            <h3 className="font-semibold text-neutral-950 text-sm tracking-tight">Direct Local Delivery</h3>
-            <p className="text-neutral-500 text-xs leading-relaxed">
-              Showroom vehicle dispatch across Mohali, Chandigarh &amp; Panchkula. No parcel transit damage.
-            </p>
-          </div>
-
-          <div className="bg-white border border-neutral-200/70 p-6 rounded-2xl space-y-2 shadow-2xs hover:border-neutral-400/80 transition-all">
-            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 mb-3">
-              <CheckCircle2 className="w-4 h-4" strokeWidth={1.5} />
-            </div>
-            <h3 className="font-semibold text-neutral-950 text-sm tracking-tight">Inspect on Delivery (COD)</h3>
-            <p className="text-neutral-500 text-xs leading-relaxed">
-              Check the solid wood finish and fitment at your doorstep before completing payment.
-            </p>
-          </div>
-
-          <div className="bg-white border border-neutral-200/70 p-6 rounded-2xl space-y-2 shadow-2xs hover:border-neutral-400/80 transition-all">
-            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 mb-3">
-              <ShieldCheck className="w-4 h-4" strokeWidth={1.5} />
-            </div>
-            <h3 className="font-semibold text-neutral-950 text-sm tracking-tight">Authorised Brand Warranties</h3>
-            <p className="text-neutral-500 text-xs leading-relaxed">
-              Genuine manufacturer stamped warranty on Samsung, LG, Godrej and 5-year solid wood guarantee.
-            </p>
-          </div>
-
-          <div className="bg-white border border-neutral-200/70 p-6 rounded-2xl space-y-2 shadow-2xs hover:border-neutral-400/80 transition-all">
-            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 mb-3">
-              <MapPin className="w-4 h-4" strokeWidth={1.5} />
-            </div>
-            <h3 className="font-semibold text-neutral-950 text-sm tracking-tight">Physical Showroom</h3>
-            <p className="text-neutral-500 text-xs leading-relaxed">
-              Experience the pieces in person at SCO 45-48, Sector 70, Mohali. Open daily 10:00 – 21:00.
-            </p>
-          </div>
-        </div>
       </section>
 
       {/* 3. Shop By Department */}
@@ -645,41 +557,6 @@ export const HomePage: React.FC = () => {
               </Link>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* 7. Authorized Brand Partners Marquee */}
-      <section className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 space-y-6">
-        <div className="text-center space-y-1">
-          <span className="text-[10px] uppercase font-semibold tracking-[0.25em] text-neutral-400">
-            Dealer Authorization
-          </span>
-          <h2 className="text-xl sm:text-2xl font-semibold text-neutral-950 tracking-tight">
-            Official Brand Partners &amp; Makers
-          </h2>
-          <p className="text-neutral-500 text-xs">
-            Every electronic appliance includes stamped manufacturer warranty cards.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-          {[
-            { name: 'Samsung', desc: 'Authorised Dealer' },
-            { name: 'LG Electronics', desc: 'Inverter Air & Care' },
-            { name: 'Godrej Interio', desc: 'Certified Partner' },
-            { name: 'Whirlpool', desc: 'Protton Refrigeration' },
-            { name: 'Sleepwell', desc: 'Orthopedic Sleep' },
-            { name: 'UrbanTeak', desc: 'Heritage Carpentry' },
-            { name: 'Haier', desc: 'Smart Living' },
-          ].map((brand) => (
-            <div
-              key={brand.name}
-              className="p-5 rounded-2xl bg-white border border-neutral-200/80 text-center space-y-1 shadow-2xs hover:border-neutral-900 transition-colors"
-            >
-              <p className="font-semibold text-neutral-950 text-sm tracking-tight">{brand.name}</p>
-              <p className="text-[10px] text-neutral-400 uppercase tracking-wider">{brand.desc}</p>
-            </div>
-          ))}
         </div>
       </section>
 
