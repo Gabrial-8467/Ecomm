@@ -172,12 +172,12 @@ export const CreateProductPage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
       <div className="flex items-center gap-4">
-        <Link to="/products" className="p-2 text-slate-400 hover:text-white rounded-lg">
+        <Link to="/products" className="p-2 text-slate-500 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Create Showroom Product</h1>
-          <p className="text-xs text-slate-400">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Create Showroom Product</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
             Define product specifications, variants, and initial physical inventory
           </p>
         </div>
@@ -185,13 +185,13 @@ export const CreateProductPage: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* 1. Basic Information */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs">
-          <h2 className="text-base font-bold text-white pb-3 border-b border-slate-800">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs">
+          <h2 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-100">
             1. Basic Information
           </h2>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
               Product Title
             </label>
             <input
@@ -200,19 +200,19 @@ export const CreateProductPage: React.FC = () => {
               placeholder="e.g. Royal 3-Door Solid Wood Wardrobe Almirah"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full text-sm px-4 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full text-sm px-4 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 focus:bg-white transition-all"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Category
               </label>
               <select
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full text-sm px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               >
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -223,11 +223,11 @@ export const CreateProductPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Brand</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Brand</label>
               <select
                 value={brandId}
                 onChange={(e) => setBrandId(e.target.value)}
-                className="w-full text-sm px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               >
                 <option value="">Showroom Handcrafted / In-House</option>
                 {brands.map((b) => (
@@ -240,7 +240,7 @@ export const CreateProductPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
               Short Description (Card Subtitle)
             </label>
             <input
@@ -248,12 +248,12 @@ export const CreateProductPage: React.FC = () => {
               placeholder="Brief highlighted benefit (e.g. 5-Star AI Inverter with 100% Copper Condenser)"
               value={shortDescription}
               onChange={(e) => setShortDescription(e.target.value)}
-              className="w-full text-sm px-4 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full text-sm px-4 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 focus:bg-white transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
               Detailed Description
             </label>
             <textarea
@@ -261,27 +261,27 @@ export const CreateProductPage: React.FC = () => {
               placeholder="Full showroom product overview, craftsmanship, dimensions and details..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full text-sm p-3 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full text-sm p-3 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 focus:bg-white transition-all"
             />
           </div>
 
           <div className="flex gap-6 pt-2">
-            <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+            <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isFeatured}
                 onChange={(e) => setIsFeatured(e.target.checked)}
-                className="w-4 h-4 rounded text-amber-600 bg-slate-800 border-slate-700"
+                className="w-4 h-4 rounded text-amber-600 border-slate-300 focus:ring-amber-500"
               />
               Mark as Featured Product
             </label>
 
-            <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+            <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isBestSeller}
                 onChange={(e) => setIsBestSeller(e.target.checked)}
-                className="w-4 h-4 rounded text-amber-600 bg-slate-800 border-slate-700"
+                className="w-4 h-4 rounded text-amber-600 border-slate-300 focus:ring-amber-500"
               />
               Mark as Best Seller
             </label>
@@ -289,21 +289,21 @@ export const CreateProductPage: React.FC = () => {
         </div>
 
         {/* 2. Variants & Inventory (Mandatory) */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Layers className="w-4 h-4 text-amber-500" />
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-amber-600" />
                 2. Product Variants & Physical Inventory
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Each option has an independent SKU, price, and tracked stock quantity
               </p>
             </div>
             <button
               type="button"
               onClick={handleAddVariant}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-700"
+              className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-amber-200 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" /> Add Variant
             </button>
@@ -313,17 +313,17 @@ export const CreateProductPage: React.FC = () => {
             {variants.map((v, idx) => (
               <div
                 key={idx}
-                className="p-4 bg-slate-800/60 rounded-xl border border-slate-700/60 space-y-3"
+                className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-3"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-amber-400 uppercase">
+                  <span className="text-xs font-bold text-amber-800 uppercase">
                     Variant #{idx + 1}
                   </span>
                   {variants.length > 1 && (
                     <button
                       type="button"
                       onClick={() => handleRemoveVariant(idx)}
-                      className="text-slate-500 hover:text-rose-400 p-1"
+                      className="text-slate-400 hover:text-rose-600 p-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -332,7 +332,7 @@ export const CreateProductPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                    <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
                       Variant Name
                     </label>
                     <input
@@ -345,12 +345,12 @@ export const CreateProductPage: React.FC = () => {
                         copy[idx].name = e.target.value;
                         setVariants(copy);
                       }}
-                      className="w-full text-xs px-3 py-2 bg-slate-900 border border-slate-700 text-white rounded-lg focus:outline-none"
+                      className="w-full text-xs px-3 py-2 bg-white border border-slate-300 text-slate-900 rounded-lg focus:outline-none focus:border-amber-600"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                    <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
                       SKU (Unique Identifier)
                     </label>
                     <input
@@ -363,12 +363,12 @@ export const CreateProductPage: React.FC = () => {
                         copy[idx].sku = e.target.value.toUpperCase();
                         setVariants(copy);
                       }}
-                      className="w-full text-xs px-3 py-2 bg-slate-900 border border-slate-700 text-white rounded-lg focus:outline-none font-mono"
+                      className="w-full text-xs px-3 py-2 bg-white border border-slate-300 text-slate-900 rounded-lg focus:outline-none focus:border-amber-600 font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                    <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
                       Selling Price (₹)
                     </label>
                     <input
@@ -381,14 +381,14 @@ export const CreateProductPage: React.FC = () => {
                         copy[idx].price = Number(e.target.value);
                         setVariants(copy);
                       }}
-                      className="w-full text-xs px-3 py-2 bg-slate-900 border border-slate-700 text-white rounded-lg focus:outline-none"
+                      className="w-full text-xs px-3 py-2 bg-white border border-slate-300 text-slate-900 rounded-lg focus:outline-none focus:border-amber-600"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                    <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
                       Compare Price (₹)
                     </label>
                     <input
@@ -400,12 +400,12 @@ export const CreateProductPage: React.FC = () => {
                         copy[idx].compareAtPrice = e.target.value ? Number(e.target.value) : undefined;
                         setVariants(copy);
                       }}
-                      className="w-full text-xs px-3 py-2 bg-slate-900 border border-slate-700 text-white rounded-lg focus:outline-none"
+                      className="w-full text-xs px-3 py-2 bg-white border border-slate-300 text-slate-900 rounded-lg focus:outline-none focus:border-amber-600"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                    <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
                       Initial Physical Stock
                     </label>
                     <input
@@ -418,12 +418,12 @@ export const CreateProductPage: React.FC = () => {
                         copy[idx].initialStock = Number(e.target.value);
                         setVariants(copy);
                       }}
-                      className="w-full text-xs px-3 py-2 bg-slate-900 border border-slate-700 text-white rounded-lg focus:outline-none"
+                      className="w-full text-xs px-3 py-2 bg-white border border-slate-300 text-slate-900 rounded-lg focus:outline-none focus:border-amber-600"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                    <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
                       Low Stock Threshold
                     </label>
                     <input
@@ -436,7 +436,7 @@ export const CreateProductPage: React.FC = () => {
                         copy[idx].lowStockThreshold = Number(e.target.value);
                         setVariants(copy);
                       }}
-                      className="w-full text-xs px-3 py-2 bg-slate-900 border border-slate-700 text-white rounded-lg focus:outline-none"
+                      className="w-full text-xs px-3 py-2 bg-white border border-slate-300 text-slate-900 rounded-lg focus:outline-none focus:border-amber-600"
                     />
                   </div>
                 </div>
@@ -446,18 +446,18 @@ export const CreateProductPage: React.FC = () => {
         </div>
 
         {/* 3. Dynamic Specifications */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <h2 className="text-base font-bold text-white">3. Dynamic Key-Value Specifications</h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <h2 className="text-base font-bold text-slate-900">3. Dynamic Key-Value Specifications</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
                 Add dimensions, wood type, BEE energy stars, warranty terms
               </p>
             </div>
             <button
               type="button"
               onClick={handleAddSpec}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-700"
+              className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-amber-200 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" /> Add Spec
             </button>
@@ -475,7 +475,7 @@ export const CreateProductPage: React.FC = () => {
                     copy[idx].groupName = e.target.value;
                     setSpecs(copy);
                   }}
-                  className="w-1/3 text-xs px-3 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none"
+                  className="w-1/3 text-xs px-3 py-2 bg-slate-50 border border-slate-300 text-slate-900 rounded-lg focus:outline-none focus:border-amber-600 focus:bg-white"
                 />
                 <input
                   type="text"
@@ -486,7 +486,7 @@ export const CreateProductPage: React.FC = () => {
                     copy[idx].name = e.target.value;
                     setSpecs(copy);
                   }}
-                  className="w-1/3 text-xs px-3 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none"
+                  className="w-1/3 text-xs px-3 py-2 bg-slate-50 border border-slate-300 text-slate-900 rounded-lg focus:outline-none focus:border-amber-600 focus:bg-white"
                 />
                 <input
                   type="text"
@@ -497,12 +497,12 @@ export const CreateProductPage: React.FC = () => {
                     copy[idx].value = e.target.value;
                     setSpecs(copy);
                   }}
-                  className="w-1/3 text-xs px-3 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none"
+                  className="w-1/3 text-xs px-3 py-2 bg-slate-50 border border-slate-300 text-slate-900 rounded-lg focus:outline-none focus:border-amber-600 focus:bg-white"
                 />
                 <button
                   type="button"
                   onClick={() => handleRemoveSpec(idx)}
-                  className="p-1.5 text-slate-500 hover:text-rose-400"
+                  className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -512,9 +512,9 @@ export const CreateProductPage: React.FC = () => {
         </div>
 
         {/* 4. Images */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs">
-          <h2 className="text-base font-bold text-white pb-3 border-b border-slate-800 flex items-center gap-2">
-            <ImageIcon className="w-4 h-4 text-amber-500" />
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs">
+          <h2 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-100 flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-amber-600" />
             4. Product Photos
           </h2>
 
@@ -524,12 +524,12 @@ export const CreateProductPage: React.FC = () => {
               placeholder="Paste Cloudinary or web image URL..."
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              className="flex-1 text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+              className="flex-1 text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
             />
             <button
               type="button"
               onClick={handleAddImage}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl border border-slate-700"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl border border-slate-200 transition-colors"
             >
               Add URL
             </button>
@@ -537,7 +537,7 @@ export const CreateProductPage: React.FC = () => {
 
           <div className="flex gap-3 flex-wrap">
             {images.map((img, idx) => (
-              <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-700">
+              <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-2xs">
                 <img src={img} alt="preview" className="w-full h-full object-cover" />
                 {idx === 0 && (
                   <span className="absolute bottom-1 left-1 bg-amber-600 text-white text-[9px] font-bold px-1.5 rounded">
@@ -561,7 +561,7 @@ export const CreateProductPage: React.FC = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-4 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-sm transition-all shadow-md disabled:opacity-50"
+          className="w-full py-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-sm transition-all shadow-xs disabled:opacity-50"
         >
           {isSubmitting ? 'Creating Product & Initializing Stock...' : 'Save & Publish Product'}
         </button>

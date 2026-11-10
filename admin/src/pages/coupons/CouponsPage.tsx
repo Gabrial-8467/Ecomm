@@ -73,8 +73,8 @@ export const CouponsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Coupons & Promotions</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Coupons & Promotions</h1>
+          <p className="text-xs text-slate-500 mt-1">
             Create percentage or flat discount promo codes for showroom marketing
           </p>
         </div>
@@ -82,7 +82,7 @@ export const CouponsPage: React.FC = () => {
         {!isAdding && (
           <button
             onClick={() => setIsAdding(true)}
-            className="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 w-fit"
+            className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 w-fit"
           >
             <Plus className="w-4 h-4" />
             <span>Create Promo Coupon</span>
@@ -91,14 +91,14 @@ export const CouponsPage: React.FC = () => {
       </div>
 
       {isAdding && (
-        <form onSubmit={handleCreate} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs">
-          <h2 className="text-base font-bold text-white pb-3 border-b border-slate-800">
+        <form onSubmit={handleCreate} className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs">
+          <h2 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-100">
             New Promo Code
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Coupon Code
               </label>
               <input
@@ -107,24 +107,24 @@ export const CouponsPage: React.FC = () => {
                 placeholder="e.g. FESTIVAL15"
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none font-mono"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white font-mono"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Discount Type
               </label>
               <select
                 value={discountType}
                 onChange={(e) => setDiscountType(e.target.value as any)}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               >
                 <option value="PERCENTAGE">Percentage (%)</option>
                 <option value="FIXED">Flat Discount (₹)</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Discount Value
               </label>
               <input
@@ -133,13 +133,13 @@ export const CouponsPage: React.FC = () => {
                 min={1}
                 value={discountValue}
                 onChange={(e) => setDiscountValue(Number(e.target.value))}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
               Description (Customer Facing)
             </label>
             <input
@@ -147,13 +147,13 @@ export const CouponsPage: React.FC = () => {
               placeholder="e.g. 15% off on your living room furniture order"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+              className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Min Cart Value (₹)
               </label>
               <input
@@ -161,11 +161,11 @@ export const CouponsPage: React.FC = () => {
                 min={0}
                 value={minimumOrder}
                 onChange={(e) => setMinimumOrder(Number(e.target.value))}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Max Cap Discount (₹)
               </label>
               <input
@@ -173,11 +173,11 @@ export const CouponsPage: React.FC = () => {
                 placeholder="Optional"
                 value={maximumDiscount || ''}
                 onChange={(e) => setMaximumDiscount(e.target.value ? Number(e.target.value) : undefined)}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Usage Limit
               </label>
               <input
@@ -185,7 +185,7 @@ export const CouponsPage: React.FC = () => {
                 min={1}
                 value={usageLimit}
                 onChange={(e) => setUsageLimit(Number(e.target.value))}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               />
             </div>
           </div>
@@ -194,13 +194,13 @@ export const CouponsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsAdding(false)}
-              className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-medium"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold"
+              className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
             >
               Save Coupon
             </button>
@@ -211,36 +211,37 @@ export const CouponsPage: React.FC = () => {
       {/* Coupons Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {coupons.map((coupon) => (
-          <div key={coupon.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs">
+          <div key={coupon.id} className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs">
             <div className="flex items-start justify-between">
               <div>
-                <span className="font-mono font-bold text-amber-400 text-lg flex items-center gap-2">
-                  <TicketPercent className="w-5 h-5 text-amber-500" />
+                <span className="font-mono font-bold text-amber-800 text-lg flex items-center gap-2">
+                  <TicketPercent className="w-5 h-5 text-amber-600" />
                   {coupon.code}
                 </span>
-                <p className="text-xs text-slate-300 mt-1">{coupon.description || 'General discount'}</p>
+                <p className="text-xs text-slate-600 mt-1">{coupon.description || 'General discount'}</p>
               </div>
               <button
                 onClick={() => handleDelete(coupon.id, coupon.code)}
-                className="p-1.5 text-slate-500 hover:text-rose-400"
+                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                title="Delete Coupon"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="text-xs text-slate-400 space-y-1">
+            <div className="text-xs text-slate-600 space-y-1.5 pt-2 border-t border-slate-100">
               <p>
                 Discount:{' '}
-                <strong className="text-white">
+                <strong className="text-slate-900">
                   {coupon.discountType === 'PERCENTAGE'
                     ? `${Number(coupon.discountValue)}% off`
                     : `₹${Number(coupon.discountValue)} flat`}
                 </strong>
                 {coupon.maximumDiscount && ` (Capped at ₹${Number(coupon.maximumDiscount)})`}
               </p>
-              <p>Minimum Order: ₹{Number(coupon.minimumOrder)}</p>
+              <p>Minimum Order: <strong className="text-slate-800">₹{Number(coupon.minimumOrder)}</strong></p>
               <p>
-                Redemptions: {coupon.usedCount} / {coupon.usageLimit || 'Unlimited'}
+                Redemptions: <strong className="text-slate-800">{coupon.usedCount} / {coupon.usageLimit || 'Unlimited'}</strong>
               </p>
             </div>
           </div>

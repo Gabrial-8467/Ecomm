@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api/client.js';
 import { DeliveryZone } from '../../types/index.js';
-import { Truck, Plus, Trash2, MapPin } from 'lucide-react';
+import { Plus, Trash2, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const DeliveryZonesPage: React.FC = () => {
@@ -83,8 +83,8 @@ export const DeliveryZonesPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Local Delivery Zones</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Local Delivery Zones</h1>
+          <p className="text-xs text-slate-500 mt-1">
             Configure serviceable PIN codes, minimum order thresholds, and delivery charges
           </p>
         </div>
@@ -92,7 +92,7 @@ export const DeliveryZonesPage: React.FC = () => {
         {!isAdding && (
           <button
             onClick={() => setIsAdding(true)}
-            className="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 w-fit"
+            className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 w-fit"
           >
             <Plus className="w-4 h-4" />
             <span>Add Delivery Zone</span>
@@ -101,14 +101,14 @@ export const DeliveryZonesPage: React.FC = () => {
       </div>
 
       {isAdding && (
-        <form onSubmit={handleCreate} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs">
-          <h2 className="text-base font-bold text-white pb-3 border-b border-slate-800">
+        <form onSubmit={handleCreate} className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs">
+          <h2 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-100">
             New Local Delivery Area
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Zone Name
               </label>
               <input
@@ -117,33 +117,33 @@ export const DeliveryZonesPage: React.FC = () => {
                 placeholder="e.g. Mohali Phase 1-11"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">City</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">City</label>
               <input
                 type="text"
                 required
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">State</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">State</label>
               <input
                 type="text"
                 required
                 value={state}
                 onChange={(e) => setState(e.target.value)}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
               Comma-Separated PIN Codes
             </label>
             <input
@@ -152,13 +152,13 @@ export const DeliveryZonesPage: React.FC = () => {
               placeholder="e.g. 160055, 160059, 160062, 160070"
               value={pincodesInput}
               onChange={(e) => setPincodesInput(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+              className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Delivery Charge (₹)
               </label>
               <input
@@ -167,11 +167,11 @@ export const DeliveryZonesPage: React.FC = () => {
                 min={0}
                 value={deliveryCharge}
                 onChange={(e) => setDeliveryCharge(Number(e.target.value))}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Minimum Cart Value (₹)
               </label>
               <input
@@ -180,11 +180,11 @@ export const DeliveryZonesPage: React.FC = () => {
                 min={0}
                 value={minimumOrder}
                 onChange={(e) => setMinimumOrder(Number(e.target.value))}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 Estimated Delivery (Days)
               </label>
               <input
@@ -193,7 +193,7 @@ export const DeliveryZonesPage: React.FC = () => {
                 min={1}
                 value={estimatedDays}
                 onChange={(e) => setEstimatedDays(Number(e.target.value))}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
               />
             </div>
           </div>
@@ -202,13 +202,13 @@ export const DeliveryZonesPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsAdding(false)}
-              className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-medium"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold"
+              className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
             >
               Save Zone
             </button>
@@ -219,20 +219,21 @@ export const DeliveryZonesPage: React.FC = () => {
       {/* Zones Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {zones.map((zone) => (
-          <div key={zone.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xs">
+          <div key={zone.id} className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="font-bold text-white text-base flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-amber-500" />
+                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-amber-600" />
                   {zone.name}
                 </h3>
-                <p className="text-xs text-slate-400">
-                  {zone.city}, {zone.state} • Estimated: {zone.estimatedDays} days
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {zone.city}, {zone.state} • Estimated delivery: {zone.estimatedDays} days
                 </p>
               </div>
               <button
                 onClick={() => handleDelete(zone.id, zone.name)}
-                className="p-1.5 text-slate-500 hover:text-rose-400"
+                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                title="Delete Zone"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -242,16 +243,16 @@ export const DeliveryZonesPage: React.FC = () => {
               {zone.pincodes.map((pin) => (
                 <span
                   key={pin}
-                  className="px-2 py-0.5 bg-slate-800 text-slate-200 border border-slate-700 text-[11px] font-mono rounded-md"
+                  className="px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-200 text-xs font-mono font-medium rounded-lg"
                 >
                   {pin}
                 </span>
               ))}
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex justify-between text-xs text-slate-300">
-              <span>Delivery Fee: ₹{Number(zone.deliveryCharge)}</span>
-              <span>Min Order: ₹{Number(zone.minimumOrder)}</span>
+            <div className="pt-3 border-t border-slate-100 flex justify-between text-xs font-medium text-slate-600">
+              <span>Delivery Fee: <strong className="text-slate-900">₹{Number(zone.deliveryCharge)}</strong></span>
+              <span>Min Order: <strong className="text-slate-900">₹{Number(zone.minimumOrder)}</strong></span>
             </div>
           </div>
         ))}
