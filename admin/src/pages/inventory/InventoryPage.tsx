@@ -390,18 +390,43 @@ export const InventoryPage: React.FC = () => {
           </div>
 
           {/* 4. Live Stock Table */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            {/* Table Subheader Summary */}
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-sm font-bold text-slate-800">Warehouse SKU Inventory</h2>
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                  {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {filterMode !== 'all' && (
+                  <span className="text-xs text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 font-medium">
+                    Filter: <strong className="font-semibold uppercase tracking-wide">{filterMode === 'lowStock' ? 'Low Stock Warnings' : 'Out of Stock'}</strong>
+                  </span>
+                )}
+                {search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    className="text-amber-800 hover:underline text-xs font-semibold"
+                  >
+                    Clear search filter
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-700">
-                <thead className="bg-slate-50 border-b border-slate-200 uppercase font-bold text-[10px] tracking-wider text-slate-500">
+                <thead className="bg-slate-50 border-b border-slate-200 uppercase font-semibold text-[11px] tracking-wider text-slate-500">
                   <tr>
                     <th className="py-3.5 px-6">Product & Variant</th>
-                    <th className="py-3.5 px-6">SKU Code</th>
-                    <th className="py-3.5 px-6">Selling Price</th>
+                    <th className="py-3.5 px-6">SKU Identifier</th>
+                    <th className="py-3.5 px-6">Unit Price</th>
                     <th className="py-3.5 px-6">Available Stock</th>
                     <th className="py-3.5 px-6">Reserved in Orders</th>
-                    <th className="py-3.5 px-6">Alert Limit Threshold</th>
-                    <th className="py-3.5 px-6 text-right">Quick Actions</th>
+                    <th className="py-3.5 px-6">Low Stock Alert Limit</th>
+                    <th className="py-3.5 px-6 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
@@ -410,15 +435,15 @@ export const InventoryPage: React.FC = () => {
                       <td colSpan={7} className="py-16 text-center text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <div className="w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-                          <span>Loading warehouse stock...</span>
+                          <span className="text-xs font-medium text-slate-500">Loading warehouse stock...</span>
                         </div>
                       </td>
                     </tr>
                   ) : filteredItems.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-16 text-center text-slate-400">
-                        <p className="font-semibold text-slate-600">No inventory records match current filter</p>
-                        <p className="text-[11px] text-slate-400 mt-1">Try clearing search terms or selecting 'All SKUs'</p>
+                        <p className="font-bold text-slate-700 text-sm">No inventory records found</p>
+                        <p className="text-xs text-slate-400 mt-1">Try clearing your search query or switching to 'All SKUs'.</p>
                       </td>
                     </tr>
                   ) : (
@@ -426,28 +451,28 @@ export const InventoryPage: React.FC = () => {
                       const isOutOfStock = item.availableQuantity <= 0;
                       const isLowStock = item.availableQuantity <= item.lowStockThreshold;
                       const primaryImg =
-                        item.variant.product.images?.[0]?.url ||
+                        item.variant?.product?.images?.[0]?.url ||
                         'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=120&q=80';
 
                       return (
-                        <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                        <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                           {/* Product Thumbnail & Name */}
                           <td className="py-4 px-6">
-                            <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 shadow-2xs">
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
                                 <img
                                   src={primaryImg}
-                                  alt={item.variant.product.name}
+                                  alt={item.variant?.product?.name || 'Product'}
                                   className="w-full h-full object-cover"
                                 />
                               </div>
-                              <div className="space-y-0.5">
-                                <p className="font-bold text-slate-900 text-sm leading-snug line-clamp-1">
-                                  {item.variant.product.name}
+                              <div className="space-y-1">
+                                <p className="font-bold text-slate-900 text-sm line-clamp-1 group-hover:text-amber-800 transition-colors">
+                                  {item.variant?.product?.name || 'Unnamed Product'}
                                 </p>
                                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                                  <span className="font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
-                                    {item.variant.name}
+                                  <span className="font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80">
+                                    {item.variant?.name || 'Default Variant'}
                                   </span>
                                 </div>
                               </div>
@@ -456,43 +481,53 @@ export const InventoryPage: React.FC = () => {
 
                           {/* SKU */}
                           <td className="py-4 px-6">
-                            <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
-                              {item.variant.sku}
+                            <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 shadow-2xs">
+                              {item.variant?.sku}
                             </span>
                           </td>
 
                           {/* Price */}
-                          <td className="py-4 px-6 font-bold text-slate-900 text-sm">
-                            ₹{Number(item.variant.price || 0).toLocaleString('en-IN')}
+                          <td className="py-4 px-6">
+                            <p className="font-bold text-slate-900 text-sm">
+                              ₹{Number(item.variant?.price || 0).toLocaleString('en-IN')}
+                            </p>
                           </td>
 
                           {/* Available Stock */}
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-2">
                               <span
-                                className={`text-base font-black ${
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
                                   isOutOfStock
-                                    ? 'text-slate-400'
+                                    ? 'bg-rose-50 text-rose-800 border border-rose-200'
                                     : isLowStock
-                                    ? 'text-rose-600'
-                                    : 'text-emerald-700'
+                                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                                 }`}
                               >
-                                {item.availableQuantity}
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    isOutOfStock
+                                      ? 'bg-rose-500'
+                                      : isLowStock
+                                      ? 'bg-amber-500'
+                                      : 'bg-emerald-500'
+                                  }`}
+                                />
+                                <span>{item.availableQuantity} units</span>
                               </span>
-                              <span className="text-[11px] text-slate-400 font-normal">units</span>
                             </div>
                           </td>
 
                           {/* Reserved Stock */}
                           <td className="py-4 px-6">
                             {item.reservedQuantity > 0 ? (
-                              <span className="inline-flex items-center gap-1 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full text-xs">
-                                <Layers className="w-3.5 h-3.5" />
+                              <span className="inline-flex items-center gap-1.5 font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full text-xs">
+                                <Layers className="w-3.5 h-3.5 text-amber-600" />
                                 <span>{item.reservedQuantity} reserved</span>
                               </span>
                             ) : (
-                              <span className="text-slate-400 text-xs">0 reserved</span>
+                              <span className="text-slate-400 text-xs font-medium">0 reserved</span>
                             )}
                           </td>
 
@@ -501,30 +536,12 @@ export const InventoryPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleOpenAdjustModal(item)}
-                              className={`group inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
-                                isOutOfStock
-                                  ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
-                                  : isLowStock
-                                  ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
-                                  : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                              }`}
+                              className="group/btn inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs hover:border-slate-300 transition-all cursor-pointer"
                               title="Click to adjust alert limit threshold"
                             >
-                              {isOutOfStock ? (
-                                <AlertCircle className="w-3.5 h-3.5 text-slate-500" />
-                              ) : isLowStock ? (
-                                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                              ) : (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              )}
-                              <span>
-                                {isOutOfStock
-                                  ? 'Out of Stock'
-                                  : isLowStock
-                                  ? `Low Stock (Limit ≤ ${item.lowStockThreshold})`
-                                  : `Healthy (Limit ≤ ${item.lowStockThreshold})`}
-                              </span>
-                              <SlidersHorizontal className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity ml-0.5" />
+                              <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Alert:</span>
+                              <span className="font-mono font-bold text-slate-900">≤ {item.lowStockThreshold}</span>
+                              <SlidersHorizontal className="w-3 h-3 text-slate-400 group-hover/btn:text-amber-700 transition-colors ml-0.5" />
                             </button>
                           </td>
 
@@ -533,10 +550,10 @@ export const InventoryPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleOpenAdjustModal(item)}
-                              className="px-3.5 py-1.5 bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-900 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 border border-slate-200 hover:border-amber-300 transition-all shadow-2xs"
+                              className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 border border-slate-200 shadow-2xs hover:border-slate-300 transition-all"
                             >
-                              <ArrowUpDown className="w-3.5 h-3.5 text-amber-700" />
-                              <span>Adjust / Restock</span>
+                              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-600" />
+                              <span>Adjust Stock</span>
                             </button>
                           </td>
                         </tr>
@@ -565,7 +582,7 @@ export const InventoryPage: React.FC = () => {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50 border-b border-slate-200 uppercase font-bold text-[10px] tracking-wider text-slate-500">
+              <thead className="bg-slate-50 border-b border-slate-200 uppercase font-semibold text-[11px] tracking-wider text-slate-500">
                 <tr>
                   <th className="py-3.5 px-6">Timestamp</th>
                   <th className="py-3.5 px-6">Movement Type</th>

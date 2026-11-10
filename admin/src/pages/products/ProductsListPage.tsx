@@ -116,11 +116,11 @@ export const ProductsListPage: React.FC = () => {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-50/80 border-b border-slate-200 uppercase font-bold text-[10px] tracking-wider text-slate-500">
+            <thead className="bg-slate-50/80 border-b border-slate-200 uppercase font-semibold text-[11px] tracking-wider text-slate-500">
               <tr>
                 <th className="py-3.5 px-6">Product Details</th>
-                <th className="py-3.5 px-6">Department & Brand</th>
-                <th className="py-3.5 px-6">Variants & Pricing</th>
+                <th className="py-3.5 px-6">Variants & SKUs</th>
+                <th className="py-3.5 px-6">Selling Price</th>
                 <th className="py-3.5 px-6">Warehouse Stock</th>
                 <th className="py-3.5 px-6">Status</th>
                 <th className="py-3.5 px-6 text-right">Actions</th>
@@ -155,23 +155,33 @@ export const ProductsListPage: React.FC = () => {
                     0
                   );
 
+                  // Calculate price or price range across variants
+                  const prices = product.variants?.map((v) => Number(v.price)).filter((p) => !isNaN(p) && p > 0) || [];
+                  const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+                  const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+
                   return (
-                    <tr key={product.id} className="hover:bg-amber-50/20 transition-colors">
+                    <tr key={product.id} className="hover:bg-amber-50/20 transition-colors group">
+                      {/* Product Details (Image, Name, Category & Brand) */}
                       <td className="py-4 px-6">
-                        <Link to={`/products/${product.id}`} className="flex items-center gap-3.5 group">
+                        <Link to={`/products/${product.id}`} className="flex items-center gap-3.5">
                           <img
                             src={primaryImage}
                             alt={product.name}
                             className="w-12 h-12 object-cover rounded-xl bg-slate-100 border border-slate-200 shrink-0 shadow-2xs group-hover:border-amber-500 transition-colors"
                           />
-                          <div className="space-y-0.5">
+                          <div className="space-y-1">
                             <p className="font-bold text-slate-900 text-sm line-clamp-1 group-hover:text-amber-800 transition-colors">
                               {product.name}
                             </p>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                              <span>{product.variants?.length || 0} variant option(s)</span>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+                              <span className="font-medium text-slate-600">
+                                {product.category?.name || 'General'}
+                              </span>
+                              <span className="text-slate-300">•</span>
+                              <span className="text-slate-500">{product.brand?.name || 'Grand Living'}</span>
                               {product.isFeatured && (
-                                <span className="px-1.5 py-0.2 bg-amber-50 text-amber-800 border border-amber-200/70 rounded text-[9px] font-bold uppercase tracking-wider">
+                                <span className="ml-1 px-1.5 py-0.2 bg-amber-50 text-amber-800 border border-amber-200/70 rounded text-[9px] font-bold uppercase tracking-wider">
                                   Featured
                                 </span>
                               )}
@@ -180,29 +190,51 @@ export const ProductsListPage: React.FC = () => {
                         </Link>
                       </td>
 
-                      <td className="py-4 px-6">
-                        <p className="font-semibold text-slate-900">{product.category?.name || 'General'}</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">{product.brand?.name || 'Grand Living Solid Wood'}</p>
-                      </td>
-
+                      {/* Variants & SKUs (SKU chips & variant names, no prices) */}
                       <td className="py-4 px-6">
                         <div className="space-y-1">
                           {product.variants?.slice(0, 2).map((v) => (
-                            <div key={v.id} className="text-[11px] flex items-center gap-2">
-                              <span className="font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">{v.sku}</span>
-                              <span className="text-slate-900 font-bold">
-                                ₹{Number(v.price).toLocaleString('en-IN')}
+                            <div key={v.id} className="text-[11px] flex items-center gap-1.5">
+                              <span className="font-mono text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                                {v.sku}
+                              </span>
+                              <span className="text-slate-600 font-medium truncate max-w-[140px]">
+                                {v.name}
                               </span>
                             </div>
                           ))}
                           {(product.variants?.length || 0) > 2 && (
-                            <span className="text-[10px] text-amber-800 font-bold">
-                              +{(product.variants?.length || 0) - 2} more options
+                            <span className="text-[10px] text-amber-800 font-bold block mt-0.5">
+                              +{(product.variants?.length || 0) - 2} more variants
                             </span>
+                          )}
+                          {(!product.variants || product.variants.length === 0) && (
+                            <span className="text-slate-400 text-xs italic">No variants</span>
                           )}
                         </div>
                       </td>
 
+                      {/* Dedicated Selling Price Column */}
+                      <td className="py-4 px-6">
+                        {minPrice > 0 ? (
+                          <div>
+                            <p className="font-bold text-slate-900 text-sm">
+                              {minPrice === maxPrice
+                                ? `₹${minPrice.toLocaleString('en-IN')}`
+                                : `₹${minPrice.toLocaleString('en-IN')} – ₹${maxPrice.toLocaleString('en-IN')}`}
+                            </p>
+                            {minPrice !== maxPrice && (
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                Across {product.variants?.length} variants
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-xs">Unpriced</span>
+                        )}
+                      </td>
+
+                      {/* Warehouse Stock */}
                       <td className="py-4 px-6">
                         <span
                           className={`inline-flex items-center gap-1.5 font-bold px-2.5 py-1 rounded-full text-xs ${
@@ -226,18 +258,25 @@ export const ProductsListPage: React.FC = () => {
                         </span>
                       </td>
 
+                      {/* Status */}
                       <td className="py-4 px-6">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wider ${
                             product.status === 'ACTIVE'
                               ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                               : 'bg-slate-100 text-slate-600 border border-slate-200'
                           }`}
                         >
-                          {product.status}
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              product.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
+                            }`}
+                          />
+                          <span>{product.status}</span>
                         </span>
                       </td>
 
+                      {/* Actions */}
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
