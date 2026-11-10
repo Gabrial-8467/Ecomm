@@ -7,6 +7,8 @@ import {
   refreshTokenSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  updateProfileSchema,
+  changePasswordSchema,
 } from './auth.validation.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { authLimiter } from '../../middleware/rate-limiter.js';
@@ -19,6 +21,8 @@ router.post('/login', authLimiter, validate({ body: loginSchema }), controller.l
 router.post('/refresh', validate({ body: refreshTokenSchema }), controller.refresh);
 router.post('/logout', controller.logout);
 router.get('/me', requireAuth, controller.me);
+router.patch('/profile', requireAuth, validate({ body: updateProfileSchema }), controller.updateProfile);
+router.post('/change-password', requireAuth, validate({ body: changePasswordSchema }), controller.changePassword);
 router.post('/forgot-password', authLimiter, validate({ body: forgotPasswordSchema }), controller.forgotPassword);
 router.post('/reset-password', authLimiter, validate({ body: resetPasswordSchema }), controller.resetPassword);
 

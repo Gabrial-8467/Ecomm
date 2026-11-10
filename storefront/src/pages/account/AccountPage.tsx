@@ -17,18 +17,34 @@ import {
   Phone,
   Mail,
   Calendar,
+  Lock,
+  KeyRound,
+  Edit2,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const AccountPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout, setUser } = useAuthStore();
   const { items: wishlistItems } = useWishlistStore();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'addresses'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'addresses' | 'security'>('profile');
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [ordersCount, setOrdersCount] = useState<number | null>(null);
+
+  // Profile Edit State
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editName, setEditName] = useState(user?.name || '');
+  const [editEmail, setEditEmail] = useState(user?.email || '');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Change Password State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Add Address Modal/Form State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -129,6 +145,60 @@ export const AccountPage: React.FC = () => {
     navigate('/');
   };
 
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) {
+      toast.error('Name cannot be empty');
+      return;
+    }
+
+    setIsSavingProfile(true);
+    try {
+      const response = await api.patch('/auth/profile', {
+        name: editName.trim(),
+        email: editEmail.trim() || null,
+      });
+      const updatedUser = response.data?.data;
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
+      setIsEditingProfile(false);
+      toast.success('Profile details updated successfully');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to update profile');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await api.post('/auth/change-password', {
+        currentPassword,
+        newPassword,
+      });
+      toast.success('Password changed successfully! Keep it safe.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to change password');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -219,7 +289,7 @@ export const AccountPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-stone-200 gap-6">
+      <div className="flex flex-wrap border-b border-stone-200 gap-6">
         <button
           type="button"
           onClick={() => setActiveTab('profile')}
@@ -242,42 +312,199 @@ export const AccountPage: React.FC = () => {
         >
           Address Book ({addresses.length})
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('security')}
+          className={`pb-3 text-sm font-bold transition-all relative flex items-center gap-1.5 ${
+            activeTab === 'security'
+              ? 'text-amber-800 border-b-2 border-amber-800'
+              : 'text-stone-500 hover:text-stone-900'
+          }`}
+        >
+          <Lock className="w-3.5 h-3.5" />
+          <span>Security & Password</span>
+        </button>
       </div>
 
       {/* Profile Details Tab Content */}
       {activeTab === 'profile' && (
         <div className="bg-white rounded-3xl border border-stone-200/90 p-6 sm:p-8 space-y-6 shadow-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+            <div>
+              <h2 className="font-serif text-lg font-bold text-stone-900">Personal Information</h2>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Your verified profile for local furniture & electronics showroom order deliveries
+              </p>
+            </div>
+            {!isEditingProfile && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditName(user.name);
+                  setEditEmail(user.email || '');
+                  setIsEditingProfile(true);
+                }}
+                className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-stone-600" />
+                <span>Edit Profile</span>
+              </button>
+            )}
+          </div>
+
+          {isEditingProfile ? (
+            <form onSubmit={handleUpdateProfile} className="max-w-xl space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                  Primary Mobile Number (Verified)
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value={user.phone || ''}
+                  className="w-full px-3.5 py-2.5 bg-stone-100 border border-stone-200 rounded-xl text-xs font-mono text-stone-500 cursor-not-allowed"
+                />
+                <p className="text-[10px] text-stone-400 mt-1">Mobile number is linked to order verification and cannot be changed directly.</p>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingProfile(false)}
+                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className="px-5 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+                >
+                  {isSavingProfile ? 'Saving...' : 'Save Profile'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
+              <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/60 space-y-1">
+                <span className="font-bold text-stone-500 uppercase text-[10px]">Full Name</span>
+                <p className="text-sm font-bold text-stone-900">{user.name}</p>
+              </div>
+
+              <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/60 space-y-1">
+                <span className="font-bold text-stone-500 uppercase text-[10px]">Registered Mobile Number</span>
+                <p className="text-sm font-bold text-stone-900 font-mono">{user.phone || 'Not provided'}</p>
+              </div>
+
+              <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/60 space-y-1">
+                <span className="font-bold text-stone-500 uppercase text-[10px]">Email Address</span>
+                <p className="text-sm font-bold text-stone-900">{user.email || 'Not provided'}</p>
+              </div>
+
+              <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/60 space-y-1">
+                <span className="font-bold text-stone-500 uppercase text-[10px]">Security & Status</span>
+                <p className="text-sm font-bold text-emerald-800 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Active Verified Customer
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Security & Change Password Tab Content */}
+      {activeTab === 'security' && (
+        <div className="bg-white rounded-3xl border border-stone-200/90 p-6 sm:p-8 space-y-6 shadow-xs max-w-2xl">
           <div>
-            <h2 className="font-serif text-lg font-bold text-stone-900">Personal Information</h2>
+            <h2 className="font-serif text-lg font-bold text-stone-900">Security & Password</h2>
             <p className="text-xs text-stone-500 mt-0.5">
-              Your verified profile for local furniture & electronics showroom order deliveries
+              Update your showroom login credentials and protect your account
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
-            <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/60 space-y-1">
-              <span className="font-bold text-stone-500 uppercase text-[10px]">Full Name</span>
-              <p className="text-sm font-bold text-stone-900">{user.name}</p>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1">
+                Current Password
+              </label>
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800"
+              />
             </div>
 
-            <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/60 space-y-1">
-              <span className="font-bold text-stone-500 uppercase text-[10px]">Registered Mobile Number</span>
-              <p className="text-sm font-bold text-stone-900 font-mono">{user.phone || 'Not provided'}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Min 6 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Re-enter new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800"
+                />
+              </div>
             </div>
 
-            <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/60 space-y-1">
-              <span className="font-bold text-stone-500 uppercase text-[10px]">Email Address</span>
-              <p className="text-sm font-bold text-stone-900">{user.email || 'Not provided'}</p>
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isChangingPassword}
+                className="px-6 py-2.5 bg-amber-800 hover:bg-amber-900 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 disabled:opacity-50"
+              >
+                <KeyRound className="w-4 h-4" />
+                <span>{isChangingPassword ? 'Updating Password...' : 'Update Password'}</span>
+              </button>
             </div>
-
-            <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/60 space-y-1">
-              <span className="font-bold text-stone-500 uppercase text-[10px]">Security & Status</span>
-              <p className="text-sm font-bold text-emerald-800 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                Active Verified Customer
-              </p>
-            </div>
-          </div>
+          </form>
         </div>
       )}
 

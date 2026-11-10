@@ -96,4 +96,25 @@ export class AuthController {
       next(error);
     }
   }
+
+  async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = (req as any).user.id;
+      const user = await authService.updateProfile(userId, req.body);
+      sendSuccess(res, user, 'Profile updated successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = (req as any).user.id;
+      const { currentPassword, newPassword } = req.body;
+      const result = await authService.changePassword(userId, currentPassword, newPassword);
+      sendSuccess(res, null, result.message);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

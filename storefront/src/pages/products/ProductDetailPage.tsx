@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { api } from '../../services/api/client.js';
 import { Product, ProductVariant, DeliveryCheckResult } from '../../types/index.js';
 import { useCartStore } from '../../store/cartStore.js';
@@ -195,6 +196,46 @@ export const ProductDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12">
+      {/* Dynamic SEO & WhatsApp / Social Media Rich Card Preview */}
+      <Helmet>
+        <title>{`${product.name} | ₹${price.toLocaleString('en-IN')} | Grand Living Mohali`}</title>
+        <meta
+          name="description"
+          content={
+            product.shortDescription ||
+            `Buy ${product.name} from Grand Living physical showroom in Sector 70, Mohali. Cash on delivery & free local room assembly available.`
+          }
+        />
+
+        {/* OpenGraph / WhatsApp Rich Previews */}
+        <meta property="og:type" content="product" />
+        <meta property="og:site_name" content="Grand Living Furniture & Electronics" />
+        <meta property="og:title" content={`${product.name} - ₹${price.toLocaleString('en-IN')}`} />
+        <meta
+          property="og:description"
+          content={
+            product.shortDescription ||
+            `Explore ${product.name} at Grand Living Showroom, Mohali. ₹${price.toLocaleString('en-IN')} with Cash on Delivery & Brand Warranty.`
+          }
+        />
+        <meta property="og:image" content={selectedImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800'} />
+        <meta property="og:image:secure_url" content={selectedImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800'} />
+        <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:image:width" content="800" />
+        <meta property="og:image:height" content="600" />
+        <meta property="product:price:amount" content={String(price)} />
+        <meta property="product:price:currency" content="INR" />
+
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${product.name} | Grand Living`} />
+        <meta
+          name="twitter:description"
+          content={product.shortDescription || `Handcrafted furniture & electronics at Grand Living, Mohali.`}
+        />
+        <meta name="twitter:image" content={selectedImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800'} />
+      </Helmet>
+
       {/* Breadcrumbs */}
       <nav className="flex items-center space-x-2 text-xs text-stone-500">
         <Link to="/" className="hover:text-stone-900">

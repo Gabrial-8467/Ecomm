@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useCompareStore } from '../../store/compareStore.js';
 import { useCartStore } from '../../store/cartStore.js';
 import { Scale, Trash2, ShoppingBag, ArrowRight, Star, CheckCircle2, X } from 'lucide-react';
@@ -50,6 +51,14 @@ export const ComparePage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8">
+      <Helmet>
+        <title>{`Compare Products (${items.length}) | Grand Living Showroom`}</title>
+        <meta
+          name="description"
+          content="Compare dimensions, solid wood finish, warranty, and electrical specifications side-by-side at Grand Living."
+        />
+      </Helmet>
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-200">
         <div>

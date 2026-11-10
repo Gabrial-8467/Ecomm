@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { api } from '../../services/api/client.js';
 import { Product, Category, Banner } from '../../types/index.js';
 import { ProductCard } from '../../components/product/ProductCard.js';
@@ -46,6 +47,31 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="space-y-16 sm:space-y-24 pb-20">
+      <Helmet>
+        <title>Grand Living | Handcrafted Wood Furniture & Branded Electronics Showroom Mohali</title>
+        <meta
+          name="description"
+          content="Grand Living physical showroom in Sector 70, Mohali. Shop solid Sheesham wood wardrobes, sofas, and Samsung & LG appliances with Cash on Delivery & Free Assembly."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Grand Living Furniture & Electronics" />
+        <meta property="og:title" content="Grand Living | Premium Furniture & Branded Electronics Showroom" />
+        <meta
+          property="og:description"
+          content="Direct from our Mohali showroom: Handcrafted Teak wood beds, wardrobes, and Samsung/LG appliances with Cash on Delivery."
+        />
+        <meta
+          property="og:image"
+          content="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80"
+        />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Grand Living | Furniture & Electronics Showroom" />
+        <meta
+          name="twitter:image"
+          content="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80"
+        />
+      </Helmet>
+
       {/* 1. Main Hero Banner */}
       <section className="relative overflow-hidden bg-stone-900 text-white min-h-[520px] sm:min-h-[600px] flex items-center transition-all duration-700">
         <div className="absolute inset-0 z-0 opacity-40">

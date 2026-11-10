@@ -231,4 +231,67 @@ export class AuthService {
 
     return { message: 'Password has been reset successfully. Please log in with your new password.' };
   }
+
+  async updateProfile(userId: string, data: { name?: string; email?: string | null }) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (data.email && data.email !== user.email) {
+      const existing = await prisma.user.findFirst({
+        where: {
+          email: data.email,
+          id: { not: userId },
+        },
+      });
+      if (existing) {
+        throw new BadRequestError('This email is already in use by another account');
+      }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.email !== undefined && { email: data.email }),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return updated;
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (!user.passwordHash) {
+      throw new BadRequestError('Account does not have a password set. Please use Forgot Password to create one.');
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isValid) {
+      throw new BadRequestError('Current password is incorrect');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    return { message: 'Password changed successfully' };
+  }
 }
