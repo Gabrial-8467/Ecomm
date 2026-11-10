@@ -15,6 +15,9 @@ import {
   AlertCircle,
   X,
   SlidersHorizontal,
+  Copy,
+  Check,
+  Hash,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -37,6 +40,15 @@ export const InventoryPage: React.FC = () => {
   const [adjustReason, setAdjustReason] = useState('');
   const [thresholdValue, setThresholdValue] = useState<number>(5);
   const [isAdjusting, setIsAdjusting] = useState(false);
+  const [copiedSku, setCopiedSku] = useState<string | null>(null);
+
+  const handleCopySku = (sku?: string) => {
+    if (!sku) return;
+    navigator.clipboard.writeText(sku);
+    setCopiedSku(sku);
+    toast.success(`Copied SKU: ${sku}`);
+    setTimeout(() => setCopiedSku(null), 1800);
+  };
 
   useEffect(() => {
     fetchInventory();
@@ -421,7 +433,7 @@ export const InventoryPage: React.FC = () => {
                 <thead className="bg-slate-50 border-b border-slate-200 uppercase font-semibold text-[11px] tracking-wider text-slate-500">
                   <tr>
                     <th className="py-3.5 px-6">Product & Variant</th>
-                    <th className="py-3.5 px-6">SKU Identifier</th>
+                    <th className="py-3.5 px-6">SKU Code</th>
                     <th className="py-3.5 px-6">Unit Price</th>
                     <th className="py-3.5 px-6">Available Stock</th>
                     <th className="py-3.5 px-6">Reserved in Orders</th>
@@ -481,9 +493,22 @@ export const InventoryPage: React.FC = () => {
 
                           {/* SKU */}
                           <td className="py-4 px-6">
-                            <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 shadow-2xs">
-                              {item.variant?.sku}
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopySku(item.variant?.sku)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-amber-50/70 text-slate-700 hover:text-amber-900 border border-slate-200 hover:border-amber-300 transition-all group/sku shadow-2xs cursor-pointer"
+                              title="Click to copy SKU code"
+                            >
+                              <Hash className="w-3 h-3 text-slate-400 group-hover/sku:text-amber-700 transition-colors" />
+                              <span className="font-mono text-xs font-bold tracking-wide">
+                                {item.variant?.sku}
+                              </span>
+                              {copiedSku === item.variant?.sku ? (
+                                <Check className="w-3 h-3 text-emerald-600 ml-0.5" />
+                              ) : (
+                                <Copy className="w-3 h-3 text-slate-300 group-hover/sku:text-amber-700 transition-colors ml-0.5" />
+                              )}
+                            </button>
                           </td>
 
                           {/* Price */}
