@@ -7,6 +7,7 @@ import { useCartStore } from '../../store/cartStore.js';
 import { useWishlistStore } from '../../store/wishlistStore.js';
 import { useCompareStore } from '../../store/compareStore.js';
 import { useAuthStore } from '../../store/authStore.js';
+import { ProductCard } from '../../components/product/ProductCard.js';
 import { toast } from 'sonner';
 import {
   Truck,
@@ -22,6 +23,13 @@ import {
   MessageSquare,
   Send,
   Scale,
+  Ruler,
+  Wrench,
+  RefreshCcw,
+  PackageCheck,
+  Award,
+  Layers,
+  ChevronRight,
 } from 'lucide-react';
 
 export const ProductDetailPage: React.FC = () => {
@@ -29,7 +37,7 @@ export const ProductDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { addItem } = useCartStore();
 
-  const { user, isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const { toggleWishlist, isInWishlist } = useWishlistStore();
   const { addItem: toggleCompare, isInCompare } = useCompareStore();
 
@@ -38,6 +46,10 @@ export const ProductDetailPage: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Related & Suggested Products
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [activeDetailsTab, setActiveDetailsTab] = useState<'specs' | 'materials' | 'dimensions' | 'assembly' | 'care'>('specs');
 
   // Reviews
   const [reviews, setReviews] = useState<any[]>([]);
@@ -52,7 +64,7 @@ export const ProductDetailPage: React.FC = () => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   // Pincode check on PDP
-  const [pincode, setPincode] = useState('');
+  const [pincode, setPincode] = useState('160071');
   const [pincodeChecking, setPincodeChecking] = useState(false);
   const [pincodeResult, setPincodeResult] = useState<DeliveryCheckResult | null>(null);
 
@@ -65,6 +77,29 @@ export const ProductDetailPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to fetch reviews:', err);
+    }
+  };
+
+  const fetchRelatedProducts = async (catSlug?: string, currentId?: string) => {
+    try {
+      const endpoint = catSlug ? `/products?category=${catSlug}&limit=12` : `/products?limit=12`;
+      const res = await api.get(endpoint);
+      let items: Product[] = res.data?.data || [];
+      items = items.filter((p) => p.id !== currentId);
+
+      // If category has few items, fallback to general catalog to ensure full recommendations
+      if (items.length < 4) {
+        const fallbackRes = await api.get('/products?limit=12');
+        const fallbackItems: Product[] = (fallbackRes.data?.data || []).filter((p: Product) => p.id !== currentId);
+        const combined = [...items, ...fallbackItems];
+        // Deduplicate
+        const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
+        setRelatedProducts(unique);
+      } else {
+        setRelatedProducts(items);
+      }
+    } catch (err) {
+      console.error('Failed to fetch related products:', err);
     }
   };
 
@@ -84,6 +119,7 @@ export const ProductDetailPage: React.FC = () => {
 
         if (data.id) {
           fetchReviews(data.id);
+          fetchRelatedProducts(data.category?.slug, data.id);
         }
       } catch (err) {
         console.error('Failed to fetch product details:', err);
@@ -98,19 +134,23 @@ export const ProductDetailPage: React.FC = () => {
     e.preventDefault();
     if (!product) return;
     if (!isAuthenticated) {
-      toast.error('Please log in to leave a verified review');
+      toast.info('Please sign in to write a review');
       navigate('/login');
+      return;
+    }
+
+    if (!reviewComment.trim()) {
+      toast.error('Please enter review comments');
       return;
     }
 
     setIsSubmittingReview(true);
     try {
-      await api.post('/reviews', {
-        productId: product.id,
+      await api.post(`/reviews/product/${product.id}`, {
         rating: reviewRating,
-        comment: reviewComment.trim() || undefined,
+        comment: reviewComment.trim(),
       });
-      toast.success('Thank you! Your review has been submitted.');
+      toast.success('Thank you! Your verified review has been published.');
       setShowReviewForm(false);
       setReviewComment('');
       fetchReviews(product.id);
@@ -121,16 +161,48 @@ export const ProductDetailPage: React.FC = () => {
     }
   };
 
+  const handleCheckPincode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pincode.trim() || pincode.length !== 6) {
+      toast.error('Please enter a valid 6-digit postal pincode');
+      return;
+    }
+
+    setPincodeChecking(true);
+    try {
+      const response = await api.get(`/delivery/check-pincode?pincode=${pincode.trim()}`);
+      setPincodeResult(response.data?.data);
+    } catch {
+      setPincodeResult({ serviceable: false, message: 'Could not verify delivery zone' });
+    } finally {
+      setPincodeChecking(false);
+    }
+  };
+
+  const handleAddToCart = async (directCheckout = false) => {
+    if (!selectedVariant) return;
+    try {
+      await addItem(selectedVariant.id, quantity);
+      toast.success(`Added ${product?.name} to your bag`);
+      if (directCheckout) {
+        navigate('/checkout');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to add item to bag');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-16 animate-pulse space-y-8">
-        <div className="h-6 bg-stone-200 rounded w-48" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <div className="aspect-square bg-stone-200 rounded-2xl" />
+        <div className="h-6 bg-neutral-200 rounded-full w-48" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="aspect-[4/3] bg-neutral-200 rounded-3xl" />
           <div className="space-y-4">
-            <div className="h-10 bg-stone-200 rounded w-3/4" />
-            <div className="h-6 bg-stone-200 rounded w-1/4" />
-            <div className="h-32 bg-stone-200 rounded" />
+            <div className="h-10 bg-neutral-200 rounded-xl w-3/4" />
+            <div className="h-6 bg-neutral-200 rounded-full w-1/4" />
+            <div className="h-24 bg-neutral-100 rounded-2xl" />
+            <div className="h-12 bg-neutral-200 rounded-full w-full" />
           </div>
         </div>
       </div>
@@ -140,12 +212,16 @@ export const ProductDetailPage: React.FC = () => {
   if (!product || !selectedVariant) {
     return (
       <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-20 text-center">
-        <h2 className="font-serif text-2xl font-bold text-stone-900 mb-4">Product Not Found</h2>
+        <h2 className="text-2xl font-bold text-neutral-900 mb-2">Piece Not Found</h2>
+        <p className="text-neutral-500 mb-6 text-sm">
+          The requested furniture or electronic piece is no longer available in our active showroom catalog.
+        </p>
         <Link
           to="/products"
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-800 text-white rounded-xl text-sm font-medium hover:bg-amber-900"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-neutral-950 text-white rounded-full text-xs font-semibold uppercase tracking-wider"
         >
-          Browse All Products
+          <span>Explore Showroom Catalogue</span>
+          <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     );
@@ -156,84 +232,39 @@ export const ProductDetailPage: React.FC = () => {
   const availableStock = selectedVariant.inventory?.availableQuantity || 0;
   const isAvailable = availableStock > 0;
 
-  const handleCheckPincode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pincode || pincode.length !== 6) {
-      toast.error('Please enter a valid 6-digit Indian PIN code');
-      return;
-    }
-    setPincodeChecking(true);
-    try {
-      const response = await api.get(`/delivery/check-pincode?pincode=${pincode}`);
-      setPincodeResult(response.data?.data);
-    } catch {
-      setPincodeResult({ serviceable: false, message: 'Could not verify delivery zone' });
-    } finally {
-      setPincodeChecking(false);
-    }
-  };
-
-  const handleAddToCart = async (redirect = false) => {
-    if (!isAvailable) return;
-    try {
-      await addItem(selectedVariant.id, quantity);
-      toast.success(`Added ${product.name} (${selectedVariant.name}) to cart`);
-      if (redirect) {
-        navigate('/cart');
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || 'Failed to add item to cart');
-    }
-  };
-
-  // Group specifications
-  const groupedSpecs = product.specifications.reduce((acc, curr) => {
-    const group = curr.groupName || 'General Specifications';
+  // Group specifications by groupName
+  const groupedSpecs = product.specifications.reduce((acc, spec) => {
+    const group = spec.groupName || 'General Specifications';
     if (!acc[group]) acc[group] = [];
-    acc[group].push(curr);
+    acc[group].push(spec);
     return acc;
   }, {} as Record<string, typeof product.specifications>);
 
   return (
-    <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 sm:py-12 space-y-12">
-      {/* Dynamic SEO & WhatsApp / Social Media Rich Card Preview */}
+    <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 sm:py-12 space-y-16">
+      {/* Dynamic SEO Meta */}
       <Helmet>
-        <title>{`${product.name} | ₹${price.toLocaleString('en-IN')} | Grand Living Mohali`}</title>
+        <title>{`${product.name} | Grand Living Showroom`}</title>
         <meta
           name="description"
           content={
             product.shortDescription ||
-            `Buy ${product.name} from Grand Living physical showroom in Sector 70, Mohali. Cash on delivery & free local room assembly available.`
+            `Buy ${product.name} at Grand Living, Mohali. Handcrafted solid wood furniture and certified electronics with Cash on Delivery.`
           }
         />
-
-        {/* OpenGraph / WhatsApp Rich Previews */}
-        <meta property="og:type" content="product" />
-        <meta property="og:site_name" content="Grand Living Furniture & Electronics" />
-        <meta property="og:title" content={`${product.name} - ₹${price.toLocaleString('en-IN')}`} />
+        <meta property="og:title" content={`${product.name} | Grand Living`} />
         <meta
           property="og:description"
-          content={
-            product.shortDescription ||
-            `Explore ${product.name} at Grand Living Showroom, Mohali. ₹${price.toLocaleString('en-IN')} with Cash on Delivery & Brand Warranty.`
-          }
-        />
-        <meta property="og:image" content={selectedImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800'} />
-        <meta property="og:image:secure_url" content={selectedImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800'} />
-        <meta property="og:image:type" content="image/jpeg" />
-        <meta property="og:image:width" content="800" />
-        <meta property="og:image:height" content="600" />
-        <meta property="product:price:amount" content={String(price)} />
-        <meta property="product:price:currency" content="INR" />
-
-        {/* Twitter Card */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${product.name} | Grand Living`} />
-        <meta
-          name="twitter:description"
           content={product.shortDescription || `Handcrafted furniture & electronics at Grand Living, Mohali.`}
         />
-        <meta name="twitter:image" content={selectedImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800'} />
+        <meta property="og:type" content="product" />
+        <meta
+          property="og:url"
+          content={typeof window !== 'undefined' ? window.location.href : `https://grandliving.in/products/${product.slug}`}
+        />
+        <meta property="og:image" content={selectedImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800'} />
+        <meta property="product:price:amount" content={String(price)} />
+        <meta property="product:price:currency" content="INR" />
       </Helmet>
 
       {/* Breadcrumbs */}
@@ -257,19 +288,24 @@ export const ProductDetailPage: React.FC = () => {
         <span className="text-neutral-900 font-medium truncate max-w-xs">{product.name}</span>
       </nav>
 
-      {/* Main PDP Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+      {/* Main PDP Grid: Gallery & Buy Box */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-16 items-start">
         {/* Left: Product Gallery */}
-        <div className="space-y-4">
-          <div className="aspect-[4/3] sm:aspect-square bg-neutral-100/70 rounded-3xl overflow-hidden border border-neutral-200/60 relative shadow-2xs">
+        <div className="lg:col-span-7 space-y-4">
+          <div className="aspect-[4/3] sm:aspect-[16/11] bg-neutral-100/70 rounded-3xl overflow-hidden border border-neutral-200/60 relative shadow-2xs group">
             <img
               src={selectedImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1000&q=80'}
               alt={product.name}
-              className="w-full h-full object-cover object-center"
+              className="w-full h-full object-cover object-center group-hover:scale-103 transition-transform duration-700"
             />
             {product.isFeatured && (
               <span className="absolute top-4 left-4 bg-neutral-950 text-white text-[10px] font-medium uppercase tracking-widest px-3 py-1 rounded-full shadow-2xs">
                 Featured Showroom Piece
+              </span>
+            )}
+            {product.isBestSeller && (
+              <span className="absolute top-4 right-4 bg-amber-500 text-neutral-950 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-2xs">
+                Best Seller
               </span>
             )}
           </div>
@@ -290,10 +326,30 @@ export const ProductDetailPage: React.FC = () => {
               ))}
             </div>
           )}
+
+          {/* Doorway & Dimension Fit Checklist Box */}
+          <div className="p-5 rounded-2xl bg-neutral-50/70 border border-neutral-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-white border border-neutral-200 text-neutral-900 shrink-0">
+                <Ruler className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-semibold text-neutral-950 uppercase tracking-wider">
+                  Doorway &amp; Room Fit Check
+                </h4>
+                <p className="text-[11px] text-neutral-500 mt-0.5 leading-relaxed">
+                  Requires standard 30" doorway clearance. Delivered &amp; carried upstairs by our 2-person showroom team.
+                </p>
+              </div>
+            </div>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-800 bg-white border border-neutral-200 px-3 py-1 rounded-full shrink-0">
+              Free Room Staging
+            </span>
+          </div>
         </div>
 
         {/* Right: Product Buy Box & Specs */}
-        <div className="space-y-7">
+        <div className="lg:col-span-5 space-y-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
               {product.brand?.name && (
@@ -305,7 +361,7 @@ export const ProductDetailPage: React.FC = () => {
               <span className="text-xs text-neutral-400 font-mono">SKU: {selectedVariant.sku}</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-neutral-950 tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-neutral-950 tracking-tight leading-tight">
               {product.name}
             </h1>
 
@@ -351,8 +407,28 @@ export const ProductDetailPage: React.FC = () => {
               )}
             </div>
             <p className="text-xs text-neutral-500">
-              Inclusive of GST. White-glove in-room assembly included across Tricity delivery zones.
+              Inclusive of all GST. White-glove in-room assembly included across Tricity delivery zones.
             </p>
+          </div>
+
+          {/* Quick Specification Highlight Chips */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="p-2.5 bg-neutral-50 border border-neutral-200/80 rounded-xl flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+              <span className="text-[11px] font-medium text-neutral-800">100% Kiln-Dried Wood</span>
+            </div>
+            <div className="p-2.5 bg-neutral-50 border border-neutral-200/80 rounded-xl flex items-center gap-2">
+              <ShieldCheck className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+              <span className="text-[11px] font-medium text-neutral-800">5-Year Wood Guarantee</span>
+            </div>
+            <div className="p-2.5 bg-neutral-50 border border-neutral-200/80 rounded-xl flex items-center gap-2">
+              <Wrench className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+              <span className="text-[11px] font-medium text-neutral-800">Free In-Home Assembly</span>
+            </div>
+            <div className="p-2.5 bg-neutral-50 border border-neutral-200/80 rounded-xl flex items-center gap-2">
+              <PackageCheck className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+              <span className="text-[11px] font-medium text-neutral-800">Inspect Before You Pay</span>
+            </div>
           </div>
 
           {/* Variants Selector */}
@@ -483,9 +559,14 @@ export const ProductDetailPage: React.FC = () => {
 
           {/* Local Pincode Delivery Check */}
           <div className="p-5 bg-white rounded-2xl border border-neutral-200/70 shadow-2xs space-y-3">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-neutral-950">
-              <MapPin className="w-3.5 h-3.5 text-neutral-500" strokeWidth={1.75} />
-              <span>Verify Local Delivery Pincode</span>
+            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-neutral-950">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-3.5 h-3.5 text-neutral-500" strokeWidth={1.75} />
+                <span>Verify Local Delivery Pincode</span>
+              </div>
+              <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                Tricity Serviceable
+              </span>
             </div>
             <form onSubmit={handleCheckPincode} className="flex gap-2">
               <input
@@ -494,7 +575,7 @@ export const ProductDetailPage: React.FC = () => {
                 value={pincode}
                 maxLength={6}
                 onChange={(e) => setPincode(e.target.value.replace(/\D/g, ''))}
-                className="flex-1 text-xs px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-full focus:outline-none focus:border-neutral-400 text-neutral-900"
+                className="flex-1 text-xs px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-full focus:outline-none focus:border-neutral-400 text-neutral-900 font-mono"
               />
               <button
                 type="submit"
@@ -520,7 +601,7 @@ export const ProductDetailPage: React.FC = () => {
                       <p className="font-semibold">Serviceable: {pincodeResult.zone?.name}</p>
                       <p className="text-[11px] text-emerald-800 mt-0.5">
                         Estimated Dispatch: {pincodeResult.zone?.estimatedDays} days • Fee: ₹
-                        {pincodeResult.zone?.deliveryCharge} • Cash on Delivery Enabled
+                        {pincodeResult.zone?.deliveryCharge} • Free Assembly &amp; Cash on Delivery Enabled
                       </p>
                     </div>
                   </>
@@ -551,258 +632,519 @@ export const ProductDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Product Specifications Section */}
-      <div className="pt-12 border-t border-neutral-200/70 space-y-6">
+      {/* Deep Product Details: Tabbed Architectural Guide */}
+      <div className="pt-12 border-t border-neutral-200/70 space-y-8">
         <div>
           <span className="text-[10px] uppercase font-semibold tracking-[0.25em] text-neutral-400">
-            Dimensions &amp; Craft Details
+            Comprehensive Specification &amp; Heritage
           </span>
-          <h2 className="text-2xl font-semibold text-neutral-950 tracking-tight mt-1">Product Specifications</h2>
+          <h2 className="text-2xl sm:text-3xl font-semibold text-neutral-950 tracking-tight mt-1">
+            Detailed Information
+          </h2>
         </div>
 
-        {Object.keys(groupedSpecs).length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {Object.entries(groupedSpecs).map(([group, specs]) => (
-              <div key={group} className="bg-white rounded-2xl border border-neutral-200/70 p-6 space-y-3 shadow-2xs">
-                <h3 className="font-semibold text-neutral-950 text-xs uppercase tracking-widest pb-2 border-b border-neutral-100 flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-neutral-500" />
-                  {group}
-                </h3>
-                <dl className="divide-y divide-neutral-100 text-xs">
-                  {specs.map((spec) => (
-                    <div key={spec.id} className="py-2.5 flex justify-between gap-4">
-                      <dt className="text-neutral-500 font-medium">{spec.name}</dt>
-                      <dd className="text-neutral-900 font-semibold text-right">{spec.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-neutral-400 text-xs">Standard showroom specifications apply to this piece.</p>
-        )}
+        {/* Tab Headers */}
+        <div className="flex flex-wrap border-b border-neutral-200 gap-2 sm:gap-6">
+          <button
+            type="button"
+            onClick={() => setActiveDetailsTab('specs')}
+            className={`pb-3 text-xs font-semibold uppercase tracking-wider transition-all border-b-2 flex items-center gap-2 ${
+              activeDetailsTab === 'specs'
+                ? 'text-neutral-950 border-neutral-950'
+                : 'text-neutral-400 border-transparent hover:text-neutral-700'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Specifications &amp; Matrix</span>
+          </button>
 
-        {/* Detailed Description */}
-        {product.description && (
-          <div className="bg-white rounded-2xl border border-neutral-200/70 p-6 sm:p-8 space-y-3 shadow-2xs">
-            <h3 className="text-base font-semibold text-neutral-950 tracking-tight">About This Piece</h3>
-            <p className="text-neutral-600 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal">
-              {product.description}
-            </p>
-          </div>
-        )}
+          <button
+            type="button"
+            onClick={() => setActiveDetailsTab('materials')}
+            className={`pb-3 text-xs font-semibold uppercase tracking-wider transition-all border-b-2 flex items-center gap-2 ${
+              activeDetailsTab === 'materials'
+                ? 'text-neutral-950 border-neutral-950'
+                : 'text-neutral-400 border-transparent hover:text-neutral-700'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Material &amp; Craft Story</span>
+          </button>
 
-        {/* Customer Reviews & Ratings */}
-        <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 sm:p-10 space-y-8 shadow-2xs">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-neutral-200/70">
-            <div>
-              <span className="text-[10px] uppercase font-semibold tracking-[0.25em] text-neutral-400">
-                Verified Feedback
-              </span>
-              <h2 className="text-2xl font-semibold text-neutral-950 tracking-tight mt-0.5">
-                Client Experiences
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                if (!isAuthenticated) {
-                  toast.info('Please sign in to write a review');
-                  navigate('/login');
-                  return;
-                }
-                setShowReviewForm(!showReviewForm);
-              }}
-              className="px-5 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-full text-xs uppercase tracking-widest font-medium transition-all shadow-2xs flex items-center justify-center gap-2 self-start sm:self-auto"
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>{showReviewForm ? 'Close Form' : 'Write a Review'}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setActiveDetailsTab('dimensions')}
+            className={`pb-3 text-xs font-semibold uppercase tracking-wider transition-all border-b-2 flex items-center gap-2 ${
+              activeDetailsTab === 'dimensions'
+                ? 'text-neutral-950 border-neutral-950'
+                : 'text-neutral-400 border-transparent hover:text-neutral-700'
+            }`}
+          >
+            <Ruler className="w-3.5 h-3.5" />
+            <span>Room Fit &amp; Dimensions</span>
+          </button>
 
-          {/* Rating Breakdown & Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center bg-neutral-50/70 rounded-2xl p-6 border border-neutral-200/60">
-            <div className="text-center md:text-left space-y-2">
-              <div className="text-5xl font-light text-neutral-950 tracking-tight">
-                {reviewStats?.averageRating ? reviewStats.averageRating.toFixed(1) : '0.0'}
-              </div>
-              <div className="flex items-center justify-center md:justify-start gap-1">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
-                    key={s}
-                    className={`w-4 h-4 ${
-                      s <= Math.round(reviewStats?.averageRating || 0)
-                        ? 'fill-neutral-950 text-neutral-950'
-                        : 'text-neutral-300'
-                    }`}
-                  />
+          <button
+            type="button"
+            onClick={() => setActiveDetailsTab('assembly')}
+            className={`pb-3 text-xs font-semibold uppercase tracking-wider transition-all border-b-2 flex items-center gap-2 ${
+              activeDetailsTab === 'assembly'
+                ? 'text-neutral-950 border-neutral-950'
+                : 'text-neutral-400 border-transparent hover:text-neutral-700'
+            }`}
+          >
+            <Wrench className="w-3.5 h-3.5" />
+            <span>White-Glove Staging</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveDetailsTab('care')}
+            className={`pb-3 text-xs font-semibold uppercase tracking-wider transition-all border-b-2 flex items-center gap-2 ${
+              activeDetailsTab === 'care'
+                ? 'text-neutral-950 border-neutral-950'
+                : 'text-neutral-400 border-transparent hover:text-neutral-700'
+            }`}
+          >
+            <Award className="w-3.5 h-3.5" />
+            <span>Care &amp; Warranty</span>
+          </button>
+        </div>
+
+        {/* Tab 1: Specifications */}
+        {activeDetailsTab === 'specs' && (
+          <div className="space-y-6">
+            {Object.keys(groupedSpecs).length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {Object.entries(groupedSpecs).map(([group, specs]) => (
+                  <div key={group} className="bg-white rounded-3xl border border-neutral-200/70 p-6 sm:p-7 space-y-3 shadow-2xs">
+                    <h3 className="font-semibold text-neutral-950 text-xs uppercase tracking-widest pb-2 border-b border-neutral-100 flex items-center gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-neutral-500" />
+                      {group}
+                    </h3>
+                    <dl className="divide-y divide-neutral-100 text-xs">
+                      {specs.map((spec) => (
+                        <div key={spec.id} className="py-2.5 flex justify-between gap-4">
+                          <dt className="text-neutral-500 font-medium">{spec.name}</dt>
+                          <dd className="text-neutral-900 font-semibold text-right">{spec.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
                 ))}
               </div>
-              <p className="text-xs text-neutral-400 font-medium">
-                Based on {reviewStats?.totalReviews || 0} customer reviews
-              </p>
-            </div>
-
-            <div className="md:col-span-2 space-y-2">
-              {[5, 4, 3, 2, 1].map((star) => {
-                const count = reviewStats?.breakdown?.[star] || 0;
-                const total = reviewStats?.totalReviews || 0;
-                const percent = total > 0 ? Math.round((count / total) * 100) : 0;
-                return (
-                  <div key={star} className="flex items-center gap-3 text-xs">
-                    <span className="w-12 text-neutral-600 font-medium text-right flex items-center justify-end gap-1">
-                      {star} <Star className="w-3 h-3 text-neutral-900 fill-neutral-900" />
-                    </span>
-                    <div className="flex-1 h-2 bg-neutral-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-neutral-900 rounded-full transition-all duration-500"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                    <span className="w-10 text-neutral-400 font-mono text-right">{count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Review Submission Form */}
-          {showReviewForm && (
-            <form onSubmit={handleSubmitReview} className="bg-neutral-50/80 border border-neutral-200 rounded-2xl p-6 space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-950">Share Your Experience</h3>
-              <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500 mb-1.5">
-                  Your Overall Rating
-                </label>
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      type="button"
-                      key={star}
-                      onClick={() => setReviewRating(star)}
-                      className="p-1 hover:scale-120 transition-transform"
-                    >
-                      <Star
-                        className={`w-6 h-6 ${
-                          star <= reviewRating
-                            ? 'fill-neutral-950 text-neutral-950'
-                            : 'text-neutral-300'
-                        }`}
-                      />
-                    </button>
-                  ))}
-                  <span className="text-xs font-semibold text-neutral-800 ml-2">
-                    {reviewRating === 5
-                      ? '5 - Excellent, loved it!'
-                      : reviewRating === 4
-                      ? '4 - Very Good'
-                      : reviewRating === 3
-                      ? '3 - Average'
-                      : reviewRating === 2
-                      ? '2 - Disappointing'
-                      : '1 - Poor'}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500 mb-1.5">
-                  Your Review / Comments
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  placeholder="Tell us about the wood grain, build quality, comfort, delivery experience..."
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  className="w-full text-xs p-3.5 bg-white border border-neutral-200 rounded-xl text-neutral-900 focus:outline-none focus:border-neutral-400"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowReviewForm(false)}
-                  className="px-4 py-2 text-neutral-500 hover:text-neutral-900 text-xs font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingReview}
-                  className="px-6 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-full text-xs font-medium uppercase tracking-widest transition-all shadow-xs flex items-center gap-2 disabled:opacity-50"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{isSubmittingReview ? 'Submitting...' : 'Post Review'}</span>
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Reviews List */}
-          <div className="space-y-4">
-            {reviews.length > 0 ? (
-              reviews.map((rev: any) => (
-                <div
-                  key={rev.id}
-                  className="p-5 rounded-2xl border border-neutral-200/60 bg-neutral-50/40 space-y-2.5"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-neutral-200 text-neutral-800 font-bold text-xs flex items-center justify-center">
-                        {rev.user?.name ? rev.user.name[0].toUpperCase() : 'U'}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold text-neutral-900">
-                            {rev.user?.name || 'Verified Customer'}
-                          </span>
-                          <span className="text-[9px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full font-medium border border-emerald-200">
-                            Verified Buyer
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-neutral-400">
-                          {new Date(rev.createdAt).toLocaleDateString('en-IN', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-0.5">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star
-                          key={s}
-                          className={`w-3.5 h-3.5 ${
-                            s <= rev.rating ? 'fill-neutral-950 text-neutral-950' : 'text-neutral-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {rev.comment && (
-                    <p className="text-xs text-neutral-600 leading-relaxed pl-10">
-                      {rev.comment}
-                    </p>
-                  )}
-                </div>
-              ))
             ) : (
-              <div className="text-center py-10 bg-neutral-50/60 rounded-2xl border border-dashed border-neutral-200 space-y-2">
-                <MessageSquare className="w-7 h-7 text-neutral-300 mx-auto" />
-                <p className="text-xs font-semibold text-neutral-800">No reviews yet for this piece</p>
-                <p className="text-[11px] text-neutral-400">
-                  Be the first verified homeowner to share your thoughts!
+              <div className="bg-white rounded-2xl border border-neutral-200/70 p-6">
+                <p className="text-neutral-500 text-xs">Standard showroom specifications and original manufacturer guidelines apply to this piece.</p>
+              </div>
+            )}
+
+            {/* Detailed Description */}
+            {product.description && (
+              <div className="bg-white rounded-3xl border border-neutral-200/70 p-6 sm:p-8 space-y-3 shadow-2xs">
+                <h3 className="text-base font-semibold text-neutral-950 tracking-tight">Design Architecture &amp; Overview</h3>
+                <p className="text-neutral-600 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal">
+                  {product.description}
                 </p>
               </div>
             )}
           </div>
+        )}
+
+        {/* Tab 2: Materials & Craft Story */}
+        {activeDetailsTab === 'materials' && (
+          <div className="bg-white rounded-3xl border border-neutral-200/70 p-7 sm:p-10 space-y-6 shadow-2xs">
+            <div className="max-w-3xl space-y-4">
+              <h3 className="text-lg font-semibold text-neutral-950 tracking-tight">The Grand Living Material Standard</h3>
+              <p className="text-neutral-600 text-xs sm:text-sm leading-relaxed">
+                Every piece in our collection is curated with zero compromises on wood density, structural joinery, or component longevity.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+              <div className="p-5 rounded-2xl bg-neutral-50/80 border border-neutral-200/70 space-y-2">
+                <div className="w-8 h-8 rounded-xl bg-white border border-neutral-200 flex items-center justify-center text-neutral-900 font-bold text-xs">
+                  01
+                </div>
+                <h4 className="font-semibold text-neutral-950 text-xs uppercase tracking-wider">Kiln-Dried Timber</h4>
+                <p className="text-neutral-500 text-xs leading-relaxed">
+                  Timber is dried to 8%–12% core moisture content, preventing thermal cracking, warping, and seasonal expansion.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-neutral-50/80 border border-neutral-200/70 space-y-2">
+                <div className="w-8 h-8 rounded-xl bg-white border border-neutral-200 flex items-center justify-center text-neutral-900 font-bold text-xs">
+                  02
+                </div>
+                <h4 className="font-semibold text-neutral-950 text-xs uppercase tracking-wider">Mortise &amp; Tenon Joinery</h4>
+                <p className="text-neutral-500 text-xs leading-relaxed">
+                  Precision interlocking wood joints that withstand decades of daily use without squeaking or loosening.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-neutral-50/80 border border-neutral-200/70 space-y-2">
+                <div className="w-8 h-8 rounded-xl bg-white border border-neutral-200 flex items-center justify-center text-neutral-900 font-bold text-xs">
+                  03
+                </div>
+                <h4 className="font-semibold text-neutral-950 text-xs uppercase tracking-wider">Eco-Friendly Poly Lacquer</h4>
+                <p className="text-neutral-500 text-xs leading-relaxed">
+                  Low-VOC protective matte seal that highlights organic grain variations while resisting water rings and stains.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Dimensions & Room Fit Guide */}
+        {activeDetailsTab === 'dimensions' && (
+          <div className="bg-white rounded-3xl border border-neutral-200/70 p-7 sm:p-10 space-y-6 shadow-2xs">
+            <div className="max-w-2xl space-y-2">
+              <h3 className="text-lg font-semibold text-neutral-950 tracking-tight">Room Planning &amp; Stairwell Clearance</h3>
+              <p className="text-neutral-600 text-xs sm:text-sm leading-relaxed">
+                Before purchasing, ensure this piece easily navigates your building entrance, elevator, and hallway turns.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+              <div className="p-5 rounded-2xl border border-neutral-200/80 space-y-3">
+                <h4 className="font-semibold text-neutral-950 text-xs uppercase tracking-wider flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Doorway &amp; Passage Check</span>
+                </h4>
+                <ul className="space-y-2 text-xs text-neutral-600">
+                  <li>• Minimum standard doorway width: <strong>30 inches (76 cm)</strong></li>
+                  <li>• Minimum hallway turning width: <strong>36 inches (91 cm)</strong></li>
+                  <li>• Elevator depth recommended: <strong>48 inches (122 cm)</strong></li>
+                </ul>
+              </div>
+
+              <div className="p-5 rounded-2xl border border-neutral-200/80 space-y-3">
+                <h4 className="font-semibold text-neutral-950 text-xs uppercase tracking-wider flex items-center gap-2">
+                  <Wrench className="w-4 h-4 text-neutral-900" />
+                  <span>Showroom Logistics Assistance</span>
+                </h4>
+                <p className="text-xs text-neutral-600 leading-relaxed">
+                  Our delivery crew brings lifting straps and moving blankets. For flat living with no elevator, our two-man team carries the piece up to the 4th floor at zero surcharge.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: White-Glove Staging */}
+        {activeDetailsTab === 'assembly' && (
+          <div className="bg-white rounded-3xl border border-neutral-200/70 p-7 sm:p-10 space-y-6 shadow-2xs">
+            <div className="max-w-3xl space-y-2">
+              <h3 className="text-lg font-semibold text-neutral-950 tracking-tight">Showroom Delivery &amp; Assembly Protocol</h3>
+              <p className="text-neutral-600 text-xs sm:text-sm leading-relaxed">
+                Unlike common parcel couriers that dump heavy boxes at the building gate, our specialized fleet takes care of every single step.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2">
+              <div className="p-4 rounded-2xl bg-neutral-50/80 border border-neutral-200/70 space-y-1.5 text-xs">
+                <span className="text-[10px] uppercase font-bold text-neutral-400">Step 01</span>
+                <p className="font-semibold text-neutral-950">Pre-Call Verification</p>
+                <p className="text-neutral-500 text-[11px] leading-relaxed">Our driver calls 30 minutes prior to arrival to confirm you are home.</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-neutral-50/80 border border-neutral-200/70 space-y-1.5 text-xs">
+                <span className="text-[10px] uppercase font-bold text-neutral-400">Step 02</span>
+                <p className="font-semibold text-neutral-950">Room Placement</p>
+                <p className="text-neutral-500 text-[11px] leading-relaxed">Carried into your living room or bedroom of choice.</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-neutral-50/80 border border-neutral-200/70 space-y-1.5 text-xs">
+                <span className="text-[10px] uppercase font-bold text-neutral-400">Step 03</span>
+                <p className="font-semibold text-neutral-950">Technician Assembly</p>
+                <p className="text-neutral-500 text-[11px] leading-relaxed">Full unboxing, hardware fastening, and debris removal.</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-neutral-50/80 border border-neutral-200/70 space-y-1.5 text-xs">
+                <span className="text-[10px] uppercase font-bold text-neutral-400">Step 04</span>
+                <p className="font-semibold text-neutral-950">Inspect &amp; Pay</p>
+                <p className="text-neutral-500 text-[11px] leading-relaxed">Inspect wood finish and appliance functions before paying via cash or UPI.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 5: Care & Warranty */}
+        {activeDetailsTab === 'care' && (
+          <div className="bg-white rounded-3xl border border-neutral-200/70 p-7 sm:p-10 space-y-6 shadow-2xs">
+            <div className="max-w-2xl space-y-2">
+              <h3 className="text-lg font-semibold text-neutral-950 tracking-tight">Care Instructions &amp; Dealer Warranty</h3>
+              <p className="text-neutral-600 text-xs sm:text-sm leading-relaxed">
+                Simple maintenance practices to ensure your investment lasts for decades.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 text-xs">
+              <div className="p-5 rounded-2xl border border-neutral-200/80 space-y-2">
+                <h4 className="font-semibold text-neutral-950 uppercase tracking-wider">Wood Furniture Care</h4>
+                <ul className="space-y-1.5 text-neutral-600 leading-relaxed">
+                  <li>• Dust weekly with a soft dry microfiber cloth.</li>
+                  <li>• Avoid direct placement directly against hot radiators or constant AC vents.</li>
+                  <li>• Use coasters under hot beverages and cold drinks to avoid ring marks.</li>
+                  <li>• Re-apply natural beeswax or teak oil once every 18 months if desired.</li>
+                </ul>
+              </div>
+
+              <div className="p-5 rounded-2xl border border-neutral-200/80 space-y-2">
+                <h4 className="font-semibold text-neutral-950 uppercase tracking-wider">Brand Warranty Coverage</h4>
+                <p className="text-neutral-600 leading-relaxed">
+                  All branded electronics (Samsung, LG, Godrej) include official dealer stamped warranty cards. In case of any technical queries or servicing, call our Mohali showroom at{' '}
+                  <strong className="text-neutral-950">+91 98765 43210</strong> or schedule an authorized brand technician directly.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Different Product Suggestions: "You May Also Like" / "Complete The Space" */}
+      {relatedProducts.length > 0 && (
+        <section className="pt-16 border-t border-neutral-200/70 space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-4 border-b border-neutral-200/60">
+            <div>
+              <span className="text-[10px] uppercase font-semibold tracking-[0.25em] text-neutral-400">
+                Curated Pairings &amp; Alternatives
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-semibold text-neutral-950 tracking-tight mt-1">
+                You May Also Like
+              </h2>
+              <p className="text-neutral-500 text-xs sm:text-sm mt-1">
+                Pieces from our showroom frequently paired by interior designers with this {product.category?.name || 'design'}.
+              </p>
+            </div>
+            <Link
+              to={product.category ? `/products?category=${product.category.slug}` : '/products'}
+              className="text-xs uppercase tracking-widest font-semibold text-neutral-900 hover:text-neutral-600 flex items-center gap-1 group"
+            >
+              <span>Explore Collection</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+            {relatedProducts.slice(0, 4).map((rel) => (
+              <ProductCard key={rel.id} product={rel} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Customer Reviews & Ratings */}
+      <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 sm:p-10 space-y-8 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-neutral-200/70">
+          <div>
+            <span className="text-[10px] uppercase font-semibold tracking-[0.25em] text-neutral-400">
+              Verified Feedback
+            </span>
+            <h2 className="text-2xl font-semibold text-neutral-950 tracking-tight mt-0.5">
+              Client Experiences
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (!isAuthenticated) {
+                toast.info('Please sign in to write a review');
+                navigate('/login');
+                return;
+              }
+              setShowReviewForm(!showReviewForm);
+            }}
+            className="px-5 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-full text-xs uppercase tracking-widest font-medium transition-all shadow-2xs flex items-center justify-center gap-2 self-start sm:self-auto"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>{showReviewForm ? 'Close Form' : 'Write a Review'}</span>
+          </button>
+        </div>
+
+        {/* Rating Breakdown & Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center bg-neutral-50/70 rounded-2xl p-6 border border-neutral-200/60">
+          <div className="text-center md:text-left space-y-2">
+            <div className="text-5xl font-light text-neutral-950 tracking-tight">
+              {reviewStats?.averageRating ? reviewStats.averageRating.toFixed(1) : '0.0'}
+            </div>
+            <div className="flex items-center justify-center md:justify-start gap-1">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <Star
+                  key={s}
+                  className={`w-4 h-4 ${
+                    s <= Math.round(reviewStats?.averageRating || 0)
+                      ? 'fill-neutral-950 text-neutral-950'
+                      : 'text-neutral-300'
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-neutral-400 font-medium">
+              Based on {reviewStats?.totalReviews || 0} customer reviews
+            </p>
+          </div>
+
+          <div className="md:col-span-2 space-y-2">
+            {[5, 4, 3, 2, 1].map((star) => {
+              const count = reviewStats?.breakdown?.[star] || 0;
+              const total = reviewStats?.totalReviews || 0;
+              const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+              return (
+                <div key={star} className="flex items-center gap-3 text-xs">
+                  <span className="w-12 text-neutral-600 font-medium text-right flex items-center justify-end gap-1">
+                    {star} <Star className="w-3 h-3 text-neutral-900 fill-neutral-900" />
+                  </span>
+                  <div className="flex-1 h-2 bg-neutral-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-neutral-900 rounded-full transition-all duration-500"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                  <span className="w-10 text-neutral-400 font-mono text-right">{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Review Submission Form */}
+        {showReviewForm && (
+          <form onSubmit={handleSubmitReview} className="bg-neutral-50/80 border border-neutral-200 rounded-2xl p-6 space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-950">Share Your Experience</h3>
+            <div>
+              <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500 mb-1.5">
+                Your Overall Rating
+              </label>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    type="button"
+                    key={star}
+                    onClick={() => setReviewRating(star)}
+                    className="p-1 hover:scale-120 transition-transform"
+                  >
+                    <Star
+                      className={`w-6 h-6 ${
+                        star <= reviewRating
+                          ? 'fill-neutral-950 text-neutral-950'
+                          : 'text-neutral-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+                <span className="text-xs font-semibold text-neutral-800 ml-2">
+                  {reviewRating === 5
+                    ? '5 - Excellent, loved it!'
+                    : reviewRating === 4
+                    ? '4 - Very Good'
+                    : reviewRating === 3
+                    ? '3 - Average'
+                    : reviewRating === 2
+                    ? '2 - Disappointing'
+                    : '1 - Poor'}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500 mb-1.5">
+                Your Review / Comments
+              </label>
+              <textarea
+                rows={3}
+                required
+                placeholder="Tell us about the wood grain, build quality, comfort, delivery experience..."
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                className="w-full text-xs p-3.5 bg-white border border-neutral-200 rounded-xl text-neutral-900 focus:outline-none focus:border-neutral-400"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowReviewForm(false)}
+                className="px-4 py-2 text-neutral-500 hover:text-neutral-900 text-xs font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmittingReview}
+                className="px-6 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-full text-xs font-medium uppercase tracking-widest transition-all shadow-xs flex items-center gap-2 disabled:opacity-50"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{isSubmittingReview ? 'Submitting...' : 'Post Review'}</span>
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Reviews List */}
+        <div className="space-y-4">
+          {reviews.length > 0 ? (
+            reviews.map((rev: any) => (
+              <div
+                key={rev.id}
+                className="p-5 rounded-2xl border border-neutral-200/60 bg-neutral-50/40 space-y-2.5"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-neutral-200 text-neutral-800 font-bold text-xs flex items-center justify-center">
+                      {rev.user?.name ? rev.user.name[0].toUpperCase() : 'U'}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-neutral-900">
+                          {rev.user?.name || 'Verified Customer'}
+                        </span>
+                        <span className="text-[9px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full font-medium border border-emerald-200">
+                          Verified Buyer
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-neutral-400">
+                        {new Date(rev.createdAt).toLocaleDateString('en-IN', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`w-3.5 h-3.5 ${
+                          s <= rev.rating ? 'fill-neutral-950 text-neutral-950' : 'text-neutral-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {rev.comment && (
+                  <p className="text-xs text-neutral-600 leading-relaxed pl-10">
+                    {rev.comment}
+                  </p>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-10 bg-neutral-50/60 rounded-2xl border border-dashed border-neutral-200 space-y-2">
+              <MessageSquare className="w-7 h-7 text-neutral-300 mx-auto" />
+              <p className="text-xs font-semibold text-neutral-800">No reviews yet for this piece</p>
+              <p className="text-[11px] text-neutral-400">
+                Be the first verified homeowner to share your thoughts!
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
+
+export default ProductDetailPage;
