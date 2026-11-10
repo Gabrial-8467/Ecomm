@@ -14,14 +14,39 @@ const app: Express = express();
 app.use(helmet());
 
 // Cross-Origin Resource Sharing
-const allowedOrigins = [env.STOREFRONT_URL, env.ADMIN_URL, 'http://localhost:5173', 'http://localhost:5174'];
+const configuredOrigins = [
+  env.STOREFRONT_URL,
+  env.ADMIN_URL,
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+  'http://127.0.0.1:5000',
+];
+
+const isDevelopment = env.NODE_ENV === 'development';
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const normalizedOrigin = origin.replace(/\/$/, '');
+      const isAllowedConfigured = configuredOrigins.some(
+        (o) => o && o.replace(/\/$/, '') === normalizedOrigin
+      );
+      const isLocalhost =
+        isDevelopment && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalizedOrigin);
+
+      if (isAllowedConfigured || isLocalhost) {
         callback(null, true);
       } else {
-        callback(new Error('CORS policy: Not allowed by CORS'));
+        // Return false without throwing an unhandled exception
+        callback(null, false);
       }
     },
     credentials: true,
