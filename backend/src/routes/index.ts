@@ -13,6 +13,7 @@ import { customerRoutes } from '../modules/customers/customer.routes.js';
 import { dashboardRoutes } from '../modules/dashboard/dashboard.routes.js';
 import { uploadRouter } from '../modules/upload/upload.routes.js';
 import { reviewRoutes } from '../modules/reviews/review.routes.js';
+import { bannerRouter } from '../modules/banners/banner.routes.js';
 
 const apiRouter = Router();
 
@@ -30,5 +31,6 @@ apiRouter.use('/customers', customerRoutes);
 apiRouter.use('/admin/dashboard', dashboardRoutes);
 apiRouter.use('/upload', uploadRouter);
 apiRouter.use('/reviews', reviewRoutes);
+apiRouter.use('/banners', bannerRouter);
 
 export { apiRouter };

@@ -53,6 +53,17 @@ export class OrderController {
     }
   }
 
+  async requestReturn(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const orderNumber = paramToString(req.params.orderNumber);
+      const { reason, details } = req.body;
+      const order = await orderService.requestReturn(orderNumber, reason, req.user!.id, details);
+      sendSuccess(res, order, 'Return/Replacement request submitted successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getAllOrders(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await orderService.getOrders(req.query as any);

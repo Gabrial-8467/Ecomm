@@ -388,6 +388,29 @@ export class OrderService {
         }
       }
 
+      // When order return is approved and marked RETURNED, restock inventory and refund
+      if (targetStatus === 'RETURNED') {
+        paymentStatusUpdate = 'REFUNDED';
+        for (const item of order.items) {
+          await tx.inventory.update({
+            where: { variantId: item.variantId },
+            data: {
+              availableQuantity: { increment: item.quantity },
+            },
+          });
+
+          await tx.inventoryMovement.create({
+            data: {
+              variantId: item.variantId,
+              type: 'RETURN',
+              quantity: item.quantity,
+              reason: `Order ${order.orderNumber} returned and restocked in inventory`,
+              reference: order.id,
+            },
+          });
+        }
+      }
+
       const updated = await tx.order.update({
         where: { id: order.id },
         data: {
@@ -406,6 +429,46 @@ export class OrderService {
           newStatus: targetStatus,
           changedBy: changedByUserId,
           reason: input.reason,
+        },
+      });
+
+      return updated;
+    });
+  }
+
+  async requestReturn(orderNumber: string, reason: string, customerId: string, details?: string) {
+    const order = await this.orderRepo.findByOrderNumber(orderNumber);
+    if (!order) {
+      throw new NotFoundError('Order not found');
+    }
+
+    if (order.customerId !== customerId) {
+      throw new NotFoundError('Order not found for this customer');
+    }
+
+    if (order.status !== 'DELIVERED') {
+      throw new UnprocessableEntityError('Only delivered orders can be submitted for return or replacement.');
+    }
+
+    const returnStamp = `[Return/Replacement Requested: ${reason}${details ? ` - ${details}` : ''}]`;
+    const updatedNote = order.customerNote ? `${order.customerNote} | ${returnStamp}` : returnStamp;
+
+    return prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id: order.id },
+        data: {
+          status: 'RETURN_REQUESTED',
+          customerNote: updatedNote,
+        },
+      });
+
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: order.id,
+          previousStatus: 'DELIVERED',
+          newStatus: 'RETURN_REQUESTED',
+          changedBy: customerId,
+          reason: `${reason}${details ? `: ${details}` : ''}`,
         },
       });
 

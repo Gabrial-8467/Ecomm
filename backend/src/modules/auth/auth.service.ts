@@ -4,7 +4,8 @@ import jwt from 'jsonwebtoken';
 import { env } from '../../config/env.js';
 import { AuthRepository } from './auth.repository.js';
 import { RegisterInput, LoginInput, AuthTokens, UserSummary } from './auth.types.js';
-import { ConflictError, UnauthorizedError, ForbiddenError } from '../../utils/errors.js';
+import { prisma } from '../../config/database.js';
+import { ConflictError, UnauthorizedError, ForbiddenError, NotFoundError, BadRequestError } from '../../utils/errors.js';
 
 export class AuthService {
   private authRepo = new AuthRepository();
@@ -184,5 +185,50 @@ export class AuthService {
       status: user.status,
       createdAt: user.createdAt,
     };
+  }
+
+  async forgotPassword(identifier: string): Promise<{ resetToken: string; message: string }> {
+    const user = await this.authRepo.findByPhoneOrEmail(identifier);
+    if (!user) {
+      throw new NotFoundError('No active account found with this phone number or email address');
+    }
+
+    const resetToken = jwt.sign(
+      { userId: user.id, purpose: 'PASSWORD_RESET' },
+      env.JWT_ACCESS_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    return {
+      resetToken,
+      message: 'Password reset token generated successfully. Valid for 15 minutes.',
+    };
+  }
+
+  async resetPassword(resetToken: string, newPassword: string): Promise<{ message: string }> {
+    let payload: { userId: string; purpose: string };
+    try {
+      payload = jwt.verify(resetToken, env.JWT_ACCESS_SECRET) as { userId: string; purpose: string };
+    } catch {
+      throw new BadRequestError('Invalid or expired password reset token');
+    }
+
+    if (payload.purpose !== 'PASSWORD_RESET') {
+      throw new BadRequestError('Invalid reset token purpose');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await prisma.user.update({
+      where: { id: payload.userId },
+      data: { passwordHash },
+    });
+
+    // Revoke all existing sessions
+    await prisma.userSession.updateMany({
+      where: { userId: payload.userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+
+    return { message: 'Password has been reset successfully. Please log in with your new password.' };
   }
 }

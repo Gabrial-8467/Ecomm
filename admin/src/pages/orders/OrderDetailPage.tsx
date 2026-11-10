@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../../services/api/client.js';
 import { Order } from '../../types/index.js';
@@ -12,8 +12,11 @@ import {
   AlertTriangle,
   History,
   Wrench,
+  Download,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import html2pdf from 'html2pdf.js';
 
 export const OrderDetailPage: React.FC = () => {
   const { orderNumber } = useParams<{ orderNumber: string }>();
@@ -21,6 +24,37 @@ export const OrderDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [invoiceModal, setInvoiceModal] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const invoiceRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadPDF = async () => {
+    if (!order) return;
+    setIsGeneratingPdf(true);
+    try {
+      // If modal is not open, open it so DOM ref exists
+      if (!invoiceModal) {
+        setInvoiceModal(true);
+        await new Promise((r) => setTimeout(r, 150));
+      }
+
+      if (!invoiceRef.current) return;
+      const opt = {
+        margin: [10, 10, 10, 10] as [number, number, number, number],
+        filename: `Invoice-${order.orderNumber}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+      };
+      await html2pdf().set(opt).from(invoiceRef.current).save();
+      toast.success(`Downloaded Invoice-${order.orderNumber}.pdf`);
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+      toast.error('Failed to generate PDF automatically. Opening print dialog...');
+      window.print();
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   useEffect(() => {
     fetchOrder();
@@ -89,6 +123,18 @@ export const OrderDetailPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleDownloadPDF}
+            disabled={isGeneratingPdf}
+            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition-colors disabled:opacity-50"
+          >
+            {isGeneratingPdf ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download PDF Invoice'}</span>
+          </button>
           <button
             onClick={() => setInvoiceModal(true)}
             className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-800 rounded-xl text-xs font-bold flex items-center gap-2 border border-slate-300 shadow-2xs transition-colors"
@@ -192,6 +238,43 @@ export const OrderDetailPage: React.FC = () => {
             <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-xs font-bold">
               <CheckCircle2 className="w-4 h-4" />
               <span>Delivered successfully. Cash on Delivery payment collected and marked as PAID.</span>
+            </div>
+          )}
+
+          {status === 'RETURN_REQUESTED' && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl w-full">
+              <div className="space-y-0.5">
+                <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-700" />
+                  Customer Requested Return / Replacement Ticket
+                </span>
+                <p className="text-[11px] text-amber-800">
+                  Inspect the reported defect or transit damage below. Accept to restock or decline to retain delivery status.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={isUpdating}
+                  onClick={() => handleUpdateStatus('RETURNED', 'Return accepted, item received at showroom and restocked')}
+                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
+                >
+                  Approve Return & Restock
+                </button>
+                <button
+                  disabled={isUpdating}
+                  onClick={() => handleUpdateStatus('DELIVERED', 'Return ticket declined by showroom after inspection')}
+                  className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-colors"
+                >
+                  Decline Ticket
+                </button>
+              </div>
+            </div>
+          )}
+
+          {status === 'RETURNED' && (
+            <div className="flex items-center gap-2 text-rose-700 bg-rose-50 border border-rose-200 px-4 py-2 rounded-xl text-xs font-bold">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Order Returned. Products have been automatically restocked into warehouse inventory.</span>
             </div>
           )}
 
@@ -337,89 +420,91 @@ export const OrderDetailPage: React.FC = () => {
       {invoiceModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="bg-white text-slate-900 rounded-3xl max-w-2xl w-full p-8 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200">
-            {/* Invoice Header */}
-            <div className="flex justify-between items-start pb-6 border-b border-slate-200">
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900">GRAND LIVING</h2>
-                <p className="text-xs text-slate-500">Physical Furniture & Electronics Showroom</p>
-                <p className="text-xs text-slate-500">SCO 45-48, Sector 70, Mohali, Punjab - 160071</p>
-                <p className="text-xs text-slate-500">GSTIN: 03ABCDE1234F1Z5 • Phone: +91 98765 43210</p>
+            <div ref={invoiceRef} className="p-4 bg-white space-y-6">
+              {/* Invoice Header */}
+              <div className="flex justify-between items-start pb-6 border-b border-slate-200">
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight text-slate-900">GRAND LIVING</h2>
+                  <p className="text-xs text-slate-500">Physical Furniture & Electronics Showroom</p>
+                  <p className="text-xs text-slate-500">SCO 45-48, Sector 70, Mohali, Punjab - 160071</p>
+                  <p className="text-xs text-slate-500">GSTIN: 03ABCDE1234F1Z5 • Phone: +91 98765 43210</p>
+                </div>
+                <div className="text-right">
+                  <span className="px-3 py-1 bg-amber-100 text-amber-900 text-xs font-bold rounded-lg uppercase">
+                    Tax Invoice
+                  </span>
+                  <p className="text-sm font-bold text-slate-900 mt-2">#{order.orderNumber}</p>
+                  <p className="text-xs text-slate-500">Date: {new Date(order.createdAt).toLocaleDateString()}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <span className="px-3 py-1 bg-amber-100 text-amber-900 text-xs font-bold rounded-lg uppercase">
-                  Tax Invoice
-                </span>
-                <p className="text-sm font-bold text-slate-900 mt-2">#{order.orderNumber}</p>
-                <p className="text-xs text-slate-500">Date: {new Date(order.createdAt).toLocaleDateString()}</p>
-              </div>
-            </div>
 
-            {/* Bill To */}
-            <div className="grid grid-cols-2 gap-6 text-xs">
-              <div>
-                <p className="font-bold text-slate-500 uppercase mb-1">Delivered To:</p>
-                <p className="font-bold text-slate-900 text-sm">{order.deliveryAddress.fullName}</p>
-                <p className="text-slate-600">{order.deliveryAddress.phone}</p>
-                <p className="text-slate-600">{order.deliveryAddress.addressLine1}</p>
-                <p className="text-slate-600">
-                  {order.deliveryAddress.city}, {order.deliveryAddress.state} -{' '}
-                  {order.deliveryAddress.pincode}
-                </p>
+              {/* Bill To */}
+              <div className="grid grid-cols-2 gap-6 text-xs">
+                <div>
+                  <p className="font-bold text-slate-500 uppercase mb-1">Delivered To:</p>
+                  <p className="font-bold text-slate-900 text-sm">{order.deliveryAddress.fullName}</p>
+                  <p className="text-slate-600">{order.deliveryAddress.phone}</p>
+                  <p className="text-slate-600">{order.deliveryAddress.addressLine1}</p>
+                  <p className="text-slate-600">
+                    {order.deliveryAddress.city}, {order.deliveryAddress.state} -{' '}
+                    {order.deliveryAddress.pincode}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-bold text-slate-500 uppercase mb-1">Payment Details:</p>
+                  <p className="text-slate-700">
+                    Method: <strong>Cash on Delivery (COD)</strong>
+                  </p>
+                  <p className="text-slate-700">
+                    Status: <strong>{order.paymentStatus}</strong>
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-slate-500 uppercase mb-1">Payment Details:</p>
-                <p className="text-slate-700">
-                  Method: <strong>Cash on Delivery (COD)</strong>
-                </p>
-                <p className="text-slate-700">
-                  Status: <strong>{order.paymentStatus}</strong>
-                </p>
-              </div>
-            </div>
 
-            {/* Items */}
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 uppercase text-[10px] text-slate-600 border-y border-slate-200">
-                <tr>
-                  <th className="p-2.5">Item & SKU</th>
-                  <th className="p-2.5 text-center">Qty</th>
-                  <th className="p-2.5 text-right">Unit Price</th>
-                  <th className="p-2.5 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {order.items.map((i) => (
-                  <tr key={i.id}>
-                    <td className="p-2.5">
-                      <p className="font-bold text-slate-900">{i.productName}</p>
-                      <p className="text-[10px] text-slate-500">
-                        {i.variantName} (SKU: {i.sku})
-                      </p>
-                    </td>
-                    <td className="p-2.5 text-center font-bold text-slate-900">{i.quantity}</td>
-                    <td className="p-2.5 text-right text-slate-700">₹{Number(i.unitPrice).toLocaleString('en-IN')}</td>
-                    <td className="p-2.5 text-right font-bold text-slate-900">
-                      ₹{Number(i.totalPrice).toLocaleString('en-IN')}
-                    </td>
+              {/* Items */}
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-50 uppercase text-[10px] text-slate-600 border-y border-slate-200">
+                  <tr>
+                    <th className="p-2.5">Item & SKU</th>
+                    <th className="p-2.5 text-center">Qty</th>
+                    <th className="p-2.5 text-right">Unit Price</th>
+                    <th className="p-2.5 text-right">Amount</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {order.items.map((i) => (
+                    <tr key={i.id}>
+                      <td className="p-2.5">
+                        <p className="font-bold text-slate-900">{i.productName}</p>
+                        <p className="text-[10px] text-slate-500">
+                          {i.variantName} (SKU: {i.sku})
+                        </p>
+                      </td>
+                      <td className="p-2.5 text-center font-bold text-slate-900">{i.quantity}</td>
+                      <td className="p-2.5 text-right text-slate-700">₹{Number(i.unitPrice).toLocaleString('en-IN')}</td>
+                      <td className="p-2.5 text-right font-bold text-slate-900">
+                        ₹{Number(i.totalPrice).toLocaleString('en-IN')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-            {/* Totals */}
-            <div className="pt-4 border-t border-slate-200 text-xs space-y-1.5 text-right">
-              <p className="text-slate-600">
-                Subtotal: <strong className="text-slate-900">₹{Number(order.subtotal).toLocaleString('en-IN')}</strong>
-              </p>
-              <p className="text-slate-600">
-                Delivery: <strong className="text-slate-900">₹{Number(order.deliveryCharge).toLocaleString('en-IN')}</strong>
-              </p>
-              <p className="text-slate-600">
-                Tax (GST 18%): <strong className="text-slate-900">₹{Number(order.taxAmount).toLocaleString('en-IN')}</strong>
-              </p>
-              <p className="text-base font-bold text-slate-900 pt-2 border-t border-slate-200">
-                Total Amount Due: ₹{Number(order.totalAmount).toLocaleString('en-IN')}
-              </p>
+              {/* Totals */}
+              <div className="pt-4 border-t border-slate-200 text-xs space-y-1.5 text-right">
+                <p className="text-slate-600">
+                  Subtotal: <strong className="text-slate-900">₹{Number(order.subtotal).toLocaleString('en-IN')}</strong>
+                </p>
+                <p className="text-slate-600">
+                  Delivery: <strong className="text-slate-900">₹{Number(order.deliveryCharge).toLocaleString('en-IN')}</strong>
+                </p>
+                <p className="text-slate-600">
+                  Tax (GST 18%): <strong className="text-slate-900">₹{Number(order.taxAmount).toLocaleString('en-IN')}</strong>
+                </p>
+                <p className="text-base font-bold text-slate-900 pt-2 border-t border-slate-200">
+                  Total Amount Due: ₹{Number(order.totalAmount).toLocaleString('en-IN')}
+                </p>
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
@@ -430,10 +515,23 @@ export const OrderDetailPage: React.FC = () => {
                 Close
               </button>
               <button
-                onClick={() => window.print()}
-                className="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition-colors shadow-xs"
+                onClick={handleDownloadPDF}
+                disabled={isGeneratingPdf}
+                className="px-4 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold hover:bg-emerald-800 transition-colors shadow-xs flex items-center gap-1.5 disabled:opacity-50"
               >
-                Print / Save PDF
+                {isGeneratingPdf ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
+                <span>{isGeneratingPdf ? 'Downloading...' : 'Download PDF'}</span>
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition-colors shadow-xs flex items-center gap-1.5"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print Dialog</span>
               </button>
             </div>
           </div>

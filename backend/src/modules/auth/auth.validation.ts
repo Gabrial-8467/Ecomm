@@ -18,3 +18,12 @@ export const loginSchema = z.object({
 export const refreshTokenSchema = z.object({
   refreshToken: z.string().optional(),
 });
+
+export const forgotPasswordSchema = z.object({
+  identifier: z.string().min(3, 'Phone or email is required'),
+});
+
+export const resetPasswordSchema = z.object({
+  resetToken: z.string().min(10, 'Valid reset token is required'),
+  newPassword: z.string().min(6, 'Password must be at least 6 characters').max(100),
+});

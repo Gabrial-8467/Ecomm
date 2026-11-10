@@ -1,24 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api/client.js';
-import { Product, Category } from '../../types/index.js';
+import { Product, Category, Banner } from '../../types/index.js';
 import { ProductCard } from '../../components/product/ProductCard.js';
-import { ArrowRight, ShieldCheck, Truck, Sparkles, MapPin, CheckCircle2, Star } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Truck, Sparkles, MapPin, CheckCircle2, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [currentBannerIdx, setCurrentBannerIdx] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [prodRes, catRes] = await Promise.all([
+        const [prodRes, catRes, bannerRes] = await Promise.all([
           api.get('/products/featured'),
           api.get('/categories'),
+          api.get('/banners').catch(() => ({ data: { data: [] } })),
         ]);
         setFeaturedProducts(prodRes.data?.data || []);
         setCategories(catRes.data?.data || []);
+        const activeBanners = (bannerRes.data?.data || []).filter((b: Banner) => b.isActive);
+        setBanners(activeBanners);
       } catch (err) {
         console.error('Failed to load homepage data:', err);
       } finally {
@@ -28,20 +33,34 @@ export const HomePage: React.FC = () => {
     loadData();
   }, []);
 
+  // Auto-rotate hero banners every 6 seconds if multiple exist
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentBannerIdx((prev) => (prev + 1) % banners.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [banners.length]);
+
+  const activeBanner = banners.length > 0 ? banners[currentBannerIdx] : null;
+
   return (
     <div className="space-y-16 sm:space-y-24 pb-20">
       {/* 1. Main Hero Banner */}
-      <section className="relative overflow-hidden bg-stone-900 text-white min-h-[520px] sm:min-h-[600px] flex items-center">
+      <section className="relative overflow-hidden bg-stone-900 text-white min-h-[520px] sm:min-h-[600px] flex items-center transition-all duration-700">
         <div className="absolute inset-0 z-0 opacity-40">
           <img
-            src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=2000&q=80"
-            alt="Luxury Furniture Showroom"
-            className="w-full h-full object-cover"
+            src={
+              activeBanner?.imageUrl ||
+              'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=2000&q=80'
+            }
+            alt={activeBanner?.title || 'Luxury Furniture Showroom'}
+            className="w-full h-full object-cover transition-all duration-700"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/80 to-transparent" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 w-full">
           <div className="max-w-2xl space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold tracking-wide uppercase">
               <Sparkles className="w-3.5 h-3.5" />
@@ -49,30 +68,76 @@ export const HomePage: React.FC = () => {
             </div>
 
             <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-              Handcrafted Wood Furniture & Branded Electronics.
+              {activeBanner?.title || 'Handcrafted Wood Furniture & Branded Electronics.'}
             </h1>
 
             <p className="text-stone-300 text-base sm:text-lg leading-relaxed font-light">
-              Experience the luxury of premium solid Sheesham wood wardrobes, sofas, and office furniture alongside energy-efficient Samsung & LG home electronics. Delivered safely by our dedicated local fleet with Cash on Delivery.
+              {activeBanner?.subtitle ||
+                'Experience the luxury of premium solid Sheesham wood wardrobes, sofas, and office furniture alongside energy-efficient Samsung & LG home electronics. Delivered safely by our dedicated local fleet with Cash on Delivery.'}
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-4">
-              <Link
-                to="/products?category=living-room"
-                className="px-7 py-3.5 bg-amber-800 hover:bg-amber-900 text-white font-medium rounded-xl transition-all shadow-lg shadow-amber-950/40 flex items-center gap-2 group"
-              >
-                <span>Explore Furniture</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                to="/products?category=home-appliances"
-                className="px-7 py-3.5 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl border border-white/20 transition-all backdrop-blur-md"
-              >
-                Shop Electronics
-              </Link>
+              {activeBanner?.linkUrl ? (
+                <Link
+                  to={activeBanner.linkUrl}
+                  className="px-7 py-3.5 bg-amber-800 hover:bg-amber-900 text-white font-medium rounded-xl transition-all shadow-lg shadow-amber-950/40 flex items-center gap-2 group"
+                >
+                  <span>Explore Offer</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/products?category=living-room"
+                    className="px-7 py-3.5 bg-amber-800 hover:bg-amber-900 text-white font-medium rounded-xl transition-all shadow-lg shadow-amber-950/40 flex items-center gap-2 group"
+                  >
+                    <span>Explore Furniture</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                  <Link
+                    to="/products?category=home-appliances"
+                    className="px-7 py-3.5 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl border border-white/20 transition-all backdrop-blur-md"
+                  >
+                    Shop Electronics
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
+
+        {/* Carousel Navigation Arrows & Indicators if multiple banners */}
+        {banners.length > 1 && (
+          <>
+            <button
+              onClick={() => setCurrentBannerIdx((prev) => (prev - 1 + banners.length) % banners.length)}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-stone-900/60 hover:bg-stone-900 text-white flex items-center justify-center border border-white/20 transition-colors"
+              aria-label="Previous Banner"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setCurrentBannerIdx((prev) => (prev + 1) % banners.length)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-stone-900/60 hover:bg-stone-900 text-white flex items-center justify-center border border-white/20 transition-colors"
+              aria-label="Next Banner"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+              {banners.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentBannerIdx(i)}
+                  className={`h-2 transition-all rounded-full ${
+                    i === currentBannerIdx ? 'w-8 bg-amber-500' : 'w-2 bg-white/40 hover:bg-white/70'
+                  }`}
+                  aria-label={`Go to banner ${i + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </section>
 
       {/* 2. Shop By Category */}

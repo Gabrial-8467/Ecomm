@@ -195,3 +195,14 @@ export interface DeliveryCheckResult {
   };
   message?: string;
 }
+
+export interface Banner {
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  imageUrl: string;
+  linkUrl?: string | null;
+  position: string;
+  isActive: boolean;
+  sortOrder: number;
+}

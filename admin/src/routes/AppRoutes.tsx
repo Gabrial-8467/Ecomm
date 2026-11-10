@@ -12,6 +12,8 @@ import { OrderDetailPage } from '../pages/orders/OrderDetailPage.js';
 import { DeliveryZonesPage } from '../pages/delivery/DeliveryZonesPage.js';
 import { CouponsPage } from '../pages/coupons/CouponsPage.js';
 import { CustomersPage } from '../pages/customers/CustomersPage.js';
+import { CategoriesBrandsPage } from '../pages/categories/CategoriesBrandsPage.js';
+import { BannersPage } from '../pages/banners/BannersPage.js';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -24,6 +26,8 @@ export const AppRoutes: React.FC = () => {
         <Route path="/products" element={<ProductsListPage />} />
         <Route path="/products/create" element={<CreateProductPage />} />
         <Route path="/products/:id" element={<EditProductPage />} />
+        <Route path="/categories-brands" element={<CategoriesBrandsPage />} />
+        <Route path="/banners" element={<BannersPage />} />
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/orders" element={<OrdersListPage />} />
         <Route path="/orders/:orderNumber" element={<OrderDetailPage />} />

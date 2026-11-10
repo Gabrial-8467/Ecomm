@@ -10,6 +10,8 @@ import {
   Users,
   LogOut,
   Store,
+  Tags,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useAdminAuthStore } from '../../store/authStore.js';
 
@@ -20,6 +22,8 @@ export const Sidebar: React.FC = () => {
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/orders', label: 'Orders & Fulfillment', icon: ShoppingBag },
     { to: '/products', label: 'Products & Variants', icon: Package },
+    { to: '/categories-brands', label: 'Categories & Brands', icon: Tags },
+    { to: '/banners', label: 'Homepage Banners', icon: ImageIcon },
     { to: '/inventory', label: 'Stock & Movements', icon: Layers },
     { to: '/delivery-zones', label: 'Local Delivery Zones', icon: Truck },
     { to: '/coupons', label: 'Coupons & Promos', icon: TicketPercent },

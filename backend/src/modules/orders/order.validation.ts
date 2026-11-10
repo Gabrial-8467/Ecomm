@@ -26,6 +26,11 @@ export const cancelOrderSchema = z.object({
   reason: z.string().min(3, 'Cancellation reason is required').max(255),
 });
 
+export const returnOrderSchema = z.object({
+  reason: z.string().min(3, 'Return/replacement reason is required').max(100),
+  details: z.string().max(500).optional(),
+});
+
 export const orderQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),

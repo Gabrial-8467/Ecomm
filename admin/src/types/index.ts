@@ -26,13 +26,20 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  description?: string;
+  description?: string | null;
+  image?: string | null;
+  parentId?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
+  children?: Category[];
 }
 
 export interface Brand {
   id: string;
   name: string;
   slug: string;
+  logo?: string | null;
+  isActive?: boolean;
 }
 
 export interface ProductSpecification {
