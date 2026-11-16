@@ -22,6 +22,9 @@ import {
   Clock,
   Truck,
   Wrench,
+  Camera,
+  Maximize2,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadOrderInvoicePdf } from '../../utils/invoicePdf.js';
@@ -38,6 +41,7 @@ export const ReturnsPage: React.FC = () => {
   const [approveModalOrder, setApproveModalOrder] = useState<Order | null>(null);
   const [declineModalOrder, setDeclineModalOrder] = useState<Order | null>(null);
   const [actionNote, setActionNote] = useState('');
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const fetchReturns = async () => {
     setIsLoading(true);
@@ -499,6 +503,39 @@ export const ReturnsPage: React.FC = () => {
                         </p>
                       </div>
 
+                      {/* Customer Uploaded Damage Evidence Photos */}
+                      {order.returnImages && order.returnImages.length > 0 && (
+                        <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                          <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                            <span className="flex items-center gap-1.5">
+                              <Camera className="w-3.5 h-3.5 text-amber-700" />
+                              Damage Photo Evidence ({order.returnImages.length})
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-normal">
+                              Click photo to inspect
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {order.returnImages.map((imgUrl, imgIdx) => (
+                              <div
+                                key={imgIdx}
+                                onClick={() => setLightboxImage(imgUrl)}
+                                className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 cursor-pointer group hover:ring-2 hover:ring-amber-500 transition-all bg-white shadow-2xs"
+                              >
+                                <img
+                                  src={imgUrl}
+                                  alt={`Damage photo ${imgIdx + 1}`}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                />
+                                <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                  <Maximize2 className="w-3.5 h-3.5" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Delivery & Service Details */}
                       <div className="space-y-2">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -787,6 +824,33 @@ export const ReturnsPage: React.FC = () => {
                 <span>Confirm Decline Ticket</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Preview Modal for Staff Inspection */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm cursor-pointer"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-3xl overflow-hidden p-2 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setLightboxImage(null)}
+              className="absolute top-4 right-4 p-2 bg-slate-950/70 hover:bg-slate-950 text-white rounded-full transition-all shadow-md cursor-pointer z-10"
+              title="Close inspection"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img
+              src={lightboxImage}
+              alt="Damage evidence full size inspection"
+              className="max-h-[82vh] w-auto max-w-full rounded-2xl object-contain mx-auto"
+            />
           </div>
         </div>
       )}

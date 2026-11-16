@@ -24,6 +24,8 @@ import {
   ShieldAlert,
   Clock,
   FileText,
+  Camera,
+  Maximize2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadOrderInvoicePdf } from '../../utils/invoicePdf.js';
@@ -40,6 +42,7 @@ export const OrderDetailPage: React.FC = () => {
   const [driverName, setDriverName] = useState('');
   const [driverPhone, setDriverPhone] = useState('');
   const [isSavingDriver, setIsSavingDriver] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadPDF = () => {
@@ -334,6 +337,40 @@ export const OrderDetailPage: React.FC = () => {
                     <p className="text-slate-900 font-bold text-sm bg-amber-50/70 p-3 rounded-lg border border-amber-200/60 leading-relaxed">
                       {parsed.returnReason || order.cancelReason || 'No detailed note provided with return ticket.'}
                     </p>
+
+                    {/* Customer Attached Damage Photos */}
+                    {order.returnImages && order.returnImages.length > 0 && (
+                      <div className="p-3 rounded-xl bg-amber-50/40 border border-amber-200/60 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs font-bold text-amber-950">
+                          <span className="flex items-center gap-1.5">
+                            <Camera className="w-3.5 h-3.5 text-amber-700" />
+                            Client Uploaded Damage Photos ({order.returnImages.length})
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-normal">
+                            Click to inspect high-res
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {order.returnImages.map((imgUrl, imgIdx) => (
+                            <div
+                              key={imgIdx}
+                              onClick={() => setLightboxImage(imgUrl)}
+                              className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 cursor-pointer group hover:ring-2 hover:ring-amber-500 transition-all bg-white shadow-2xs"
+                            >
+                              <img
+                                src={imgUrl}
+                                alt={`Damage evidence ${imgIdx + 1}`}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                              <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                <Maximize2 className="w-3.5 h-3.5" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {(parsed.preferredSlot || parsed.freeAssembly || parsed.instructions) && (
                       <div className="pt-2 border-t border-amber-100 flex flex-wrap items-center gap-2 text-[11px]">
                         {parsed.preferredSlot && (
@@ -847,6 +884,33 @@ export const OrderDetailPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Preview Modal for Staff Inspection */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm cursor-pointer"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-3xl overflow-hidden p-2 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setLightboxImage(null)}
+              className="absolute top-4 right-4 p-2 bg-slate-950/70 hover:bg-slate-950 text-white rounded-full transition-all shadow-md cursor-pointer z-10"
+              title="Close inspection"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img
+              src={lightboxImage}
+              alt="Damage evidence full size inspection"
+              className="max-h-[82vh] w-auto max-w-full rounded-2xl object-contain mx-auto"
+            />
           </div>
         </div>
       )}

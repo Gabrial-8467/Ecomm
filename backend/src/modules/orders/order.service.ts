@@ -516,7 +516,7 @@ export class OrderService {
     return updated;
   }
 
-  async requestReturn(orderNumber: string, reason: string, customerId: string, details?: string) {
+  async requestReturn(orderNumber: string, reason: string, customerId: string, details?: string, images: string[] = []) {
     const order = await this.orderRepo.findByOrderNumber(orderNumber, customerId);
     if (!order) {
       throw new NotFoundError('Order not found for this customer');
@@ -536,6 +536,7 @@ export class OrderService {
           status: 'RETURN_REQUESTED',
           customerNote: updatedNote,
           cancelReason: `${reason}${details ? ` - ${details}` : ''}`,
+          returnImages: Array.isArray(images) ? images : [],
         },
       });
 

@@ -203,6 +203,7 @@ export interface Order {
   deliveredAt?: string | null;
   cancelledAt?: string | null;
   cancelReason?: string | null;
+  returnImages?: string[];
   items: OrderItem[];
   statusHistory?: OrderStatusHistory[];
   createdAt: string;

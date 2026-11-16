@@ -346,6 +346,7 @@ model Order {
   deliveredAt  DateTime?
   cancelledAt  DateTime?
   cancelReason String?
+  returnImages String[] @default([])
 
   customer      User?                @relation(fields: [customerId], references: [id], onDelete: SetNull)
   deliveryZone  DeliveryZone?        @relation(fields: [deliveryZoneId], references: [id])

@@ -184,6 +184,7 @@ export interface Order {
   cancelledAt?: string | null;
   cancelReason?: string | null;
   adminNote?: string | null;
+  returnImages?: string[];
   items: OrderItem[];
   statusHistory?: OrderStatusHistory[];
   createdAt: string;

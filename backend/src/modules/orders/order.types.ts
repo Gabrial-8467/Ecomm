@@ -37,3 +37,9 @@ export interface AssignDeliveryAgentInput {
 export interface CancelOrderInput {
   reason: string;
 }
+
+export interface RequestReturnInput {
+  reason: string;
+  details?: string;
+  images?: string[];
+}

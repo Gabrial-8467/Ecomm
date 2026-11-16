@@ -36,14 +36,15 @@ const upload = multer({
 // Helper to save a single file buffer to Cloudinary or local disk
 async function saveImageBuffer(
   req: Request,
-  file: Express.Multer.File
+  file: Express.Multer.File,
+  subfolder: string = 'products'
 ): Promise<{ url: string; originalName: string; size: number }> {
   // Try Cloudinary first if configured
   if (env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET) {
     try {
       const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          { folder: 'furniture-store/products' },
+          { folder: `furniture-store/${subfolder}` },
           (error, result) => {
             if (error || !result) {
               return reject(error || new Error('Cloudinary upload returned empty result'));
@@ -65,7 +66,7 @@ async function saveImageBuffer(
   }
 
   // Fallback: save to local public/uploads directory
-  const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+  const uploadsDir = path.join(process.cwd(), 'public', 'uploads', subfolder);
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
@@ -79,7 +80,7 @@ async function saveImageBuffer(
 
   const host = req.get('host') || `localhost:${env.PORT}`;
   const protocol = req.protocol || 'http';
-  const fileUrl = `${protocol}://${host}/uploads/${filename}`;
+  const fileUrl = `${protocol}://${host}/uploads/${subfolder}/${filename}`;
 
   return {
     url: fileUrl,
@@ -123,6 +124,33 @@ uploadRouter.post(
 
       const results = await Promise.all(files.map((file) => saveImageBuffer(req, file)));
       sendSuccess(res, results, 'Images uploaded successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Customer return damage photos upload endpoint (up to 4 photos)
+uploadRouter.post(
+  '/return-images',
+  requireAuth,
+  requireRole('CUSTOMER'),
+  upload.array('images', 4),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        throw new BadRequestError('No image files provided in "images" field');
+      }
+
+      const results = await Promise.all(
+        files.map((file) => saveImageBuffer(req, file, 'returns'))
+      );
+      sendSuccess(
+        res,
+        results.map((r) => r.url),
+        'Damage photos uploaded successfully'
+      );
     } catch (error) {
       next(error);
     }

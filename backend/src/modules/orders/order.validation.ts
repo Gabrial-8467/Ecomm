@@ -40,6 +40,7 @@ export const cancelOrderSchema = z.object({
 export const returnOrderSchema = z.object({
   reason: z.string().min(3, 'Return/replacement reason is required').max(100),
   details: z.string().max(500).optional(),
+  images: z.array(z.string()).max(4).optional().default([]),
 });
 
 export const orderQuerySchema = z.object({

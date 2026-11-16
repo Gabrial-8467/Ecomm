@@ -22,6 +22,9 @@ import {
   PackageCheck,
   RefreshCw,
   FileText,
+  Camera,
+  X,
+  Maximize2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadOrderInvoicePdf } from '../../utils/invoicePdf.js';
@@ -48,6 +51,9 @@ export const OrderSuccessPage: React.FC = () => {
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [returnReason, setReturnReason] = useState('Transit Damage (Scratched, chipped wood, or dent)');
   const [returnDetails, setReturnDetails] = useState('');
+  const [returnImages, setReturnImages] = useState<string[]>([]);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
   const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
 
@@ -66,6 +72,40 @@ export const OrderSuccessPage: React.FC = () => {
     }
     fetchOrder();
   }, [orderNumber]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    if (returnImages.length + files.length > 4) {
+      toast.error('You can upload a maximum of 4 photos');
+      return;
+    }
+
+    const formData = new FormData();
+    Array.from(files).forEach((file) => {
+      formData.append('images', file);
+    });
+
+    setIsUploadingImages(true);
+    try {
+      const response = await api.post('/upload/return-images', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const urls: string[] = response.data?.data || [];
+      setReturnImages((prev) => [...prev, ...urls]);
+      toast.success(`Uploaded ${urls.length} damage photo(s)`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to upload photo(s)');
+    } finally {
+      setIsUploadingImages(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setReturnImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
 
   const handleCancelOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,10 +135,12 @@ export const OrderSuccessPage: React.FC = () => {
       const response = await api.post(`/orders/${order.orderNumber}/return`, {
         reason: returnReason,
         details: returnDetails.trim() || undefined,
+        images: returnImages,
       });
       setOrder(response.data?.data);
       setReturnModalOpen(false);
-      toast.success('Return/Replacement request submitted! Showroom team will reach out.');
+      setReturnImages([]);
+      toast.success('Return/Replacement request submitted! Showroom team will review photos.');
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || 'Failed to submit return request');
     } finally {
@@ -424,6 +466,33 @@ export const OrderSuccessPage: React.FC = () => {
                     <strong className="text-neutral-900 font-semibold">Showroom Staff Note: </strong>
                     {order.adminNote}
                   </p>
+                )}
+
+                {order.returnImages && order.returnImages.length > 0 && (
+                  <div className="pt-2.5 border-t border-neutral-100 space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5 text-neutral-600" />
+                      Uploaded Damage Evidence ({order.returnImages.length} photos)
+                    </span>
+                    <div className="flex flex-wrap gap-2.5 pt-1">
+                      {order.returnImages.map((imgUrl, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => setLightboxImage(imgUrl)}
+                          className="relative w-16 h-16 rounded-xl overflow-hidden border border-neutral-200 cursor-pointer group bg-neutral-100 hover:ring-2 hover:ring-neutral-900 transition-all shadow-2xs"
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`Damage photo ${idx + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                          <div className="absolute inset-0 bg-neutral-950/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                            <Maximize2 className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             );
@@ -767,6 +836,70 @@ export const OrderSuccessPage: React.FC = () => {
                 />
               </div>
 
+              {/* Photo Upload Section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600">
+                    Damage Evidence Photos (Up to 4)
+                  </label>
+                  <span className="text-[11px] font-mono text-neutral-400">
+                    {returnImages.length}/4 photos
+                  </span>
+                </div>
+
+                {returnImages.length < 4 && (
+                  <label className="border-2 border-dashed border-neutral-200 hover:border-neutral-400 rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer bg-neutral-50/60 hover:bg-neutral-50 transition-all">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      className="hidden"
+                      disabled={isUploadingImages}
+                      onChange={handleImageUpload}
+                    />
+                    <div className="w-8 h-8 rounded-full bg-white shadow-2xs flex items-center justify-center text-neutral-600">
+                      {isUploadingImages ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-neutral-900" />
+                      ) : (
+                        <Camera className="w-4 h-4 text-neutral-700" />
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold text-neutral-800">
+                      {isUploadingImages ? 'Uploading photos...' : 'Tap to take or choose photos'}
+                    </span>
+                    <span className="text-[10px] text-neutral-400">
+                      JPEG, PNG or WEBP up to 5MB each
+                    </span>
+                  </label>
+                )}
+
+                {/* Previews with remove button */}
+                {returnImages.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 pt-1">
+                    {returnImages.map((url, idx) => (
+                      <div
+                        key={idx}
+                        className="relative group rounded-xl overflow-hidden aspect-square border border-neutral-200 bg-neutral-100 shadow-2xs"
+                      >
+                        <img
+                          src={url}
+                          alt={`Evidence preview ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute top-1 right-1 p-1 bg-neutral-900/80 hover:bg-neutral-900 text-white rounded-full transition-opacity shadow-xs cursor-pointer"
+                          title="Remove photo"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
@@ -777,13 +910,40 @@ export const OrderSuccessPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmittingReturn}
+                  disabled={isSubmittingReturn || isUploadingImages}
                   className="flex-1 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-full text-xs uppercase tracking-wider transition-colors disabled:opacity-50"
                 >
                   {isSubmittingReturn ? 'Submitting...' : 'Submit Request'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Preview Modal */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/80 backdrop-blur-sm"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div
+            className="relative max-w-3xl max-h-[90vh] bg-neutral-900 rounded-3xl overflow-hidden p-2 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setLightboxImage(null)}
+              className="absolute top-4 right-4 p-2 bg-neutral-950/70 hover:bg-neutral-950 text-white rounded-full transition-all shadow-md cursor-pointer z-10"
+              title="Close image"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img
+              src={lightboxImage}
+              alt="Damage evidence full size"
+              className="max-h-[80vh] w-auto max-w-full rounded-2xl object-contain mx-auto"
+            />
           </div>
         </div>
       )}
