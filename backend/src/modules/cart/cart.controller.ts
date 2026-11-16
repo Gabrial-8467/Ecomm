@@ -52,5 +52,14 @@ export class CartController {
       next(error);
     }
   }
+
+  async mergeCart(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const cart = await cartService.mergeCart(req.user!.id, req.body.items);
+      sendSuccess(res, cart, 'Guest cart merged successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 

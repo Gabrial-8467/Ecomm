@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { CartController } from './cart.controller.js';
 import { validate } from '../../middleware/validate.js';
-import { addToCartSchema, updateCartItemSchema } from './cart.validation.js';
+import { addToCartSchema, updateCartItemSchema, mergeCartSchema } from './cart.validation.js';
 import { requireAuth } from '../../middleware/auth.js';
 
 const router = Router();
@@ -12,6 +12,7 @@ router.use(requireAuth);
 
 router.get('/', controller.getCart);
 router.post('/items', validate({ body: addToCartSchema }), controller.addItem);
+router.post('/merge', validate({ body: mergeCartSchema }), controller.mergeCart);
 router.put('/items/:id', validate({ body: updateCartItemSchema }), controller.updateItem);
 router.delete('/items/:id', controller.removeItem);
 router.delete('/', controller.clearCart);

@@ -8,3 +8,12 @@ export const addToCartSchema = z.object({
 export const updateCartItemSchema = z.object({
   quantity: z.number().int().positive('Quantity must be at least 1').max(20),
 });
+
+export const mergeCartSchema = z.object({
+  items: z.array(
+    z.object({
+      variantId: z.string().min(1, 'variantId is required'),
+      quantity: z.number().int().positive('Quantity must be at least 1').max(20),
+    })
+  ),
+});

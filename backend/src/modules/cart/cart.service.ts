@@ -109,4 +109,15 @@ export class CartService {
     await this.cartRepo.clearCart(cart.id);
     return this.getCart(userId);
   }
+
+  async mergeCart(userId: string, items: Array<{ variantId: string; quantity: number }>) {
+    for (const item of items) {
+      try {
+        await this.addItem(userId, item);
+      } catch {
+        // Skip unavailable or out-of-stock items gracefully during merge
+      }
+    }
+    return this.getCart(userId);
+  }
 }

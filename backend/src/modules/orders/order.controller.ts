@@ -82,5 +82,21 @@ export class OrderController {
       next(error);
     }
   }
+
+  async assignDeliveryAgent(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const id = paramToString(req.params.id);
+      const { deliveryAgentName, deliveryAgentPhone } = req.body;
+      const order = await orderService.assignDeliveryAgent(
+        id,
+        deliveryAgentName,
+        deliveryAgentPhone,
+        req.user!.id
+      );
+      sendSuccess(res, order, 'Delivery agent assigned successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 

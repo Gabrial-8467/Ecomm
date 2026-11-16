@@ -181,6 +181,12 @@ export interface Order {
   deliveryCharge: number | string;
   taxAmount: number | string;
   totalAmount: number | string;
+  fulfillmentType?: 'DELIVERY' | 'STORE_PICKUP';
+  preferredDeliveryDate?: string | null;
+  deliveryTimeSlot?: string | null;
+  requiresInstallation?: boolean;
+  deliveryAgentName?: string | null;
+  deliveryAgentPhone?: string | null;
   deliveryAddress: {
     fullName: string;
     phone: string;

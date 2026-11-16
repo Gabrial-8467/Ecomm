@@ -11,34 +11,8 @@ export const CartPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchCart();
-    }
+    fetchCart();
   }, [isAuthenticated]);
-
-  if (!isAuthenticated) {
-    return (
-      <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-6">
-        <div className="w-16 h-16 bg-neutral-100 text-neutral-900 rounded-full flex items-center justify-center mx-auto border border-neutral-200">
-          <ShoppingBag className="w-7 h-7 stroke-[1.5]" />
-        </div>
-        <div className="space-y-2">
-          <span className="text-[10px] uppercase tracking-widest text-neutral-400 font-semibold">Authentication Required</span>
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Sign in to view your bag</h2>
-          <p className="text-neutral-500 text-sm max-w-sm mx-auto leading-relaxed">
-            Sign in with your phone or email to manage saved items and proceed with seamless white-glove checkout.
-          </p>
-        </div>
-        <Link
-          to="/login?redirect=/cart"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-900 text-white font-medium rounded-full text-xs tracking-wider uppercase hover:bg-neutral-800 transition-all shadow-sm"
-        >
-          <span>Sign In to Continue</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
-    );
-  }
 
   const items = cart?.items || [];
   const subtotal = cart?.subtotal || 0;
@@ -55,6 +29,23 @@ export const CartPage: React.FC = () => {
           {items.length} {items.length === 1 ? 'Design Object' : 'Design Objects'}
         </p>
       </div>
+
+      {!isAuthenticated && items.length > 0 && (
+        <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="w-4 h-4 text-amber-700 shrink-0" />
+            <span>
+              <strong>Shopping as Guest:</strong> Your items are saved on this browser. Sign in anytime to sync across devices.
+            </span>
+          </div>
+          <Link
+            to="/login?redirect=/cart"
+            className="inline-flex items-center gap-1 font-bold text-amber-950 underline hover:text-amber-800 shrink-0"
+          >
+            Sign In / Register <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <div className="bg-white rounded-3xl border border-neutral-200/80 p-16 text-center space-y-6 max-w-2xl mx-auto">

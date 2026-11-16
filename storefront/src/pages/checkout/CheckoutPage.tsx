@@ -4,27 +4,30 @@ import { api } from '../../services/api/client.js';
 import { useCartStore } from '../../store/cartStore.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { Address, DeliveryCheckResult } from '../../types/index.js';
-import { Truck, CheckCircle2, Tag, Plus, AlertCircle, ArrowLeft, Calendar, Clock, Wrench } from 'lucide-react';
+import { Truck, CheckCircle2, Tag, Plus, AlertCircle, ArrowLeft, Calendar, Clock, Wrench, Store, MapPin, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
+import clsx from 'clsx';
 
 export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { cart, fetchCart } = useCartStore();
   const { isAuthenticated, user } = useAuthStore();
 
+  const [fulfillmentType, setFulfillmentType] = useState<'DELIVERY' | 'STORE_PICKUP'>('DELIVERY');
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
 
-  // Address form fields
-  const [newFullName, setNewFullName] = useState(user?.name || '');
-  const [newPhone, setNewPhone] = useState(user?.phone || '');
+  // Address form fields (unfilled by default)
+  const [newFullName, setNewFullName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
   const [newLine1, setNewLine1] = useState('');
   const [newLine2, setNewLine2] = useState('');
   const [newLandmark, setNewLandmark] = useState('');
-  const [newCity, setNewCity] = useState('Mohali');
-  const [newState, setNewState] = useState('Punjab');
-  const [newPincode, setNewPincode] = useState('160071');
+  const [newCity, setNewCity] = useState('');
+  const [newState, setNewState] = useState('');
+  const [newPincode, setNewPincode] = useState('');
 
   // Order options
   const [couponCode, setCouponCode] = useState('');
@@ -63,12 +66,14 @@ export const CheckoutPage: React.FC = () => {
       const response = await api.get('/addresses');
       const data: Address[] = response.data?.data || [];
       setAddresses(data);
-      const defaultAddr = data.find((a) => a.isDefault) || data[0];
-      if (defaultAddr) {
-        setSelectedAddressId(defaultAddr.id);
-        checkDeliveryPincode(defaultAddr.pincode);
-      } else {
+      if (data.length === 0) {
         setIsAddingAddress(true);
+      } else {
+        const defaultAddr = data.find((a) => a.isDefault) || data[0];
+        if (defaultAddr) {
+          setSelectedAddressId(defaultAddr.id);
+          checkDeliveryPincode(defaultAddr.pincode);
+        }
       }
     } catch (err) {
       console.error('Failed to load customer addresses:', err);
@@ -91,26 +96,68 @@ export const CheckoutPage: React.FC = () => {
     checkDeliveryPincode(addr.pincode);
   };
 
-  const handleCreateAddress = async (e: React.FormEvent) => {
+  const handleOpenAddAddress = () => {
+    setEditingAddressId(null);
+    setNewFullName('');
+    setNewPhone('');
+    setNewLine1('');
+    setNewLine2('');
+    setNewLandmark('');
+    setNewCity('');
+    setNewState('');
+    setNewPincode('');
+    setIsAddingAddress(true);
+  };
+
+  const handleStartEdit = (e: React.MouseEvent, addr: Address) => {
+    e.stopPropagation();
+    setEditingAddressId(addr.id);
+    setNewFullName(addr.fullName);
+    setNewPhone(addr.phone);
+    setNewLine1(addr.addressLine1);
+    setNewLine2(addr.addressLine2 || '');
+    setNewLandmark(addr.landmark || '');
+    setNewCity(addr.city);
+    setNewState(addr.state);
+    setNewPincode(addr.pincode);
+    setIsAddingAddress(true);
+  };
+
+  const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await api.post('/addresses', {
-        fullName: newFullName,
-        phone: newPhone,
-        addressLine1: newLine1,
-        addressLine2: newLine2,
-        landmark: newLandmark,
-        city: newCity,
-        state: newState,
-        pincode: newPincode,
-        isDefault: addresses.length === 0,
-      });
-      const created = response.data?.data;
-      setAddresses([...addresses, created]);
-      setSelectedAddressId(created.id);
+      const payload = {
+        fullName: newFullName.trim(),
+        phone: newPhone.trim(),
+        addressLine1: newLine1.trim(),
+        addressLine2: newLine2.trim() || undefined,
+        landmark: newLandmark.trim() || undefined,
+        city: newCity.trim(),
+        state: newState.trim(),
+        pincode: newPincode.trim(),
+      };
+
+      if (editingAddressId) {
+        const response = await api.put(`/addresses/${editingAddressId}`, payload);
+        const updated = response.data?.data;
+        setAddresses((prev) => prev.map((a) => (a.id === editingAddressId ? updated : a)));
+        if (selectedAddressId === editingAddressId) {
+          checkDeliveryPincode(updated.pincode);
+        }
+        toast.success('Address updated successfully');
+      } else {
+        const response = await api.post('/addresses', {
+          ...payload,
+          isDefault: addresses.length === 0,
+        });
+        const created = response.data?.data;
+        setAddresses((prev) => [...prev, created]);
+        setSelectedAddressId(created.id);
+        checkDeliveryPincode(created.pincode);
+        toast.success('Address saved successfully');
+      }
       setIsAddingAddress(false);
-      checkDeliveryPincode(created.pincode);
-      toast.success('Address saved successfully');
+      setEditingAddressId(null);
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || 'Failed to save address');
     }
@@ -132,21 +179,27 @@ export const CheckoutPage: React.FC = () => {
   };
 
   const handlePlaceOrder = async () => {
-    if (!selectedAddressId) {
-      toast.error('Please select or add a delivery address');
-      return;
-    }
+    if (fulfillmentType === 'DELIVERY') {
+      if (!selectedAddressId) {
+        toast.error('Please select or add a delivery address');
+        return;
+      }
 
-    if (!deliveryInfo?.serviceable) {
-      toast.error('The selected address is not within our local delivery zones.');
-      return;
+      if (!deliveryInfo?.serviceable) {
+        toast.error('The selected address is not within our local delivery zones.');
+        return;
+      }
     }
 
     setIsSubmitting(true);
     try {
       const idempotencyKey = 'key_' + Math.random().toString(36).substring(2) + Date.now();
 
+      const selectedDateObj = availableDates.find((d) => d.label === selectedDate);
+      const preferredDeliveryDate = selectedDateObj ? selectedDateObj.iso : undefined;
+
       const structuredNote = [
+        fulfillmentType === 'STORE_PICKUP' ? 'Fulfillment: SHOWROOM SELF-PICKUP' : 'Fulfillment: TRUCK DELIVERY',
         `Preferred Slot: ${selectedDate} [${selectedSlot}]`,
         assemblyRequired ? 'Free Assembly: YES (Technician Requested)' : 'Free Assembly: NO',
         customerNote.trim() ? `Instructions: ${customerNote.trim()}` : '',
@@ -157,7 +210,11 @@ export const CheckoutPage: React.FC = () => {
       const response = await api.post(
         '/orders',
         {
-          deliveryAddressId: selectedAddressId,
+          fulfillmentType,
+          deliveryAddressId: fulfillmentType === 'DELIVERY' ? selectedAddressId : undefined,
+          preferredDeliveryDate,
+          deliveryTimeSlot: selectedSlot,
+          requiresInstallation: assemblyRequired,
           couponCode: appliedCoupon?.code,
           customerNote: structuredNote,
         },
@@ -180,7 +237,7 @@ export const CheckoutPage: React.FC = () => {
 
   const subtotal = cart?.subtotal || 0;
   const discount = appliedCoupon?.discountAmount || 0;
-  const deliveryFee = deliveryInfo?.serviceable ? deliveryInfo.zone?.deliveryCharge || 0 : 0;
+  const deliveryFee = fulfillmentType === 'STORE_PICKUP' ? 0 : (deliveryInfo?.serviceable ? deliveryInfo.zone?.deliveryCharge || 0 : 0);
   const tax = Math.round((subtotal - discount) * 0.18);
   const total = Math.max(0, subtotal - discount + deliveryFee + tax);
 
@@ -199,17 +256,89 @@ export const CheckoutPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
         {/* Left: Address Selection & Customer Note */}
         <div className="lg:col-span-2 space-y-8">
-          {/* 1. Address Section */}
-          <div className="bg-white rounded-3xl border border-neutral-200/80 p-7 sm:p-8 space-y-6 shadow-xs">
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
-              <h2 className="text-base font-semibold tracking-tight text-neutral-900">
-                1. Delivery Destination (Local Service Only)
-              </h2>
+          {/* Fulfillment Method Selection */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-1.5 bg-neutral-100 rounded-2xl">
+            <button
+              type="button"
+              onClick={() => setFulfillmentType('DELIVERY')}
+              className={clsx(
+                'flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-xs font-semibold transition-all',
+                fulfillmentType === 'DELIVERY'
+                  ? 'bg-white text-neutral-900 shadow-xs'
+                  : 'text-neutral-500 hover:text-neutral-900'
+              )}
+            >
+              <Truck className="w-4 h-4 text-amber-700" />
+              <span>Local Truck Delivery</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFulfillmentType('STORE_PICKUP')}
+              className={clsx(
+                'flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-xs font-semibold transition-all',
+                fulfillmentType === 'STORE_PICKUP'
+                  ? 'bg-white text-neutral-900 shadow-xs'
+                  : 'text-neutral-500 hover:text-neutral-900'
+              )}
+            >
+              <Store className="w-4 h-4 text-emerald-700" />
+              <span>Showroom Self-Pickup (Free BOPIS)</span>
+            </button>
+          </div>
+
+          {/* 1. Address Section or Showroom Pickup Details */}
+          {fulfillmentType === 'STORE_PICKUP' ? (
+            <div className="bg-white rounded-3xl border border-neutral-200/80 p-7 sm:p-8 space-y-5 shadow-xs">
+              <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+                <h2 className="text-base font-semibold tracking-tight text-neutral-900 flex items-center gap-2">
+                  <Store className="w-4 h-4 text-emerald-700" />
+                  1. Showroom Pickup Location
+                </h2>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Zero Delivery Fee
+                </span>
+              </div>
+              <div className="p-5 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-3">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-neutral-900 shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-neutral-900">Grand Living Showroom & Fulfillment Hub</h3>
+                    <p className="text-xs text-neutral-600 mt-1 leading-relaxed">
+                      Plot 104, Sector 82, JLPL Industrial Area, Mohali, Punjab 160055 (Near Airport Road)<br />
+                      Pickup Hours: <strong>10:00 AM – 08:30 PM</strong> (Open All 7 Days)
+                    </p>
+                    <p className="text-xs text-neutral-600 mt-1">
+                      Direct Showroom Desk: <strong>+91 98765 43210</strong>
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-neutral-200/60 text-[11px] text-neutral-500">
+                  ✓ Inspect high-ticket furniture or electronics in person before taking delivery. Our team provides vehicle loading assistance.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl border border-neutral-200/80 p-7 sm:p-8 space-y-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-neutral-100">
+              <div>
+                <h2 className="text-base font-semibold tracking-tight text-neutral-900">
+                  {isAddingAddress
+                    ? editingAddressId
+                      ? '1. Edit Delivery Address'
+                      : '1. Add Delivery Address'
+                    : '1. Select Delivery Address'}
+                </h2>
+                {!isAddingAddress && (
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Click to choose which saved address your order should be delivered to.
+                  </p>
+                )}
+              </div>
               {!isAddingAddress && (
                 <button
                   type="button"
-                  onClick={() => setIsAddingAddress(true)}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-900 hover:text-neutral-600 transition-colors"
+                  onClick={handleOpenAddAddress}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-900 hover:text-neutral-600 transition-colors shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add New Address
                 </button>
@@ -222,13 +351,14 @@ export const CheckoutPage: React.FC = () => {
                 <div className="h-16 bg-neutral-100 rounded-2xl" />
               </div>
             ) : isAddingAddress ? (
-              <form onSubmit={handleCreateAddress} className="space-y-4">
+              <form onSubmit={handleSaveAddress} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">Full Name</label>
                     <input
                       type="text"
                       required
+                      placeholder="e.g. John Doe"
                       value={newFullName}
                       onChange={(e) => setNewFullName(e.target.value)}
                       className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
@@ -239,7 +369,7 @@ export const CheckoutPage: React.FC = () => {
                     <input
                       type="tel"
                       required
-                      placeholder="+919876543210"
+                      placeholder="e.g. 9876543210"
                       value={newPhone}
                       onChange={(e) => setNewPhone(e.target.value)}
                       className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
@@ -254,6 +384,7 @@ export const CheckoutPage: React.FC = () => {
                   <input
                     type="text"
                     required
+                    placeholder="e.g. House No. 422, Street 5"
                     value={newLine1}
                     onChange={(e) => setNewLine1(e.target.value)}
                     className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
@@ -267,6 +398,7 @@ export const CheckoutPage: React.FC = () => {
                     </label>
                     <input
                       type="text"
+                      placeholder="e.g. Sector 70"
                       value={newLine2}
                       onChange={(e) => setNewLine2(e.target.value)}
                       className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
@@ -276,6 +408,7 @@ export const CheckoutPage: React.FC = () => {
                     <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">Landmark</label>
                     <input
                       type="text"
+                      placeholder="e.g. Near Community Center"
                       value={newLandmark}
                       onChange={(e) => setNewLandmark(e.target.value)}
                       className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
@@ -289,6 +422,7 @@ export const CheckoutPage: React.FC = () => {
                     <input
                       type="text"
                       required
+                      placeholder="City"
                       value={newCity}
                       onChange={(e) => setNewCity(e.target.value)}
                       className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
@@ -299,6 +433,7 @@ export const CheckoutPage: React.FC = () => {
                     <input
                       type="text"
                       required
+                      placeholder="State"
                       value={newState}
                       onChange={(e) => setNewState(e.target.value)}
                       className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all"
@@ -310,6 +445,7 @@ export const CheckoutPage: React.FC = () => {
                       type="text"
                       required
                       maxLength={6}
+                      placeholder="6-digit PIN"
                       value={newPincode}
                       onChange={(e) => setNewPincode(e.target.value.replace(/\D/g, ''))}
                       className="w-full text-sm px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:bg-white transition-all font-mono"
@@ -322,12 +458,15 @@ export const CheckoutPage: React.FC = () => {
                     type="submit"
                     className="px-6 py-2.5 bg-neutral-900 text-white rounded-full text-xs font-medium uppercase tracking-wider hover:bg-neutral-800 transition-colors"
                   >
-                    Save Address
+                    {editingAddressId ? 'Update Address' : 'Save Address'}
                   </button>
                   {addresses.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setIsAddingAddress(false)}
+                      onClick={() => {
+                        setIsAddingAddress(false);
+                        setEditingAddressId(null);
+                      }}
                       className="px-6 py-2.5 bg-neutral-100 text-neutral-700 rounded-full text-xs font-medium uppercase tracking-wider hover:bg-neutral-200 transition-colors"
                     >
                       Cancel
@@ -343,33 +482,82 @@ export const CheckoutPage: React.FC = () => {
                     <div
                       key={addr.id}
                       onClick={() => handleSelectAddress(addr)}
-                      className={`p-5 rounded-2xl border cursor-pointer transition-all relative ${
+                      className={`group p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between gap-4 ${
                         isSelected
-                          ? 'border-neutral-900 bg-neutral-50/80 ring-1 ring-neutral-900'
-                          : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                          ? 'border-neutral-900 bg-neutral-50/90 ring-2 ring-neutral-900/10 shadow-xs'
+                          : 'border-neutral-200 hover:border-neutral-400 bg-white shadow-xs'
                       }`}
                     >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold text-neutral-900 text-sm tracking-tight">{addr.fullName}</p>
-                          <p className="text-xs text-neutral-500 font-mono mt-0.5">{addr.phone}</p>
-                          <p className="text-xs text-neutral-600 mt-2.5 leading-relaxed">
-                            {addr.addressLine1}
-                            {addr.addressLine2 ? `, ${addr.addressLine2}` : ''}
-                            <br />
-                            {addr.landmark ? `Near ${addr.landmark}, ` : ''}
-                            {addr.city}, {addr.state} - <strong className="text-neutral-900">{addr.pincode}</strong>
-                          </p>
-                        </div>
-                        {isSelected && (
-                          <div className="w-5 h-5 rounded-full bg-neutral-900 text-white flex items-center justify-center shrink-0">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
+                      <div className="space-y-2">
+                        {/* Top row: Radio + Name + Badges + Edit */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            {/* Radio Circle */}
+                            <div
+                              className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all shrink-0 ${
+                                isSelected
+                                  ? 'border-neutral-900 bg-neutral-900'
+                                  : 'border-neutral-300 bg-white group-hover:border-neutral-400'
+                              }`}
+                            >
+                              {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </div>
+
+                            <span className="font-semibold text-neutral-900 text-sm tracking-tight">
+                              {addr.fullName}
+                            </span>
+
+                            {addr.isDefault && (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-neutral-200 text-neutral-700">
+                                Default
+                              </span>
+                            )}
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => handleStartEdit(e, addr)}
+                            className="p-1.5 text-neutral-400 hover:text-neutral-900 rounded-lg hover:bg-neutral-100 transition-colors"
+                            title="Edit this address"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Phone & Address details */}
+                        <p className="text-xs text-neutral-500 font-mono pl-6.5">{addr.phone}</p>
+                        <p className="text-xs text-neutral-600 leading-relaxed pl-6.5">
+                          {addr.addressLine1}
+                          {addr.addressLine2 ? `, ${addr.addressLine2}` : ''}
+                          <br />
+                          {addr.landmark ? `Near ${addr.landmark}, ` : ''}
+                          {addr.city}, {addr.state} - <strong className="text-neutral-900">{addr.pincode}</strong>
+                        </p>
+                      </div>
+
+                      {/* Bottom status row */}
+                      <div className="pt-3 border-t border-neutral-100 pl-6.5 flex items-center justify-between">
+                        {isSelected ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                            <CheckCircle2 className="w-4 h-4" />
+                            Selected for Delivery
+                          </span>
+                        ) : (
+                          <span className="text-xs font-medium text-neutral-500 group-hover:text-neutral-900">
+                            Click to select this address →
+                          </span>
                         )}
                       </div>
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {addresses.length > 0 && !selectedAddressId && !isAddingAddress && (
+              <div className="p-4 rounded-2xl text-xs flex items-center gap-2.5 bg-amber-50 text-amber-900 border border-amber-200">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Please click on an address above to select your delivery destination.</span>
               </div>
             )}
 
@@ -407,6 +595,7 @@ export const CheckoutPage: React.FC = () => {
               </div>
             )}
           </div>
+          )}
 
           {/* 2. Preferred Delivery Slot & Assembly Service */}
           <div className="bg-white rounded-3xl border border-neutral-200/80 p-7 sm:p-8 space-y-6 shadow-xs">
@@ -605,7 +794,10 @@ export const CheckoutPage: React.FC = () => {
           <button
             type="button"
             onClick={handlePlaceOrder}
-            disabled={isSubmitting || !deliveryInfo?.serviceable || !selectedAddressId}
+            disabled={
+              isSubmitting ||
+              (fulfillmentType === 'DELIVERY' && (!deliveryInfo?.serviceable || !selectedAddressId))
+            }
             className="w-full py-4 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium rounded-full text-xs uppercase tracking-wider transition-all shadow-sm flex items-center justify-center gap-2"
           >
             {isSubmitting ? (

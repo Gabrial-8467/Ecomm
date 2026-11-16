@@ -29,9 +29,7 @@ export const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchCart();
-    }
+    fetchCart();
   }, [isAuthenticated]);
 
   return (
@@ -46,7 +44,7 @@ export const App: React.FC = () => {
             </main>
             <Footer />
             <CompareFloatingBar />
-            <Toaster position="top-right" richColors closeButton />
+            <Toaster position="bottom-right" richColors closeButton />
           </div>
         </BrowserRouter>
       </QueryClientProvider>

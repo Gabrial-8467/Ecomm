@@ -16,9 +16,11 @@ import {
   AlertTriangle,
   Download,
   Loader2,
+  Phone,
+  Store,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import html2pdf from 'html2pdf.js';
+import { downloadOrderInvoicePdf } from '../../utils/invoicePdf.js';
 
 const STATUS_STEPS = [
   { key: 'PLACED', label: 'Order Received', icon: Clock },
@@ -99,27 +101,16 @@ export const OrderSuccessPage: React.FC = () => {
     }
   };
 
-  const handleDownloadInvoice = async () => {
-    const element = document.getElementById('customer-tax-invoice');
-    if (!element || !order) return;
-
+  const handleDownloadInvoice = () => {
+    if (!order) return;
     setIsDownloadingInvoice(true);
-    toast.info('Generating official GST tax invoice PDF...');
-
     try {
-      const opt = {
-        margin: [10, 10, 10, 10] as [number, number, number, number],
-        filename: `Tax-Invoice-${order.orderNumber}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-      };
-
-      await html2pdf().set(opt).from(element).save();
+      downloadOrderInvoicePdf(order);
       toast.success('Tax invoice downloaded successfully!');
     } catch (err) {
       console.error('Invoice download failed:', err);
-      toast.error('Failed to generate PDF. You can also print via browser Ctrl+P.');
+      toast.error('Failed to generate PDF. Opening print dialog...');
+      window.print();
     } finally {
       setIsDownloadingInvoice(false);
     }
@@ -287,10 +278,21 @@ export const OrderSuccessPage: React.FC = () => {
         {/* Delivery Address & Actions */}
         <div className="space-y-6">
           <div className="bg-white rounded-3xl border border-neutral-200/80 p-7 space-y-4 shadow-xs">
-            <h3 className="text-base font-semibold tracking-tight text-neutral-900 pb-3 border-b border-neutral-100 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-neutral-900" />
-              Delivery Destination
-            </h3>
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <h3 className="text-base font-semibold tracking-tight text-neutral-900 flex items-center gap-2">
+                {order.fulfillmentType === 'STORE_PICKUP' ? (
+                  <Store className="w-4 h-4 text-emerald-700" />
+                ) : (
+                  <MapPin className="w-4 h-4 text-neutral-900" />
+                )}
+                {order.fulfillmentType === 'STORE_PICKUP' ? 'Showroom Pickup Point' : 'Delivery Destination'}
+              </h3>
+              {order.fulfillmentType === 'STORE_PICKUP' && (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Store Pickup
+                </span>
+              )}
+            </div>
 
             <div className="text-xs text-neutral-600 space-y-1 leading-relaxed">
               <p className="font-semibold text-neutral-900 text-sm">{order.deliveryAddress.fullName}</p>
@@ -321,6 +323,34 @@ export const OrderSuccessPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {order.deliveryAgentName && !isCancelled && (
+            <div className="p-5 bg-emerald-50/80 border border-emerald-200 rounded-3xl text-xs text-emerald-950 space-y-2.5 shadow-xs">
+              <div className="flex items-center justify-between">
+                <p className="font-semibold flex items-center gap-1.5 text-emerald-900">
+                  <Truck className="w-4 h-4 text-emerald-700" />
+                  <span>Assigned Fleet Driver</span>
+                </p>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-200/60 text-emerald-900 uppercase tracking-wider">
+                  Direct Fleet
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <div>
+                  <p className="font-bold text-sm text-emerald-950">{order.deliveryAgentName}</p>
+                  <p className="text-emerald-700 font-mono text-[11px]">{order.deliveryAgentPhone || 'Fleet Driver'}</p>
+                </div>
+                {order.deliveryAgentPhone && (
+                  <a
+                    href={`tel:${order.deliveryAgentPhone}`}
+                    className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5" /> Call Driver
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
 
           {canCancel && (
             <button
@@ -516,151 +546,6 @@ export const OrderSuccessPage: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Hidden Container for Customer Tax Invoice PDF Rendering */}
-      <div className="hidden">
-        <div id="customer-tax-invoice" className="p-8 max-w-3xl mx-auto bg-white text-neutral-900 font-sans text-xs space-y-6">
-          {/* Invoice Header */}
-          <div className="flex justify-between items-start border-b-2 border-neutral-900 pb-4">
-            <div>
-              <h1 className="text-2xl font-bold uppercase tracking-tight text-neutral-950">
-                Grand Living
-              </h1>
-              <p className="text-[11px] text-neutral-600 mt-0.5">
-                Curated Architectural Furniture & Premium Electronics
-              </p>
-              <p className="text-[10px] text-neutral-500">
-                SCO 45-48, Sector 70, Mohali, Punjab - 160071
-              </p>
-              <p className="text-[10px] text-neutral-500">
-                GSTIN: 03ABCDE1234F1Z5 | Phone: +91 98765 43210
-              </p>
-            </div>
-            <div className="text-right space-y-0.5">
-              <span className="inline-block px-2.5 py-1 bg-neutral-100 text-neutral-900 font-bold rounded text-[11px] uppercase tracking-wider">
-                Official Tax Invoice
-              </span>
-              <p className="font-bold text-sm mt-1">Invoice #: INV-{order.orderNumber}</p>
-              <p className="text-neutral-500 text-[10px]">
-                Date: {new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-              </p>
-              <p className="text-neutral-500 text-[10px]">Order Ref: #{order.orderNumber}</p>
-            </div>
-          </div>
-
-          {/* Customer & Bill Details */}
-          <div className="grid grid-cols-2 gap-4 bg-neutral-50 p-4 rounded-xl border border-neutral-200">
-            <div>
-              <p className="font-bold text-neutral-500 uppercase text-[9px] tracking-wider mb-1">
-                Billed & Shipped To:
-              </p>
-              <p className="font-bold text-neutral-900">{order.deliveryAddress?.fullName || 'Valued Customer'}</p>
-              <p className="text-neutral-600 text-[11px]">{order.deliveryAddress?.addressLine1}</p>
-              {order.deliveryAddress?.addressLine2 && (
-                <p className="text-neutral-600 text-[11px]">{order.deliveryAddress.addressLine2}</p>
-              )}
-              <p className="text-neutral-600 text-[11px]">
-                {order.deliveryAddress?.city}, {order.deliveryAddress?.state} - {order.deliveryAddress?.pincode}
-              </p>
-              <p className="text-neutral-600 text-[11px] font-semibold mt-1">Phone: {order.deliveryAddress?.phone}</p>
-            </div>
-            <div className="text-right">
-              <p className="font-bold text-neutral-500 uppercase text-[9px] tracking-wider mb-1">
-                Payment & Fulfillment:
-              </p>
-              <p className="text-neutral-700">Payment Mode: <span className="font-bold">{order.paymentMethod}</span></p>
-              <p className="text-neutral-700">Payment Status: <span className="font-bold">{order.paymentStatus}</span></p>
-              <p className="text-neutral-700">Order Status: <span className="font-bold">{order.status}</span></p>
-              {order.customerNote && (
-                <p className="text-[10px] text-neutral-500 italic mt-1 max-w-xs ml-auto">
-                  Note: {order.customerNote}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Itemized Table */}
-          <div>
-            <table className="w-full text-left border-collapse border border-neutral-300">
-              <thead className="bg-neutral-100 uppercase text-[9px] font-bold text-neutral-700 border-b border-neutral-300">
-                <tr>
-                  <th className="p-2 border-r border-neutral-300 w-8">#</th>
-                  <th className="p-2 border-r border-neutral-300">Item Description</th>
-                  <th className="p-2 border-r border-neutral-300 w-24">HSN / SKU</th>
-                  <th className="p-2 border-r border-neutral-300 w-12 text-center">Qty</th>
-                  <th className="p-2 border-r border-neutral-300 w-24 text-right">Unit Price</th>
-                  <th className="p-2 w-24 text-right">Total (INR)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-200">
-                {order.items.map((item, idx) => (
-                  <tr key={item.id}>
-                    <td className="p-2 border-r border-neutral-200 text-center font-semibold">{idx + 1}</td>
-                    <td className="p-2 border-r border-neutral-200">
-                      <p className="font-bold text-neutral-900">{item.productName}</p>
-                      <p className="text-[10px] text-neutral-500">Variant: {item.variantName}</p>
-                    </td>
-                    <td className="p-2 border-r border-neutral-200 font-mono text-[10px] text-neutral-600">
-                      {item.sku}
-                    </td>
-                    <td className="p-2 border-r border-neutral-200 text-center font-bold">{item.quantity}</td>
-                    <td className="p-2 border-r border-neutral-200 text-right">
-                      ₹{Number(item.unitPrice).toLocaleString('en-IN')}
-                    </td>
-                    <td className="p-2 text-right font-bold text-neutral-900">
-                      ₹{Number(item.totalPrice).toLocaleString('en-IN')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Totals Summary */}
-          <div className="flex justify-end">
-            <div className="w-64 space-y-1.5 text-xs bg-neutral-50 p-4 rounded-xl border border-neutral-200">
-              <div className="flex justify-between text-neutral-600">
-                <span>Subtotal:</span>
-                <span>₹{Number(order.subtotal).toLocaleString('en-IN')}</span>
-              </div>
-              {Number(order.discountAmount) > 0 && (
-                <div className="flex justify-between text-emerald-800 font-medium">
-                  <span>Promo Discount:</span>
-                  <span>-₹{Number(order.discountAmount).toLocaleString('en-IN')}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-neutral-600">
-                <span>Delivery Charges:</span>
-                <span>{Number(order.deliveryCharge) === 0 ? 'FREE' : `₹${Number(order.deliveryCharge).toLocaleString('en-IN')}`}</span>
-              </div>
-              <div className="flex justify-between text-neutral-600">
-                <span>GST (Included 18%):</span>
-                <span>₹{Number(order.taxAmount).toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex justify-between font-bold text-sm pt-2 border-t border-neutral-300 text-neutral-950">
-                <span>Grand Total:</span>
-                <span>₹{Number(order.totalAmount).toLocaleString('en-IN')}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Warranty Stamp & Showroom Terms */}
-          <div className="pt-4 border-t border-neutral-300 flex justify-between items-end text-[10px] text-neutral-500">
-            <div className="space-y-1 max-w-sm">
-              <p className="font-bold text-neutral-700">Official Brand Warranty Verification:</p>
-              <p>• Retain this bill for official Samsung, LG & Godrej brand warranty claims.</p>
-              <p>• Handcrafted Teak & Sheesham wood furniture carries 5-year termite guarantee.</p>
-              <p>• For inquiries, call showroom at +91 98765 43210 (10:00 AM - 09:00 PM).</p>
-            </div>
-            <div className="text-center space-y-1">
-              <div className="w-32 h-10 border border-neutral-300 rounded flex items-center justify-center text-[9px] text-neutral-400">
-                Authorized Seal
-              </div>
-              <p className="font-bold text-neutral-900">Grand Living Store</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

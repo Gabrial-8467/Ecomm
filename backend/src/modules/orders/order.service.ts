@@ -29,25 +29,35 @@ export class OrderService {
       }
     }
 
+    const isStorePickup = input.fulfillmentType === 'STORE_PICKUP';
+
     // 1. Fetch user details and address
     const [user, address] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId } }),
-      prisma.address.findFirst({ where: { id: input.deliveryAddressId, userId } }),
+      input.deliveryAddressId
+        ? prisma.address.findFirst({ where: { id: input.deliveryAddressId, userId } })
+        : null,
     ]);
 
     if (!user) throw new NotFoundError('User not found');
-    if (!address) throw new NotFoundError('Delivery address not found');
+    if (!isStorePickup && !input.deliveryAddressId) {
+      throw new BadRequestError('Delivery address is required for home delivery');
+    }
+    if (!isStorePickup && !address) throw new NotFoundError('Delivery address not found');
 
-    // 2. Validate serviceable delivery zone
-    const deliveryZone = await prisma.deliveryZone.findFirst({
-      where: {
-        isActive: true,
-        pincodes: { has: address.pincode },
-      },
-    });
+    // 2. Validate serviceable delivery zone (if home delivery)
+    let deliveryZone: any = null;
+    if (!isStorePickup) {
+      deliveryZone = await prisma.deliveryZone.findFirst({
+        where: {
+          isActive: true,
+          pincodes: { has: address!.pincode },
+        },
+      });
 
-    if (!deliveryZone) {
-      throw new BadRequestError(`Delivery is not available to pincode ${address.pincode}`);
+      if (!deliveryZone) {
+        throw new BadRequestError(`Delivery is not available to pincode ${address!.pincode}`);
+      }
     }
 
     // 3. Fetch cart items
@@ -80,8 +90,8 @@ export class OrderService {
       subtotal += Number(item.variant.price) * item.quantity;
     }
 
-    // 5. Check minimum order value for zone
-    if (Number(deliveryZone.minimumOrder) > 0 && subtotal < Number(deliveryZone.minimumOrder)) {
+    // 5. Check minimum order value for zone (if home delivery)
+    if (deliveryZone && Number(deliveryZone.minimumOrder) > 0 && subtotal < Number(deliveryZone.minimumOrder)) {
       throw new BadRequestError(
         `Minimum order amount for ${deliveryZone.name} is ₹${deliveryZone.minimumOrder}. Current order is ₹${subtotal}.`
       );
@@ -121,11 +131,48 @@ export class OrderService {
       couponIdToRedeem = coupon.id;
     }
 
-    const deliveryCharge = Number(deliveryZone.deliveryCharge);
+    const deliveryCharge = isStorePickup ? 0 : Number(deliveryZone?.deliveryCharge || 0);
     // Estimated 18% GST on furniture & electronics
     const taxAmount = Math.round(((subtotal - discountAmount) * 0.18) * 100) / 100;
     const totalAmount = Math.max(0, subtotal - discountAmount + deliveryCharge + taxAmount);
     const orderNumber = generateOrderNumber();
+
+    const deliveryAddress = isStorePickup
+      ? (address
+          ? {
+              fullName: address.fullName,
+              phone: address.phone,
+              addressLine1: `[Showroom Self-Pickup] ${address.addressLine1}`,
+              addressLine2: address.addressLine2,
+              landmark: address.landmark,
+              city: address.city,
+              state: address.state,
+              pincode: address.pincode,
+            }
+          : {
+              fullName: user.name,
+              phone: user.phone,
+              addressLine1: 'Grand Living Showroom (Self-Pickup)',
+              addressLine2: 'Sector 82, JLPL Industrial Area',
+              landmark: 'Near Airport Road',
+              city: 'Mohali',
+              state: 'Punjab',
+              pincode: '160055',
+            })
+      : {
+          fullName: address!.fullName,
+          phone: address!.phone,
+          addressLine1: address!.addressLine1,
+          addressLine2: address!.addressLine2,
+          landmark: address!.landmark,
+          city: address!.city,
+          state: address!.state,
+          pincode: address!.pincode,
+        };
+
+    const preferredDeliveryDate = input.preferredDeliveryDate
+      ? new Date(input.preferredDeliveryDate)
+      : null;
 
     // 7. Execute Atomic Checkout Transaction
     return prisma.$transaction(async (tx) => {
@@ -165,17 +212,12 @@ export class OrderService {
           deliveryCharge,
           taxAmount,
           totalAmount,
-          deliveryZoneId: deliveryZone.id,
-          deliveryAddress: {
-            fullName: address.fullName,
-            phone: address.phone,
-            addressLine1: address.addressLine1,
-            addressLine2: address.addressLine2,
-            landmark: address.landmark,
-            city: address.city,
-            state: address.state,
-            pincode: address.pincode,
-          },
+          fulfillmentType: isStorePickup ? 'STORE_PICKUP' : 'DELIVERY',
+          preferredDeliveryDate: preferredDeliveryDate && !isNaN(preferredDeliveryDate.getTime()) ? preferredDeliveryDate : null,
+          deliveryTimeSlot: input.deliveryTimeSlot || null,
+          requiresInstallation: Boolean(input.requiresInstallation),
+          deliveryZoneId: deliveryZone?.id || null,
+          deliveryAddress,
           customerNote: input.customerNote,
           idempotencyKey,
         },
@@ -425,6 +467,8 @@ export class OrderService {
         data: {
           status: targetStatus,
           adminNote: input.adminNote !== undefined ? input.adminNote : order.adminNote,
+          ...(input.deliveryAgentName !== undefined && { deliveryAgentName: input.deliveryAgentName }),
+          ...(input.deliveryAgentPhone !== undefined && { deliveryAgentPhone: input.deliveryAgentPhone }),
           ...(paymentStatusUpdate && { paymentStatus: paymentStatusUpdate }),
           ...(deliveredAtUpdate && { deliveredAt: deliveredAtUpdate }),
           ...(confirmedAtUpdate && { confirmedAt: confirmedAtUpdate }),
@@ -443,6 +487,33 @@ export class OrderService {
 
       return updated;
     });
+  }
+
+  async assignDeliveryAgent(orderId: string, deliveryAgentName: string, deliveryAgentPhone: string, changedByUserId: string) {
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      throw new NotFoundError('Order not found');
+    }
+
+    const updated = await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        deliveryAgentName,
+        deliveryAgentPhone,
+      },
+    });
+
+    await prisma.orderStatusHistory.create({
+      data: {
+        orderId,
+        previousStatus: order.status,
+        newStatus: order.status,
+        changedBy: changedByUserId,
+        reason: `Assigned delivery agent: ${deliveryAgentName} (${deliveryAgentPhone})`,
+      },
+    });
+
+    return updated;
   }
 
   async requestReturn(orderNumber: string, reason: string, customerId: string, details?: string) {

@@ -4,6 +4,7 @@ import { validate } from '../../middleware/validate.js';
 import {
   checkoutSchema,
   updateOrderStatusSchema,
+  assignDeliveryAgentSchema,
   cancelOrderSchema,
   returnOrderSchema,
   orderQuerySchema,
@@ -25,5 +26,6 @@ router.post('/:orderNumber/return', requireAuth, validate({ body: returnOrderSch
 // Admin order routes
 router.get('/admin/all', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ query: orderQuerySchema }), controller.getAllOrders);
 router.patch('/admin/:id/status', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: updateOrderStatusSchema }), controller.updateStatus);
+router.patch('/admin/:id/assign-agent', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: assignDeliveryAgentSchema }), controller.assignDeliveryAgent);
 
 export const orderRoutes = router;

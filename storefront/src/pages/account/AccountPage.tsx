@@ -17,6 +17,8 @@ import {
   Lock,
   KeyRound,
   Edit2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -40,18 +42,22 @@ export const AccountPage: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // Add Address Modal/Form State
+  // Address Modal/Form State
   const [showAddModal, setShowAddModal] = useState(false);
-  const [fullName, setFullName] = useState(user?.name || '');
-  const [phone, setPhone] = useState(user?.phone || '');
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
   const [addressLine2, setAddressLine2] = useState('');
   const [landmark, setLandmark] = useState('');
-  const [city, setCity] = useState('Mohali');
-  const [state, setState] = useState('Punjab');
-  const [pincode, setPincode] = useState('160071');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [pincode, setPincode] = useState('');
   const [isDefault, setIsDefault] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -62,6 +68,34 @@ export const AccountPage: React.FC = () => {
     }
     loadData();
   }, [isAuthenticated]);
+
+  const openAddModal = () => {
+    setEditingAddressId(null);
+    setFullName('');
+    setPhone('');
+    setAddressLine1('');
+    setAddressLine2('');
+    setLandmark('');
+    setCity('');
+    setState('');
+    setPincode('');
+    setIsDefault(addresses.length === 0);
+    setShowAddModal(true);
+  };
+
+  const openEditModal = (addr: Address) => {
+    setEditingAddressId(addr.id);
+    setFullName(addr.fullName);
+    setPhone(addr.phone);
+    setAddressLine1(addr.addressLine1);
+    setAddressLine2(addr.addressLine2 || '');
+    setLandmark(addr.landmark || '');
+    setCity(addr.city);
+    setState(addr.state);
+    setPincode(addr.pincode);
+    setIsDefault(addr.isDefault);
+    setShowAddModal(true);
+  };
 
   const loadData = async () => {
     try {
@@ -79,7 +113,7 @@ export const AccountPage: React.FC = () => {
     }
   };
 
-  const handleAddAddress = async (e: React.FormEvent) => {
+  const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || !phone.trim() || !addressLine1.trim() || !pincode.trim()) {
       toast.error('Please fill all mandatory address fields');
@@ -88,7 +122,7 @@ export const AccountPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await api.post('/addresses', {
+      const payload = {
         fullName: fullName.trim(),
         phone: phone.trim(),
         addressLine1: addressLine1.trim(),
@@ -98,13 +132,18 @@ export const AccountPage: React.FC = () => {
         state: state.trim(),
         pincode: pincode.trim(),
         isDefault,
-      });
+      };
 
-      toast.success('Address saved successfully!');
+      if (editingAddressId) {
+        await api.put(`/addresses/${editingAddressId}`, payload);
+        toast.success('Address updated successfully!');
+      } else {
+        await api.post('/addresses', payload);
+        toast.success('Address saved successfully!');
+      }
+
       setShowAddModal(false);
-      setAddressLine1('');
-      setAddressLine2('');
-      setLandmark('');
+      setEditingAddressId(null);
       loadData();
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || 'Failed to save address');
@@ -449,14 +488,24 @@ export const AccountPage: React.FC = () => {
               <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
                 Current Password
               </label>
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
-              />
+              <div className="relative">
+                <input
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  required
+                  placeholder="••••••••"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 pr-10 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-1"
+                  title={showCurrentPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -464,28 +513,48 @@ export const AccountPage: React.FC = () => {
                 <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
                   New Password
                 </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Min 6 characters"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Min 6 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 pr-10 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-1"
+                    title={showNewPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
                   Confirm New Password
                 </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Re-enter new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Re-enter new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 pr-10 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-1"
+                    title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -515,7 +584,7 @@ export const AccountPage: React.FC = () => {
             </div>
             <button
               type="button"
-              onClick={() => setShowAddModal(true)}
+              onClick={openAddModal}
               className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full text-xs font-semibold uppercase tracking-wider transition-all shadow-xs flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -575,14 +644,24 @@ export const AccountPage: React.FC = () => {
                       </span>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteAddress(addr.id)}
-                      className="p-1.5 text-neutral-400 hover:text-neutral-900 transition-colors"
-                      title="Delete address"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(addr)}
+                        className="p-1.5 text-neutral-400 hover:text-neutral-900 transition-colors"
+                        title="Edit address"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAddress(addr.id)}
+                        className="p-1.5 text-neutral-400 hover:text-rose-600 transition-colors"
+                        title="Delete address"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -598,7 +677,7 @@ export const AccountPage: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => setShowAddModal(true)}
+                onClick={openAddModal}
                 className="px-6 py-2.5 bg-neutral-900 text-white rounded-full text-xs font-semibold uppercase tracking-wider inline-flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Address Now
@@ -613,7 +692,9 @@ export const AccountPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-xs">
           <div className="bg-white rounded-3xl max-w-lg w-full p-7 sm:p-8 space-y-5 border border-neutral-200 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-              <h3 className="text-base font-semibold tracking-tight text-neutral-900">Add New Delivery Address</h3>
+              <h3 className="text-base font-semibold tracking-tight text-neutral-900">
+                {editingAddressId ? 'Edit Delivery Address' : 'Add New Delivery Address'}
+              </h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
@@ -623,7 +704,7 @@ export const AccountPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleAddAddress} className="space-y-4">
+            <form onSubmit={handleSaveAddress} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1">
@@ -756,7 +837,7 @@ export const AccountPage: React.FC = () => {
                   disabled={isSubmitting}
                   className="px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full text-xs font-semibold uppercase tracking-wider transition-all shadow-xs disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Saving Address...' : 'Save Address'}
+                  {isSubmitting ? 'Saving Address...' : editingAddressId ? 'Update Address' : 'Save Address'}
                 </button>
               </div>
             </form>

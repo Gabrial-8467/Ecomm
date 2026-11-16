@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../types/index.js';
-import { ShoppingBag, Eye, CheckCircle2, Heart, Scale } from 'lucide-react';
+import { ShoppingBag, Eye, CheckCircle2, Heart, Scale, Plus, Minus } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore.js';
 import { useWishlistStore } from '../../store/wishlistStore.js';
 import { useCompareStore } from '../../store/compareStore.js';
@@ -12,7 +12,7 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const { addItem } = useCartStore();
+  const { cart, addItem, updateQuantity, removeItem } = useCartStore();
   const { toggleWishlist, isInWishlist } = useWishlistStore();
   const { addItem: toggleCompare, isInCompare } = useCompareStore();
   const isWishlisted = isInWishlist(product.id);
@@ -24,6 +24,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80';
 
   const defaultVariant = product.variants[0];
+  const cartItem = cart?.items.find((item) => item.variantId === defaultVariant?.id);
+  const quantityInCart = cartItem?.quantity || 0;
   const price = defaultVariant ? Number(defaultVariant.price) : 0;
   const compareAtPrice = defaultVariant?.compareAtPrice ? Number(defaultVariant.compareAtPrice) : null;
   const discountPercent =
@@ -39,10 +41,53 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     if (!defaultVariant || !isAvailable) return;
 
     try {
-      await addItem(defaultVariant.id, 1);
+      await addItem(defaultVariant.id, 1, {
+        product: {
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          variantName: defaultVariant.name || 'Default',
+          sku: defaultVariant.sku,
+          image: product.images?.[0]?.url,
+        },
+        unitPrice: price,
+        availableStock: defaultVariant.inventory?.availableQuantity || 99,
+      });
       toast.success(`Added ${product.name} to cart!`);
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || 'Failed to add item to cart');
+    }
+  };
+
+  const handleIncrement = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!cartItem) return;
+    const available = defaultVariant?.inventory?.availableQuantity || 99;
+    if (quantityInCart >= available) {
+      toast.error(`Only ${available} items in stock`);
+      return;
+    }
+    try {
+      await updateQuantity(cartItem.id, quantityInCart + 1);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to update quantity');
+    }
+  };
+
+  const handleDecrement = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!cartItem) return;
+    try {
+      if (quantityInCart <= 1) {
+        await removeItem(cartItem.id);
+        toast.info(`Removed ${product.name} from cart`);
+      } else {
+        await updateQuantity(cartItem.id, quantityInCart - 1);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to update quantity');
     }
   };
 
@@ -185,19 +230,50 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               <Eye className="w-4 h-4" strokeWidth={1.75} />
             </Link>
 
-            <button
-              onClick={handleQuickAdd}
-              disabled={!isAvailable}
-              className={`p-2 sm:px-3 sm:py-2 rounded-xl font-medium transition-all flex items-center gap-1.5 text-xs shadow-2xs ${
-                isAvailable
-                  ? 'bg-neutral-950 text-white hover:bg-neutral-800'
-                  : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
-              }`}
-              title="Add to cart"
-            >
-              <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span className="hidden sm:inline">Add</span>
-            </button>
+            {quantityInCart > 0 ? (
+              <div
+                className="flex items-center bg-neutral-950 text-white rounded-xl shadow-2xs p-0.5"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={handleDecrement}
+                  className="w-7 h-7 flex items-center justify-center hover:bg-neutral-800 rounded-lg text-white transition-colors cursor-pointer"
+                  title="Decrease quantity"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="w-6 text-center text-xs font-bold font-mono select-none">
+                  {quantityInCart}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleIncrement}
+                  disabled={quantityInCart >= (defaultVariant?.inventory?.availableQuantity || 99)}
+                  className="w-7 h-7 flex items-center justify-center hover:bg-neutral-800 disabled:opacity-40 disabled:hover:bg-transparent rounded-lg text-white transition-colors cursor-pointer"
+                  title="Increase quantity"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleQuickAdd}
+                disabled={!isAvailable}
+                className={`p-2 sm:px-3 sm:py-2 rounded-xl font-medium transition-all flex items-center gap-1.5 text-xs shadow-2xs cursor-pointer ${
+                  isAvailable
+                    ? 'bg-neutral-950 text-white hover:bg-neutral-800'
+                    : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                }`}
+                title="Add to cart"
+              >
+                <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.75} />
+                <span className="hidden sm:inline">Add</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

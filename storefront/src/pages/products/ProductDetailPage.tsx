@@ -180,10 +180,21 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   const handleAddToCart = async (directCheckout = false) => {
-    if (!selectedVariant) return;
+    if (!selectedVariant || !product) return;
     try {
-      await addItem(selectedVariant.id, quantity);
-      toast.success(`Added ${product?.name} to your bag`);
+      await addItem(selectedVariant.id, quantity, {
+        product: {
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          variantName: selectedVariant.name,
+          sku: selectedVariant.sku,
+          image: selectedImage || product.images?.[0]?.url,
+        },
+        unitPrice: Number(selectedVariant.price),
+        availableStock: availableStock,
+      });
+      toast.success(`Added ${product.name} to your bag`);
       if (directCheckout) {
         navigate('/checkout');
       }

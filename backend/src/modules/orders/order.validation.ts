@@ -1,7 +1,11 @@
 import { z } from 'zod';
 
 export const checkoutSchema = z.object({
-  deliveryAddressId: z.string().min(1, 'Delivery address is required'),
+  deliveryAddressId: z.string().optional(),
+  fulfillmentType: z.enum(['DELIVERY', 'STORE_PICKUP']).default('DELIVERY'),
+  preferredDeliveryDate: z.string().optional(),
+  deliveryTimeSlot: z.string().optional(),
+  requiresInstallation: z.boolean().optional(),
   couponCode: z.string().optional(),
   customerNote: z.string().max(500).optional(),
 });
@@ -20,6 +24,13 @@ export const updateOrderStatusSchema = z.object({
   ]),
   reason: z.string().max(255).optional(),
   adminNote: z.string().max(500).optional(),
+  deliveryAgentName: z.string().max(100).optional(),
+  deliveryAgentPhone: z.string().max(20).optional(),
+});
+
+export const assignDeliveryAgentSchema = z.object({
+  deliveryAgentName: z.string().min(2, 'Delivery agent name is required').max(100),
+  deliveryAgentPhone: z.string().min(10, 'Delivery agent phone must be at least 10 characters').max(20),
 });
 
 export const cancelOrderSchema = z.object({

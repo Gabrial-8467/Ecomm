@@ -16,7 +16,18 @@ export const WishlistPage: React.FC = () => {
     }
 
     try {
-      await addItem(item.defaultVariantId, 1);
+      await addItem(item.defaultVariantId, 1, {
+        product: {
+          id: item.productId,
+          name: item.name,
+          slug: item.slug,
+          variantName: 'Default',
+          sku: 'SKU-' + item.productId.substring(0, 6).toUpperCase(),
+          image: item.image,
+        },
+        unitPrice: item.price,
+        availableStock: 99,
+      });
       removeItem(item.productId);
       toast.success(`Moved ${item.name} to cart!`);
     } catch (err: any) {

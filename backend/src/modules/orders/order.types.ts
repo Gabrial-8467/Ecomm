@@ -1,7 +1,11 @@
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 
 export interface CheckoutInput {
-  deliveryAddressId: string;
+  deliveryAddressId?: string;
+  fulfillmentType?: 'DELIVERY' | 'STORE_PICKUP';
+  preferredDeliveryDate?: string;
+  deliveryTimeSlot?: string;
+  requiresInstallation?: boolean;
   couponCode?: string;
   customerNote?: string;
 }
@@ -21,6 +25,13 @@ export interface UpdateOrderStatusInput {
   status: OrderStatus;
   reason?: string;
   adminNote?: string;
+  deliveryAgentName?: string;
+  deliveryAgentPhone?: string;
+}
+
+export interface AssignDeliveryAgentInput {
+  deliveryAgentName: string;
+  deliveryAgentPhone: string;
 }
 
 export interface CancelOrderInput {

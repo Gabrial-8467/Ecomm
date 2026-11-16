@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api/client.js';
 import { useAdminAuthStore } from '../../store/authStore.js';
-import { Store, Shield } from 'lucide-react';
+import { Store, Shield, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const LoginPage: React.FC = () => {
@@ -11,6 +11,7 @@ export const LoginPage: React.FC = () => {
 
   const [identifier, setIdentifier] = useState('admin@store.com');
   const [password, setPassword] = useState('Admin@12345');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,13 +70,23 @@ export const LoginPage: React.FC = () => {
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
               Password
             </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full text-sm px-4 py-2.5 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 focus:bg-white transition-all"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full text-sm px-4 py-2.5 pr-10 bg-slate-50 border border-slate-300 text-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 focus:bg-white transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <button

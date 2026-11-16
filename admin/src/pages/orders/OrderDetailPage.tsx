@@ -14,9 +14,13 @@ import {
   Wrench,
   Download,
   Loader2,
+  Store,
+  MapPin,
+  UserCheck,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import html2pdf from 'html2pdf.js';
+import { downloadOrderInvoicePdf } from '../../utils/invoicePdf.js';
 
 export const OrderDetailPage: React.FC = () => {
   const { orderNumber } = useParams<{ orderNumber: string }>();
@@ -25,27 +29,17 @@ export const OrderDetailPage: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [driverModalOpen, setDriverModalOpen] = useState(false);
+  const [driverName, setDriverName] = useState('');
+  const [driverPhone, setDriverPhone] = useState('');
+  const [isSavingDriver, setIsSavingDriver] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = () => {
     if (!order) return;
     setIsGeneratingPdf(true);
     try {
-      // If modal is not open, open it so DOM ref exists
-      if (!invoiceModal) {
-        setInvoiceModal(true);
-        await new Promise((r) => setTimeout(r, 150));
-      }
-
-      if (!invoiceRef.current) return;
-      const opt = {
-        margin: [10, 10, 10, 10] as [number, number, number, number],
-        filename: `Invoice-${order.orderNumber}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-      };
-      await html2pdf().set(opt).from(invoiceRef.current).save();
+      downloadOrderInvoicePdf(order);
       toast.success(`Downloaded Invoice-${order.orderNumber}.pdf`);
     } catch (err) {
       console.error('Failed to generate PDF:', err);
@@ -60,6 +54,13 @@ export const OrderDetailPage: React.FC = () => {
     fetchOrder();
   }, [orderNumber]);
 
+  useEffect(() => {
+    if (order) {
+      setDriverName(order.deliveryAgentName || '');
+      setDriverPhone(order.deliveryAgentPhone || '');
+    }
+  }, [order]);
+
   async function fetchOrder() {
     setIsLoading(true);
     try {
@@ -71,6 +72,26 @@ export const OrderDetailPage: React.FC = () => {
       setIsLoading(false);
     }
   }
+
+  const handleAssignDriver = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order) return;
+    setIsSavingDriver(true);
+    try {
+      const response = await api.patch(`/orders/admin/${order.id}/assign-agent`, {
+        deliveryAgentName: driverName.trim(),
+        deliveryAgentPhone: driverPhone.trim(),
+      });
+      setOrder(response.data?.data);
+      toast.success('Fleet driver assigned successfully');
+      setDriverModalOpen(false);
+      fetchOrder();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to assign driver');
+    } finally {
+      setIsSavingDriver(false);
+    }
+  };
 
   const handleUpdateStatus = async (newStatus: Order['status'], reason?: string) => {
     if (!order) return;
@@ -204,14 +225,31 @@ export const OrderDetailPage: React.FC = () => {
           )}
 
           {status === 'READY_FOR_DISPATCH' && (
-            <button
-              disabled={isUpdating}
-              onClick={() => handleUpdateStatus('OUT_FOR_DELIVERY', 'Dispatched with local delivery driver')}
-              className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
-            >
-              <Truck className="w-4 h-4" />
-              <span>Dispatch with Local Fleet Driver</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={isUpdating}
+                onClick={() => {
+                  if (!order.deliveryAgentName) {
+                    setDriverModalOpen(true);
+                  } else {
+                    handleUpdateStatus('OUT_FOR_DELIVERY', `Dispatched with driver ${order.deliveryAgentName}`);
+                  }
+                }}
+                className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+              >
+                <Truck className="w-4 h-4" />
+                <span>Dispatch with Local Fleet Driver</span>
+              </button>
+              {!order.deliveryAgentName && (
+                <button
+                  type="button"
+                  onClick={() => setDriverModalOpen(true)}
+                  className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  + Set Driver First
+                </button>
+              )}
+            </div>
           )}
 
           {status === 'OUT_FOR_DELIVERY' && (
@@ -344,10 +382,65 @@ export const OrderDetailPage: React.FC = () => {
 
         {/* Right: Customer & Delivery Snapshot */}
         <div className="space-y-6">
+          {/* Fleet Driver Assignment Card */}
           <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-3">
-            <h3 className="text-sm font-bold text-slate-900 pb-2 border-b border-slate-100">
-              Customer Information
-            </h3>
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <Truck className="w-4 h-4 text-amber-600" />
+                <span>Fleet Driver & Logistics</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setDriverModalOpen(true)}
+                className="text-xs text-amber-700 hover:text-amber-800 font-semibold cursor-pointer"
+              >
+                {order.deliveryAgentName ? 'Change Driver' : '+ Assign Driver'}
+              </button>
+            </div>
+
+            {order.deliveryAgentName ? (
+              <div className="p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-xl space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-700" />
+                    {order.deliveryAgentName}
+                  </span>
+                  <span className="text-[10px] uppercase font-bold text-emerald-700 tracking-wider">
+                    Assigned
+                  </span>
+                </div>
+                {order.deliveryAgentPhone && (
+                  <a
+                    href={`tel:${order.deliveryAgentPhone}`}
+                    className="text-xs text-emerald-800 font-mono font-medium hover:underline flex items-center gap-1 pt-1"
+                  >
+                    <Phone className="w-3 h-3 text-emerald-600" />
+                    {order.deliveryAgentPhone}
+                  </a>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 italic bg-slate-50 p-3 rounded-xl border border-slate-100">
+                No delivery driver assigned yet. Assign a local staff driver before final dispatch.
+              </p>
+            )}
+          </div>
+
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900">
+                Customer Information
+              </h3>
+              {order.fulfillmentType === 'STORE_PICKUP' ? (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                  <Store className="w-3 h-3" /> Store Pickup
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                  <Truck className="w-3 h-3" /> Local Delivery
+                </span>
+              )}
+            </div>
             <div className="text-xs text-slate-700 space-y-1">
               <p className="font-bold text-slate-900 text-sm">{order.customerName}</p>
               <a
@@ -534,6 +627,74 @@ export const OrderDetailPage: React.FC = () => {
                 <span>Print Dialog</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Driver Assignment Modal */}
+      {driverModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Truck className="w-5 h-5 text-amber-600" />
+                Assign Fleet Driver
+              </h3>
+              <button
+                onClick={() => setDriverModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAssignDriver} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  Driver / Delivery Agent Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Ramesh Singh"
+                  value={driverName}
+                  onChange={(e) => setDriverName(e.target.value)}
+                  className="w-full text-sm px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-500 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  Driver Phone Number
+                </label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="e.g. +91 98765 00000"
+                  value={driverPhone}
+                  onChange={(e) => setDriverPhone(e.target.value)}
+                  className="w-full text-sm px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-500 focus:bg-white font-mono"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setDriverModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingDriver}
+                  className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                >
+                  {isSavingDriver && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Driver & Update</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
