@@ -175,33 +175,70 @@ export const OrdersListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter / Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-4 justify-between">
-        <form onSubmit={handleSearch} className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search by order number or customer phone..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 text-sm text-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 focus:bg-white transition-all"
-          />
-        </form>
+      {/* Quick Filter Tabs & Search Bar */}
+      <div className="space-y-3">
+        {/* Quick Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { label: 'All Orders', value: '' },
+            { label: 'Confirmed & Processing', value: 'CONFIRMED' },
+            { label: 'Out for Delivery', value: 'OUT_FOR_DELIVERY' },
+            { label: 'Delivered', value: 'DELIVERED' },
+            { label: 'Return Requests', value: 'RETURN_REQUESTED', isAlert: true },
+            { label: 'Returned & Restocked', value: 'RETURNED' },
+            { label: 'Cancelled', value: 'CANCELLED' },
+          ].map((tab) => {
+            const isActive = statusFilter === tab.value;
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setStatusFilter(tab.value)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isActive
+                    ? 'bg-amber-700 text-white shadow-xs'
+                    : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs'
+                }`}
+              >
+                {tab.isAlert && (
+                  <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-white' : 'bg-amber-600 animate-pulse'}`} />
+                )}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 px-3.5 py-2 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
-        >
-          <option value="">All Fulfillment Statuses</option>
-          <option value="PLACED">Placed (Pending Store Call)</option>
-          <option value="CONFIRMED">Confirmed</option>
-          <option value="PROCESSING">Processing / Assembling</option>
-          <option value="READY_FOR_DISPATCH">Ready for Dispatch</option>
-          <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-          <option value="DELIVERED">Delivered (COD Collected)</option>
-          <option value="CANCELLED">Cancelled</option>
-        </select>
+        {/* Filter / Search Bar */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-4 justify-between">
+          <form onSubmit={handleSearch} className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search by order number or customer phone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 text-sm text-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 focus:bg-white transition-all"
+            />
+          </form>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 px-3.5 py-2 rounded-xl focus:outline-none focus:border-amber-600 focus:bg-white"
+          >
+            <option value="">All Fulfillment Statuses</option>
+            <option value="PLACED">Placed (Pending Store Call)</option>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="PROCESSING">Processing / Assembling</option>
+            <option value="READY_FOR_DISPATCH">Ready for Dispatch</option>
+            <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+            <option value="DELIVERED">Delivered (COD Collected)</option>
+            <option value="RETURN_REQUESTED">Return Requested (Review)</option>
+            <option value="RETURNED">Returned & Restocked</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+        </div>
       </div>
 
       {/* Orders Table Container */}

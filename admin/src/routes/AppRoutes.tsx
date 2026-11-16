@@ -9,6 +9,7 @@ import { EditProductPage } from '../pages/products/EditProductPage.js';
 import { InventoryPage } from '../pages/inventory/InventoryPage.js';
 import { OrdersListPage } from '../pages/orders/OrdersListPage.js';
 import { OrderDetailPage } from '../pages/orders/OrderDetailPage.js';
+import { ReturnsPage } from '../pages/orders/ReturnsPage.js';
 import { DeliveryZonesPage } from '../pages/delivery/DeliveryZonesPage.js';
 import { CouponsPage } from '../pages/coupons/CouponsPage.js';
 import { CustomersPage } from '../pages/customers/CustomersPage.js';
@@ -31,6 +32,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/orders" element={<OrdersListPage />} />
         <Route path="/orders/:orderNumber" element={<OrderDetailPage />} />
+        <Route path="/returns" element={<ReturnsPage />} />
         <Route path="/delivery-zones" element={<DeliveryZonesPage />} />
         <Route path="/coupons" element={<CouponsPage />} />
         <Route path="/customers" element={<CustomersPage />} />

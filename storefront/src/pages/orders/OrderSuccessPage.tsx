@@ -18,9 +18,14 @@ import {
   Loader2,
   Phone,
   Store,
+  RotateCcw,
+  PackageCheck,
+  RefreshCw,
+  FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadOrderInvoicePdf } from '../../utils/invoicePdf.js';
+import { parseOrderNotes } from '../../utils/orderNotes.js';
 
 const STATUS_STEPS = [
   { key: 'PLACED', label: 'Order Received', icon: Clock },
@@ -141,18 +146,43 @@ export const OrderSuccessPage: React.FC = () => {
   }
 
   const isCancelled = order.status === 'CANCELLED';
+  const isReturned = order.status === 'RETURNED';
+  const isReturnRequested = order.status === 'RETURN_REQUESTED';
   const cancellableStatuses = ['PLACED', 'CONFIRMED', 'PROCESSING'];
   const canCancel = cancellableStatuses.includes(order.status);
   const isDispatched = order.status === 'READY_FOR_DISPATCH' || order.status === 'OUT_FOR_DELIVERY';
 
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.key === order.status);
 
+  const RETURN_LIFECYCLE_STEPS = [
+    { key: 'DELIVERED', label: 'Item Delivered', desc: 'Received at delivery address', icon: PackageCheck },
+    { key: 'RETURN_REQUESTED', label: 'Return Ticket Filed', desc: 'Reported to showroom concierge', icon: AlertCircle },
+    { key: 'INSPECTION', label: 'Pickup & Verification', desc: 'Quality inspection & transit', icon: Truck },
+    { key: 'RETURNED', label: 'Restocked & Refunded', desc: 'Restocked into warehouse', icon: RotateCcw },
+  ];
+
   return (
     <div className="max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-10 sm:py-16 space-y-10">
       {/* Top Banner */}
       <div className="bg-white rounded-3xl border border-neutral-200/80 p-8 sm:p-10 shadow-xs text-center space-y-4">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-neutral-200 bg-neutral-50 text-neutral-900">
-          {isCancelled ? <XCircle className="w-8 h-8 text-rose-600 stroke-[1.5]" /> : <CheckCircle2 className="w-8 h-8 stroke-[1.5]" />}
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto border ${
+          isReturned
+            ? 'bg-rose-50 border-rose-200 text-rose-600'
+            : isReturnRequested
+            ? 'bg-amber-50 border-amber-200 text-amber-600'
+            : isCancelled
+            ? 'bg-rose-50 border-rose-200 text-rose-600'
+            : 'bg-neutral-50 border-neutral-200 text-neutral-900'
+        }`}>
+          {isReturned ? (
+            <RotateCcw className="w-8 h-8 stroke-[1.8]" />
+          ) : isReturnRequested ? (
+            <AlertCircle className="w-8 h-8 stroke-[1.8]" />
+          ) : isCancelled ? (
+            <XCircle className="w-8 h-8 text-rose-600 stroke-[1.5]" />
+          ) : (
+            <CheckCircle2 className="w-8 h-8 stroke-[1.5]" />
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -160,27 +190,112 @@ export const OrderSuccessPage: React.FC = () => {
             REF #{order.orderNumber}
           </span>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">
-            {isCancelled ? 'Order Cancelled' : 'Order Confirmed & Scheduled'}
+            {isReturned
+              ? 'Order Returned & Restocked'
+              : isReturnRequested
+              ? 'Return / Replacement Ticket Active'
+              : isCancelled
+              ? 'Order Cancelled'
+              : 'Order Confirmed & Scheduled'}
           </h1>
           <p className="text-neutral-500 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
-            {isCancelled
+            {isReturned
+              ? `Order #${order.orderNumber} was returned and received by our Mohali showroom warehouse. Products were verified and restocked into inventory, and your refund has been processed.`
+              : isReturnRequested
+              ? `Your return request for Order #${order.orderNumber} is under review. Our showroom logistics concierge will contact you to coordinate item pickup.`
+              : isCancelled
               ? `This order was cancelled. Reason: ${order.cancelReason || 'Customer requested'}`
               : `Order #${order.orderNumber} has been received. Our showroom logistics concierge will inspect the items and coordinate delivery.`}
           </p>
         </div>
 
         <div className="pt-2 flex flex-wrap justify-center gap-2.5">
-          <span className="px-3 py-1 bg-neutral-100 rounded-full text-[11px] font-medium text-neutral-700">
-            Payment: COD ({order.paymentStatus})
-          </span>
-          <span className="px-3 py-1 bg-neutral-900 text-white rounded-full text-[11px] font-medium">
-            Total Due: ₹{Number(order.totalAmount).toLocaleString('en-IN')}
-          </span>
+          {isReturned ? (
+            <>
+              <span className="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-[11px] font-bold">
+                Status: Returned to Showroom
+              </span>
+              <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-bold">
+                Refund: Completed (₹{Number(order.totalAmount).toLocaleString('en-IN')})
+              </span>
+            </>
+          ) : isReturnRequested ? (
+            <>
+              <span className="px-3 py-1 bg-amber-100 text-amber-900 rounded-full text-[11px] font-bold animate-pulse">
+                Status: Showroom Review in Progress
+              </span>
+              <span className="px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full text-[11px] font-medium">
+                Order Value: ₹{Number(order.totalAmount).toLocaleString('en-IN')}
+              </span>
+            </>
+          ) : isCancelled ? (
+            <span className="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-[11px] font-bold">
+              Status: Cancelled
+            </span>
+          ) : (
+            <>
+              <span className="px-3 py-1 bg-neutral-100 rounded-full text-[11px] font-medium text-neutral-700">
+                Payment: COD ({order.paymentStatus})
+              </span>
+              <span className="px-3 py-1 bg-neutral-900 text-white rounded-full text-[11px] font-medium">
+                Total Due: ₹{Number(order.totalAmount).toLocaleString('en-IN')}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Progress Timeline */}
-      {!isCancelled && (
+      {/* Return Lifecycle Timeline */}
+      {(isReturned || isReturnRequested) && (
+        <div className="bg-white rounded-3xl border border-neutral-200/80 p-7 sm:p-9 shadow-xs space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+            <div className="flex items-center gap-2">
+              <RotateCcw className="w-4 h-4 text-neutral-700" />
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-900">Return & Restock Process</h2>
+            </div>
+            <span className={`text-xs font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full ${
+              isReturned ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
+            }`}>
+              {isReturned ? 'Completed & Restocked' : 'Review in Progress'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {RETURN_LIFECYCLE_STEPS.map((step, idx) => {
+              const isPast = isReturned ? true : idx <= 1;
+              const isCurrent = isReturned ? idx === 3 : idx === 1;
+              const StepIcon = step.icon;
+
+              return (
+                <div key={step.key} className="flex flex-col items-center text-center space-y-2 p-3 rounded-2xl bg-neutral-50/60 border border-neutral-100">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                      isCurrent
+                        ? isReturned
+                          ? 'bg-rose-600 text-white ring-4 ring-rose-100'
+                          : 'bg-amber-600 text-white ring-4 ring-amber-100'
+                        : isPast
+                        ? 'bg-neutral-900 text-white'
+                        : 'bg-neutral-200 text-neutral-400'
+                    }`}
+                  >
+                    <StepIcon className="w-4 h-4 stroke-[1.8]" />
+                  </div>
+                  <span className={`text-xs font-bold ${isCurrent ? 'text-neutral-900' : isPast ? 'text-neutral-800' : 'text-neutral-400'}`}>
+                    {step.label}
+                  </span>
+                  <span className="text-[11px] text-neutral-500 leading-tight">
+                    {step.desc}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Progress Timeline (Standard Forward Orders) */}
+      {!isCancelled && !isReturned && !isReturnRequested && (
         <div className="bg-white rounded-3xl border border-neutral-200/80 p-7 sm:p-9 shadow-xs space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-900">Fulfillment Status</h2>
@@ -221,6 +336,98 @@ export const OrderSuccessPage: React.FC = () => {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Dedicated Return Audit Summary Card */}
+      {(isReturned || isReturnRequested) && (
+        <div className={`rounded-3xl border p-7 sm:p-9 shadow-xs space-y-5 ${
+          isReturned
+            ? 'bg-gradient-to-br from-rose-50/70 via-white to-amber-50/40 border-rose-200'
+            : 'bg-gradient-to-br from-amber-50/70 via-white to-neutral-50 border-amber-200'
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-200/60">
+            <div className="flex items-center gap-3">
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
+                isReturned ? 'bg-rose-600 text-white shadow-sm' : 'bg-amber-600 text-white shadow-sm'
+              }`}>
+                <RotateCcw className="w-5 h-5 stroke-[2]" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-neutral-900">
+                  {isReturned ? 'Warehouse Restock & Refund Audit' : 'Return / Replacement Ticket Status'}
+                </h2>
+                <p className="text-xs text-neutral-500">
+                  {isReturned
+                    ? 'Showroom inspection complete. Products restocked into inventory.'
+                    : 'Showroom team is reviewing your inspection request.'}
+                </p>
+              </div>
+            </div>
+
+            <span className={`self-start sm:self-auto px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+              isReturned ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-amber-100 text-amber-900 border border-amber-200'
+            }`}>
+              {isReturned ? 'Returned & Restocked' : 'Review in Progress'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div className="bg-white p-4 rounded-2xl border border-neutral-200/80 space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Inventory Status</span>
+              <p className="font-bold text-neutral-900">
+                {isReturned ? 'Restocked into Warehouse' : 'Pending Inspection'}
+              </p>
+              <p className="text-[11px] text-neutral-500">
+                {isReturned ? 'Available stock restored' : 'Awaiting showroom pickup'}
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-neutral-200/80 space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Payment & Refund</span>
+              <p className="font-bold text-neutral-900">
+                {order.paymentStatus === 'REFUNDED' || isReturned ? 'Refund Processed' : 'Pending Inspection'}
+              </p>
+              <p className="text-[11px] text-neutral-500">
+                Total: ₹{Number(order.totalAmount).toLocaleString('en-IN')} (COD Refund)
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-neutral-200/80 space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Support Desk</span>
+              <p className="font-bold text-neutral-900">+91 98765 43210</p>
+              <p className="text-[11px] text-neutral-500">Mohali Showroom Concierge</p>
+            </div>
+          </div>
+
+          {(order.customerNote || order.cancelReason || order.adminNote) && (() => {
+            const parsed = parseOrderNotes(order.customerNote, order.cancelReason);
+            return (
+              <div className="bg-white/80 p-4 rounded-2xl border border-neutral-200/80 text-xs space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Recorded Return Notes</span>
+                {parsed.returnReason && (
+                  <p className="text-neutral-800">
+                    <strong className="text-neutral-900 font-semibold">Client Claim: </strong>
+                    <span className="bg-amber-50 px-2 py-0.5 rounded text-amber-900 font-medium">
+                      {parsed.returnReason}
+                    </span>
+                  </p>
+                )}
+                {parsed.instructions && (
+                  <p className="text-neutral-600">
+                    <strong className="text-neutral-800 font-semibold">Special Instructions: </strong>
+                    "{parsed.instructions}"
+                  </p>
+                )}
+                {order.adminNote && (
+                  <p className="text-neutral-700">
+                    <strong className="text-neutral-900 font-semibold">Showroom Staff Note: </strong>
+                    {order.adminNote}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -308,20 +515,48 @@ export const OrderSuccessPage: React.FC = () => {
               </p>
             </div>
 
-            {order.customerNote && (
-              <div className="pt-3 border-t border-neutral-100 space-y-2">
-                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Schedule & Staging:</p>
-                {order.customerNote.includes('Free Assembly: YES') && (
-                  <div className="flex items-center gap-1.5 p-2.5 bg-neutral-50 text-neutral-900 rounded-xl text-xs font-medium border border-neutral-200">
-                    <Wrench className="w-3.5 h-3.5" />
-                    <span>Free Technician Assembly Included</span>
+            {order.customerNote && (() => {
+              const parsed = parseOrderNotes(order.customerNote, order.cancelReason);
+              return (
+                <div className="pt-3 border-t border-neutral-100 space-y-2">
+                  <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                    Schedule & Staging:
+                  </p>
+                  <div className="space-y-2 text-xs">
+                    {parsed.preferredSlot && (
+                      <div className="flex items-center gap-2 p-2.5 bg-neutral-50 text-neutral-800 rounded-xl border border-neutral-200/70 font-medium">
+                        <Clock className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                        <span>Slot: <strong>{parsed.preferredSlot}</strong></span>
+                      </div>
+                    )}
+                    {parsed.freeAssembly && (
+                      <div className="flex items-center gap-2 p-2.5 bg-emerald-50 text-emerald-900 rounded-xl border border-emerald-200/70 font-medium">
+                        <Wrench className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                        <span>Free Technician Assembly Included</span>
+                      </div>
+                    )}
+                    {parsed.instructions && (
+                      <div className="flex items-start gap-2 p-2.5 bg-neutral-50 text-neutral-700 rounded-xl border border-neutral-200/70">
+                        <FileText className="w-3.5 h-3.5 text-neutral-400 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-semibold text-neutral-900">Instructions: </span>
+                          <span>"{parsed.instructions}"</span>
+                        </div>
+                      </div>
+                    )}
+                    {parsed.returnReason && (
+                      <div className="flex items-start gap-2 p-2.5 bg-rose-50 text-rose-900 rounded-xl border border-rose-200/70">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-semibold text-rose-950">Return Request: </span>
+                          <span>{parsed.returnReason}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-                <p className="text-xs text-neutral-600 bg-neutral-50 p-3 rounded-xl border border-neutral-100">
-                  {order.customerNote}
-                </p>
-              </div>
-            )}
+                </div>
+              );
+            })()}
           </div>
 
           {order.deliveryAgentName && !isCancelled && (
@@ -388,7 +623,13 @@ export const OrderSuccessPage: React.FC = () => {
             ) : (
               <Download className="w-4 h-4 text-neutral-900" />
             )}
-            <span>{isDownloadingInvoice ? 'Generating Invoice...' : 'Download GST Invoice (PDF)'}</span>
+            <span>
+              {isDownloadingInvoice
+                ? 'Generating Invoice...'
+                : isReturned
+                ? 'Download Return Credit Note (PDF)'
+                : 'Download GST Invoice (PDF)'}
+            </span>
           </button>
 
           {order.status === 'DELIVERED' && (
@@ -402,25 +643,25 @@ export const OrderSuccessPage: React.FC = () => {
           )}
 
           {order.status === 'RETURN_REQUESTED' && (
-            <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-3xl text-xs text-neutral-900 space-y-1">
-              <p className="font-semibold flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4" />
-                <span>Return Ticket Under Review</span>
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-3xl text-xs text-amber-950 space-y-1.5">
+              <p className="font-bold flex items-center gap-1.5 text-amber-900">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+                <span>Return Ticket Under Showroom Review</span>
               </p>
-              <p className="text-[11px] text-neutral-500">
-                Our showroom service manager is reviewing your ticket and will contact you within 24 hours.
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                Our showroom concierge is reviewing your request and will contact you within 24 hours to schedule white-glove pickup.
               </p>
             </div>
           )}
 
           {order.status === 'RETURNED' && (
-            <div className="p-4 bg-rose-50 border border-rose-200 rounded-3xl text-xs text-rose-900 space-y-1">
-              <p className="font-semibold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-rose-700" />
-                <span>Return Completed</span>
+            <div className="p-4 bg-rose-50/80 border border-rose-200 rounded-3xl text-xs text-rose-950 space-y-1.5">
+              <p className="font-bold flex items-center gap-1.5 text-rose-900">
+                <RotateCcw className="w-4 h-4 text-rose-700" />
+                <span>Return & Warehouse Restock Completed</span>
               </p>
-              <p className="text-[11px] text-rose-800">
-                The items were inspected and returned to the showroom.
+              <p className="text-[11px] text-rose-800 leading-relaxed">
+                Items were received at the Mohali showroom warehouse, verified by technicians, and restocked into live inventory. Refund has been settled.
               </p>
             </div>
           )}

@@ -56,6 +56,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const response = await api.get('/auth/me');
       const user = response.data?.data?.user;
+      if (user?.role === 'ADMIN' || user?.role === 'STAFF') {
+        throw new Error('Admin/Staff accounts cannot access customer storefront');
+      }
       set({ user, isAuthenticated: true, isLoading: false });
       localStorage.setItem('user', JSON.stringify(user));
     } catch {

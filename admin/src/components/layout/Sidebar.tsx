@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   ShoppingBag,
+  RotateCcw,
   Package,
   Layers,
   Truck,
@@ -21,6 +22,7 @@ export const Sidebar: React.FC = () => {
   const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/orders', label: 'Orders & Fulfillment', icon: ShoppingBag },
+    { to: '/returns', label: 'Returns & Restocks', icon: RotateCcw },
     { to: '/products', label: 'Products & Variants', icon: Package },
     { to: '/categories-brands', label: 'Categories & Brands', icon: Tags },
     { to: '/banners', label: 'Homepage Banners', icon: ImageIcon },

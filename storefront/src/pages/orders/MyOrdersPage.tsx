@@ -1,14 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api/client.js';
 import { Order } from '../../types/index.js';
+import { useAuthStore } from '../../store/authStore.js';
 import { Package, ChevronRight, ShoppingBag, ArrowRight } from 'lucide-react';
 
 export const MyOrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated, user } = useAuthStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    if (!isAuthenticated || user?.role === 'ADMIN' || user?.role === 'STAFF') {
+      navigate('/login?redirect=/orders');
+      return;
+    }
+
     async function fetchOrders() {
       try {
         const response = await api.get('/orders');
@@ -20,7 +28,7 @@ export const MyOrdersPage: React.FC = () => {
       }
     }
     fetchOrders();
-  }, []);
+  }, [isAuthenticated, user, navigate]);
 
   const getStatusBadge = (status: Order['status']) => {
     switch (status) {
@@ -28,6 +36,18 @@ export const MyOrdersPage: React.FC = () => {
         return (
           <span className="px-2.5 py-1 bg-emerald-50 text-emerald-900 border border-emerald-200/60 text-[10px] font-semibold uppercase tracking-wider rounded-full">
             Delivered
+          </span>
+        );
+      case 'RETURN_REQUESTED':
+        return (
+          <span className="px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-300 text-[10px] font-semibold uppercase tracking-wider rounded-full">
+            Return Requested
+          </span>
+        );
+      case 'RETURNED':
+        return (
+          <span className="px-2.5 py-1 bg-rose-50 text-rose-900 border border-rose-200 text-[10px] font-semibold uppercase tracking-wider rounded-full">
+            Returned & Restocked
           </span>
         );
       case 'CANCELLED':

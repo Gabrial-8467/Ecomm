@@ -2,13 +2,22 @@ import { Request, Response, NextFunction } from 'express';
 import { ProductService } from './product.service.js';
 import { sendSuccess, sendCreated } from '../../utils/response.js';
 import { paramToString } from '../../utils/params.js';
+import { NotFoundError } from '../../utils/errors.js';
 
 const productService = new ProductService();
 
 export class ProductController {
   async getAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const result = await productService.getProducts(req.query as any);
+      const isStaffOrAdmin = req.user?.role === 'ADMIN' || req.user?.role === 'STAFF';
+      const filters = { ...req.query } as any;
+
+      // Prevent draft / inactive catalog data leakage to storefront
+      if (!isStaffOrAdmin) {
+        filters.status = 'ACTIVE';
+      }
+
+      const result = await productService.getProducts(filters);
       sendSuccess(res, result.products, undefined, 200, result.pagination);
     } catch (error) {
       next(error);
@@ -26,8 +35,15 @@ export class ProductController {
 
   async getBySlug(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      const isStaffOrAdmin = req.user?.role === 'ADMIN' || req.user?.role === 'STAFF';
       const slug = paramToString(req.params.slug);
       const product = await productService.getProductBySlug(slug);
+
+      // Prevent unpublished product leakage to storefront
+      if (!isStaffOrAdmin && product.status !== 'ACTIVE' && product.status !== 'OUT_OF_STOCK') {
+        throw new NotFoundError('Product not found');
+      }
+
       sendSuccess(res, product);
     } catch (error) {
       next(error);

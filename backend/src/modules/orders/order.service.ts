@@ -517,12 +517,8 @@ export class OrderService {
   }
 
   async requestReturn(orderNumber: string, reason: string, customerId: string, details?: string) {
-    const order = await this.orderRepo.findByOrderNumber(orderNumber);
+    const order = await this.orderRepo.findByOrderNumber(orderNumber, customerId);
     if (!order) {
-      throw new NotFoundError('Order not found');
-    }
-
-    if (order.customerId !== customerId) {
       throw new NotFoundError('Order not found for this customer');
     }
 
@@ -539,6 +535,7 @@ export class OrderService {
         data: {
           status: 'RETURN_REQUESTED',
           customerNote: updatedNote,
+          cancelReason: `${reason}${details ? ` - ${details}` : ''}`,
         },
       });
 

@@ -74,7 +74,7 @@ export class AuthService {
     return { user: summary, tokens };
   }
 
-  async login(input: LoginInput, userAgent?: string, ipAddress?: string): Promise<{ user: UserSummary; tokens: AuthTokens }> {
+  async login(input: LoginInput, userAgent?: string, ipAddress?: string, clientApp?: 'admin' | 'storefront'): Promise<{ user: UserSummary; tokens: AuthTokens }> {
     const user = await this.authRepo.findByPhoneOrEmail(input.identifier);
     if (!user || !user.passwordHash) {
       throw new UnauthorizedError('Invalid credentials');
@@ -82,6 +82,17 @@ export class AuthService {
 
     if (user.status === 'BLOCKED' || user.status === 'INACTIVE') {
       throw new ForbiddenError('Account is inactive or blocked. Please contact support.');
+    }
+
+    // Strict role segregation: Prevent storefront customer from accessing admin panel and vice versa
+    if (clientApp === 'admin') {
+      if (user.role !== 'ADMIN' && user.role !== 'STAFF') {
+        throw new ForbiddenError('Access denied: Customer accounts cannot access the admin panel.');
+      }
+    } else if (clientApp === 'storefront') {
+      if (user.role === 'ADMIN' || user.role === 'STAFF') {
+        throw new ForbiddenError('Access denied: Admin/Staff accounts cannot login via customer storefront. Please use the Admin portal.');
+      }
     }
 
     let isValid = await bcrypt.compare(input.password, user.passwordHash);
@@ -130,11 +141,17 @@ export class AuthService {
     return { user: summary, tokens };
   }
 
-  async refresh(refreshToken: string, userAgent?: string, ipAddress?: string): Promise<{ accessToken: string; newRefreshToken: string }> {
+  async refresh(refreshToken: string, userAgent?: string, ipAddress?: string, clientApp?: 'admin' | 'storefront'): Promise<{ accessToken: string; newRefreshToken: string }> {
     const refreshTokenHash = this.hashToken(refreshToken);
     const session = await this.authRepo.findSession(refreshTokenHash);
 
-    if (!session || session.revokedAt || session.expiresAt < new Date()) {
+    if (!session || session.expiresAt < new Date()) {
+      throw new UnauthorizedError('Session expired, please log in again', 'SESSION_EXPIRED');
+    }
+
+    // Grace window (15s) for concurrent refresh requests (e.g. multiple tabs or parallel HTTP requests on page load)
+    const isRecentRevocation = !!(session.revokedAt && Date.now() - session.revokedAt.getTime() < 15000);
+    if (session.revokedAt && !isRecentRevocation) {
       throw new UnauthorizedError('Session expired or revoked, please log in again', 'SESSION_EXPIRED');
     }
 
@@ -142,23 +159,35 @@ export class AuthService {
       throw new ForbiddenError('Account is inactive or blocked');
     }
 
-    // Revoke old session token
-    await this.authRepo.revokeSession(refreshTokenHash);
+    // Strict role segregation: Prevent storefront customer from refreshing admin session and vice versa
+    if (clientApp === 'admin') {
+      if (session.user.role !== 'ADMIN' && session.user.role !== 'STAFF') {
+        throw new ForbiddenError('Access denied: Customer accounts cannot access the admin panel.');
+      }
+    } else if (clientApp === 'storefront') {
+      if (session.user.role === 'ADMIN' || session.user.role === 'STAFF') {
+        throw new ForbiddenError('Access denied: Admin/Staff sessions cannot be used on customer storefront.');
+      }
+    }
 
-    // Issue rotated tokens
     const tokens = this.generateTokens(session.userId, session.user.role);
-    const newHash = this.hashToken(tokens.refreshToken);
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    if (!isRecentRevocation) {
+      // Revoke old session token on first rotation
+      await this.authRepo.revokeSession(refreshTokenHash);
 
-    await this.authRepo.createSession({
-      userId: session.userId,
-      refreshTokenHash: newHash,
-      expiresAt,
-      userAgent,
-      ipAddress,
-    });
+      const newHash = this.hashToken(tokens.refreshToken);
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      await this.authRepo.createSession({
+        userId: session.userId,
+        refreshTokenHash: newHash,
+        expiresAt,
+        userAgent,
+        ipAddress,
+      });
+    }
 
     return { accessToken: tokens.accessToken, newRefreshToken: tokens.refreshToken };
   }

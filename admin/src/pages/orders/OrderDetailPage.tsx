@@ -18,9 +18,16 @@ import {
   MapPin,
   UserCheck,
   X,
+  RotateCcw,
+  PackageCheck,
+  Warehouse,
+  ShieldAlert,
+  Clock,
+  FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadOrderInvoicePdf } from '../../utils/invoicePdf.js';
+import { parseOrderNotes } from '../../utils/orderNotes.js';
 
 export const OrderDetailPage: React.FC = () => {
   const { orderNumber } = useParams<{ orderNumber: string }>();
@@ -280,39 +287,150 @@ export const OrderDetailPage: React.FC = () => {
           )}
 
           {status === 'RETURN_REQUESTED' && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl w-full">
-              <div className="space-y-0.5">
-                <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-700" />
-                  Customer Requested Return / Replacement Ticket
-                </span>
-                <p className="text-[11px] text-amber-800">
-                  Inspect the reported defect or transit damage below. Accept to restock or decline to retain delivery status.
-                </p>
+            <div className="w-full bg-amber-50/90 border border-amber-300 rounded-2xl p-5 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-200/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-xs">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-amber-950 uppercase tracking-wide">
+                      Customer Return / Damage Ticket Filed
+                    </h3>
+                    <p className="text-[11px] text-amber-800">
+                      Client reported transit damage or defect. Review notes before approving warehouse restock or declining.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={isUpdating}
+                    onClick={() => handleUpdateStatus('RETURNED', 'Return accepted, item received at showroom and restocked')}
+                    className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-colors shadow-xs flex items-center gap-1.5"
+                  >
+                    <PackageCheck className="w-3.5 h-3.5" />
+                    <span>Approve Return & Restock</span>
+                  </button>
+                  <button
+                    disabled={isUpdating}
+                    onClick={() => handleUpdateStatus('DELIVERED', 'Return ticket declined by showroom after inspection')}
+                    className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-colors"
+                  >
+                    Decline Ticket
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={isUpdating}
-                  onClick={() => handleUpdateStatus('RETURNED', 'Return accepted, item received at showroom and restocked')}
-                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
-                >
-                  Approve Return & Restock
-                </button>
-                <button
-                  disabled={isUpdating}
-                  onClick={() => handleUpdateStatus('DELIVERED', 'Return ticket declined by showroom after inspection')}
-                  className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-colors"
-                >
-                  Decline Ticket
-                </button>
-              </div>
+
+              {/* Reported details from client (Structured) */}
+              {(() => {
+                const parsed = parseOrderNotes(order.customerNote, order.cancelReason);
+                return (
+                  <div className="bg-white/95 p-4 rounded-xl border border-amber-200 text-xs space-y-2.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                      Customer Reported Defect / Return Reason:
+                    </span>
+                    <p className="text-slate-900 font-bold text-sm bg-amber-50/70 p-3 rounded-lg border border-amber-200/60 leading-relaxed">
+                      {parsed.returnReason || order.cancelReason || 'No detailed note provided with return ticket.'}
+                    </p>
+                    {(parsed.preferredSlot || parsed.freeAssembly || parsed.instructions) && (
+                      <div className="pt-2 border-t border-amber-100 flex flex-wrap items-center gap-2 text-[11px]">
+                        {parsed.preferredSlot && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
+                            <Clock className="w-3 h-3 text-amber-700" /> Slot: {parsed.preferredSlot}
+                          </span>
+                        )}
+                        {parsed.freeAssembly && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">
+                            <Wrench className="w-3 h-3 text-emerald-600" /> Technician Assembly
+                          </span>
+                        )}
+                        {parsed.instructions && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
+                            <FileText className="w-3 h-3 text-slate-400" /> Note: "{parsed.instructions}"
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
 
           {status === 'RETURNED' && (
-            <div className="flex items-center gap-2 text-rose-700 bg-rose-50 border border-rose-200 px-4 py-2 rounded-xl text-xs font-bold">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Order Returned. Products have been automatically restocked into warehouse inventory.</span>
+            <div className="w-full bg-gradient-to-r from-rose-50 via-white to-amber-50/50 border border-rose-200 rounded-2xl p-6 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-rose-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-xs">
+                    <RotateCcw className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                        Order Returned & Warehouse Restock Completed
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                        AUDITED
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      All line items have been received at Mohali warehouse, verified by staff, and restored to live stock.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Inventory Restocked</span>
+                  </span>
+                  <span className="px-3 py-1 bg-slate-100 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold font-mono">
+                    Payment: REFUNDED
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Restock Movement</span>
+                  <p className="font-bold text-slate-900 flex items-center gap-1">
+                    <PackageCheck className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>+{order.items.reduce((s, i) => s + i.quantity, 0)} Units Returned</span>
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-mono">Type: RETURN in stock audit</p>
+                </div>
+
+                <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Refund Settlement</span>
+                  <p className="font-bold text-slate-900 font-mono">
+                    ₹{Number(order.totalAmount).toLocaleString('en-IN')}
+                  </p>
+                  <p className="text-[11px] text-slate-500">Payment status updated to REFUNDED</p>
+                </div>
+
+                <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Staff Audit Note</span>
+                  <p className="text-slate-800 font-medium text-[11px] line-clamp-2">
+                    {order.adminNote || 'Return accepted, item received at showroom and restocked'}
+                  </p>
+                </div>
+              </div>
+
+              {(order.customerNote || order.cancelReason) && (() => {
+                const parsed = parseOrderNotes(order.customerNote, order.cancelReason);
+                return (
+                  <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 text-xs space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Customer Reported Return Reason:
+                    </span>
+                    <p className="text-slate-900 font-semibold text-xs leading-relaxed">
+                      {parsed.returnReason || order.cancelReason || 'Item returned by customer'}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -337,7 +455,15 @@ export const OrderDetailPage: React.FC = () => {
             {order.items.map((item) => (
               <div key={item.id} className="py-3 flex justify-between items-center">
                 <div>
-                  <p className="font-bold text-slate-900 text-sm">{item.productName}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-slate-900 text-sm">{item.productName}</p>
+                    {status === 'RETURNED' && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        Restocked (+{item.quantity})
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-500">
                     Option: {item.variantName} • SKU: <span className="font-mono text-amber-800 font-semibold">{item.sku}</span>
                   </p>
@@ -467,22 +593,48 @@ export const OrderDetailPage: React.FC = () => {
               </p>
             </div>
 
-            {order.customerNote && (
-              <div className="pt-3 border-t border-slate-100 space-y-2">
-                <span className="text-[10px] font-bold uppercase text-slate-500">
-                  Customer Delivery Preferences & Notes:
-                </span>
-                {order.customerNote.includes('Free Assembly: YES') && (
-                  <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-bold">
-                    <Wrench className="w-3.5 h-3.5" />
-                    <span>Free Room Assembly & Setup Requested</span>
+            {(order.customerNote || order.cancelReason) && (() => {
+              const parsed = parseOrderNotes(order.customerNote, order.cancelReason);
+              return (
+                <div className="pt-3 border-t border-slate-100 space-y-2.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Delivery Preferences & Service Details:
+                  </span>
+                  <div className="space-y-2 text-xs">
+                    {parsed.preferredSlot && (
+                      <div className="flex items-center gap-2 p-2.5 bg-amber-50/70 border border-amber-200/60 rounded-xl text-amber-900 font-medium">
+                        <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                        <span>Slot: {parsed.preferredSlot}</span>
+                      </div>
+                    )}
+                    {parsed.freeAssembly && (
+                      <div className="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 font-bold">
+                        <Wrench className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Free Room Assembly Requested</span>
+                      </div>
+                    )}
+                    {parsed.instructions && (
+                      <div className="flex items-start gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium">
+                        <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-semibold text-slate-900">Client Instructions: </span>
+                          <span>"{parsed.instructions}"</span>
+                        </div>
+                      </div>
+                    )}
+                    {parsed.returnReason && (
+                      <div className="flex items-start gap-2 p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 font-medium">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-bold text-rose-950">Return Reason: </span>
+                          <span>{parsed.returnReason}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-                <p className="text-xs text-amber-900 bg-amber-50/70 p-2.5 rounded-xl border border-amber-200/60 mt-1 font-medium">
-                  "{order.customerNote}"
-                </p>
-              </div>
-            )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Audit History Timeline */}

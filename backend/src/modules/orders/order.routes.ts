@@ -16,12 +16,12 @@ import { checkoutLimiter } from '../../middleware/rate-limiter.js';
 const router = Router();
 const controller = new OrderController();
 
-// Customer order routes
-router.post('/', requireAuth, checkoutLimiter, validate({ body: checkoutSchema }), controller.checkout);
-router.get('/', requireAuth, validate({ query: orderQuerySchema }), controller.getMyOrders);
+// Customer order routes (strictly isolated to CUSTOMER accounts)
+router.post('/', requireAuth, requireRole('CUSTOMER'), checkoutLimiter, validate({ body: checkoutSchema }), controller.checkout);
+router.get('/', requireAuth, requireRole('CUSTOMER'), validate({ query: orderQuerySchema }), controller.getMyOrders);
 router.get('/:orderNumber', requireAuth, controller.getOrderByNumber);
-router.post('/:orderNumber/cancel', requireAuth, validate({ body: cancelOrderSchema }), controller.cancelOrder);
-router.post('/:orderNumber/return', requireAuth, validate({ body: returnOrderSchema }), controller.requestReturn);
+router.post('/:orderNumber/cancel', requireAuth, requireRole('CUSTOMER'), validate({ body: cancelOrderSchema }), controller.cancelOrder);
+router.post('/:orderNumber/return', requireAuth, requireRole('CUSTOMER'), validate({ body: returnOrderSchema }), controller.requestReturn);
 
 // Admin order routes
 router.get('/admin/all', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ query: orderQuerySchema }), controller.getAllOrders);

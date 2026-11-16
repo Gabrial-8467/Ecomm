@@ -4,13 +4,13 @@ import { api } from '../../services/api/client.js';
 import { useCartStore } from '../../store/cartStore.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { Address, DeliveryCheckResult } from '../../types/index.js';
-import { Truck, CheckCircle2, Tag, Plus, AlertCircle, ArrowLeft, Calendar, Clock, Wrench, Store, MapPin, Edit2 } from 'lucide-react';
+import { Truck, CheckCircle2, Tag, Plus, AlertCircle, ArrowLeft, Calendar, Clock, Wrench, Store, MapPin, Edit2, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import clsx from 'clsx';
 
 export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
-  const { cart, fetchCart } = useCartStore();
+  const { cart, fetchCart, isLoading: cartLoading } = useCartStore();
   const { isAuthenticated, user } = useAuthStore();
 
   const [fulfillmentType, setFulfillmentType] = useState<'DELIVERY' | 'STORE_PICKUP'>('DELIVERY');
@@ -51,6 +51,8 @@ export const CheckoutPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
 
+  const isCartEmpty = !cart || !cart.items || cart.items.length === 0;
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login?redirect=/checkout');
@@ -59,6 +61,13 @@ export const CheckoutPage: React.FC = () => {
     fetchCart();
     loadAddresses();
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!cartLoading && isCartEmpty) {
+      toast.error('Your cart is empty. Please add items to checkout.');
+      navigate('/cart', { replace: true });
+    }
+  }, [cartLoading, isCartEmpty]);
 
   async function loadAddresses() {
     setLoadingAddresses(true);
@@ -179,6 +188,12 @@ export const CheckoutPage: React.FC = () => {
   };
 
   const handlePlaceOrder = async () => {
+    if (isCartEmpty) {
+      toast.error('Your cart is empty. Please add items to checkout.');
+      navigate('/cart');
+      return;
+    }
+
     if (fulfillmentType === 'DELIVERY') {
       if (!selectedAddressId) {
         toast.error('Please select or add a delivery address');
@@ -237,9 +252,33 @@ export const CheckoutPage: React.FC = () => {
 
   const subtotal = cart?.subtotal || 0;
   const discount = appliedCoupon?.discountAmount || 0;
-  const deliveryFee = fulfillmentType === 'STORE_PICKUP' ? 0 : (deliveryInfo?.serviceable ? deliveryInfo.zone?.deliveryCharge || 0 : 0);
-  const tax = Math.round((subtotal - discount) * 0.18);
-  const total = Math.max(0, subtotal - discount + deliveryFee + tax);
+  const deliveryFee = (isCartEmpty || fulfillmentType === 'STORE_PICKUP')
+    ? 0
+    : (deliveryInfo?.serviceable ? deliveryInfo.zone?.deliveryCharge || 0 : 0);
+  const tax = isCartEmpty ? 0 : Math.round((subtotal - discount) * 0.18);
+  const total = isCartEmpty ? 0 : Math.max(0, subtotal - discount + deliveryFee + tax);
+
+  if (isCartEmpty) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-6">
+        <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-400">
+          <ShoppingBag className="w-8 h-8 stroke-[1.5]" />
+        </div>
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Your Cart is Empty</h1>
+          <p className="text-xs text-neutral-500 max-w-sm mx-auto leading-relaxed">
+            You don't have any items in your cart to checkout. Please explore our products to start your order.
+          </p>
+        </div>
+        <Link
+          to="/products"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full text-xs font-semibold uppercase tracking-wider transition-all shadow-xs"
+        >
+          <span>Explore Collections</span>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-10 sm:py-16 space-y-10">
@@ -796,6 +835,7 @@ export const CheckoutPage: React.FC = () => {
             onClick={handlePlaceOrder}
             disabled={
               isSubmitting ||
+              isCartEmpty ||
               (fulfillmentType === 'DELIVERY' && (!deliveryInfo?.serviceable || !selectedAddressId))
             }
             className="w-full py-4 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium rounded-full text-xs uppercase tracking-wider transition-all shadow-sm flex items-center justify-center gap-2"

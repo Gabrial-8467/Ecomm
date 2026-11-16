@@ -183,6 +183,7 @@ export interface Order {
   deliveredAt?: string | null;
   cancelledAt?: string | null;
   cancelReason?: string | null;
+  adminNote?: string | null;
   items: OrderItem[];
   statusHistory?: OrderStatusHistory[];
   createdAt: string;

@@ -79,6 +79,10 @@ export const LoginPage: React.FC = () => {
       });
 
       const { user, accessToken } = response.data?.data;
+      if (user.role === 'ADMIN' || user.role === 'STAFF') {
+        toast.error('Store administrators and staff must log in via the Admin portal.');
+        return;
+      }
       setUser(user, accessToken);
       toast.success(`Welcome back, ${user.name}!`);
       navigate(redirect);
