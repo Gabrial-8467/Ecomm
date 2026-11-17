@@ -5,16 +5,17 @@ import { createCategorySchema, updateCategorySchema } from './category.validatio
 import { requireAuth } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/role.js';
 
-const router = Router();
 const controller = new CategoryController();
 
-// Public routes
-router.get('/', controller.getAll);
-router.get('/:slug', controller.getBySlug);
+export const adminCategoryRoutes = Router();
 
-// Admin routes
-router.post('/', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: createCategorySchema }), controller.create);
-router.put('/:id', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: updateCategorySchema }), controller.update);
-router.delete('/:id', requireAuth, requireRole('ADMIN'), controller.delete);
+adminCategoryRoutes.get('/', requireAuth, requireRole('ADMIN', 'STAFF'), controller.getAll);
+adminCategoryRoutes.get('/:slug', requireAuth, requireRole('ADMIN', 'STAFF'), controller.getBySlug);
+adminCategoryRoutes.post('/', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: createCategorySchema }), controller.create);
+adminCategoryRoutes.put('/:id', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: updateCategorySchema }), controller.update);
+adminCategoryRoutes.delete('/:id', requireAuth, requireRole('ADMIN'), controller.delete);
 
-export const categoryRoutes = router;
+export const storefrontCategoryRoutes = Router();
+
+storefrontCategoryRoutes.get('/', controller.getAll);
+storefrontCategoryRoutes.get('/:slug', controller.getBySlug);

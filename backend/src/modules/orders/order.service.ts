@@ -4,6 +4,8 @@ import { prisma } from '../../config/database.js';
 import { BadRequestError, NotFoundError, UnprocessableEntityError } from '../../utils/errors.js';
 import { generateOrderNumber } from '../../utils/order-number.js';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { backInStockService } from '../back-in-stock/back-in-stock.service.js';
+import { emailService } from '../notifications/email.service.js';
 
 export class OrderService {
   private orderRepo = new OrderRepository();
@@ -175,7 +177,7 @@ export class OrderService {
       : null;
 
     // 7. Execute Atomic Checkout Transaction
-    return prisma.$transaction(async (tx) => {
+    const createdOrder = await prisma.$transaction(async (tx) => {
       // Step A: Conditionally reserve inventory for each item
       for (const item of cart.items) {
         const updateResult = await tx.inventory.updateMany({
@@ -283,6 +285,14 @@ export class OrderService {
         },
       });
     });
+
+    if (createdOrder) {
+      emailService.sendOrderConfirmation(createdOrder).catch((err) => {
+        console.error('[EMAIL DISPATCH ERROR] Failed to send order confirmation:', err);
+      });
+    }
+
+    return createdOrder;
   }
 
   async getOrders(filters: OrderQueryFilter, customerId?: string) {
@@ -346,6 +356,11 @@ export class OrderService {
             reference: order.id,
           },
         });
+
+        const inv = await tx.inventory.findUnique({ where: { variantId: item.variantId } });
+        if (inv && inv.availableQuantity > 0) {
+          await backInStockService.notifySubscribersForVariant(item.variantId, inv.availableQuantity, tx);
+        }
       }
 
       // Step B: Update order record
@@ -407,13 +422,30 @@ export class OrderService {
       let paymentStatusUpdate: PaymentStatus | undefined;
       let deliveredAtUpdate: Date | undefined;
       let confirmedAtUpdate: Date | undefined;
+      let generatedDeliveryOtp: string | undefined;
 
       if (targetStatus === 'CONFIRMED') {
         confirmedAtUpdate = new Date();
       }
 
-      // When order is DELIVERED, COD payment is marked PAID and reserved stock is finalized as sold
+      // When transitioning to OUT_FOR_DELIVERY, generate 4-digit Delivery OTP if not already generated
+      if (targetStatus === 'OUT_FOR_DELIVERY') {
+        if (!order.deliveryOtp) {
+          generatedDeliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
+        }
+      }
+
+      // When order is DELIVERED, verify delivery OTP, mark COD as PAID, record POD, and finalize reserved stock
       if (targetStatus === 'DELIVERED') {
+        // Verify Delivery OTP
+        if (order.deliveryOtp && !input.bypassOtp) {
+          if (!input.deliveryOtp || input.deliveryOtp.trim() !== order.deliveryOtp.trim()) {
+            throw new BadRequestError(
+              'Invalid Delivery OTP. Please enter the secure 4-digit verification code provided to the customer upon room inspection.'
+            );
+          }
+        }
+
         deliveredAtUpdate = new Date();
         if (order.paymentMethod === 'COD') {
           paymentStatusUpdate = 'PAID';
@@ -440,38 +472,101 @@ export class OrderService {
       }
 
       // When order return is approved and marked RETURNED, restock inventory and refund
+      let finalRefundAmount = Number(order.totalAmount);
       if (targetStatus === 'RETURNED') {
         paymentStatusUpdate = 'REFUNDED';
-        for (const item of order.items) {
-          await tx.inventory.update({
-            where: { variantId: item.variantId },
-            data: {
-              availableQuantity: { increment: item.quantity },
-            },
-          });
 
-          await tx.inventoryMovement.create({
-            data: {
-              variantId: item.variantId,
-              type: 'RETURN',
-              quantity: item.quantity,
-              reason: `Order ${order.orderNumber} returned and restocked in inventory`,
-              reference: order.id,
-            },
-          });
+        if (order.isPartialReturn && Array.isArray(order.returnItems) && (order.returnItems as any[]).length > 0) {
+          // Partial Return Restock: Only restock the specific items & quantities requested!
+          finalRefundAmount = order.refundAmount ? Number(order.refundAmount) : 0;
+          for (const retItem of order.returnItems as any[]) {
+            const qtyToReturn = Number(retItem.quantity) || 1;
+            await tx.inventory.update({
+              where: { variantId: retItem.variantId },
+              data: {
+                availableQuantity: { increment: qtyToReturn },
+              },
+            });
+
+            await tx.orderItem.update({
+              where: { id: retItem.orderItemId },
+              data: {
+                returnedQuantity: { increment: qtyToReturn },
+              },
+            });
+
+            await tx.inventoryMovement.create({
+              data: {
+                variantId: retItem.variantId,
+                type: 'RETURN',
+                quantity: qtyToReturn,
+                reason: `Partial return approved (${order.orderNumber}): ${retItem.productName} (${retItem.variantName || 'Default'})`,
+                reference: order.id,
+              },
+            });
+
+            const inv = await tx.inventory.findUnique({ where: { variantId: retItem.variantId } });
+            if (inv && inv.availableQuantity > 0) {
+              await backInStockService.notifySubscribersForVariant(retItem.variantId, inv.availableQuantity, tx);
+            }
+          }
+        } else {
+          // Full Order Return Restock
+          for (const item of order.items) {
+            await tx.inventory.update({
+              where: { variantId: item.variantId },
+              data: {
+                availableQuantity: { increment: item.quantity },
+              },
+            });
+
+            await tx.orderItem.update({
+              where: { id: item.id },
+              data: {
+                returnedQuantity: item.quantity,
+              },
+            });
+
+            await tx.inventoryMovement.create({
+              data: {
+                variantId: item.variantId,
+                type: 'RETURN',
+                quantity: item.quantity,
+                reason: `Order ${order.orderNumber} returned and restocked in inventory`,
+                reference: order.id,
+              },
+            });
+
+            const inv = await tx.inventory.findUnique({ where: { variantId: item.variantId } });
+            if (inv && inv.availableQuantity > 0) {
+              await backInStockService.notifySubscribersForVariant(item.variantId, inv.availableQuantity, tx);
+            }
+          }
         }
+      }
+
+      // Build updated admin note if OTP was bypassed
+      let finalAdminNote = input.adminNote !== undefined ? input.adminNote : order.adminNote;
+      if (targetStatus === 'DELIVERED' && input.bypassOtp) {
+        const bypassStamp = `[Delivery OTP Bypassed by Staff: ${input.bypassReason || 'Customer offline / phone unavailable'}]`;
+        finalAdminNote = finalAdminNote ? `${finalAdminNote} | ${bypassStamp}` : bypassStamp;
       }
 
       const updated = await tx.order.update({
         where: { id: order.id },
         data: {
           status: targetStatus,
-          adminNote: input.adminNote !== undefined ? input.adminNote : order.adminNote,
+          adminNote: finalAdminNote,
           ...(input.deliveryAgentName !== undefined && { deliveryAgentName: input.deliveryAgentName }),
           ...(input.deliveryAgentPhone !== undefined && { deliveryAgentPhone: input.deliveryAgentPhone }),
           ...(paymentStatusUpdate && { paymentStatus: paymentStatusUpdate }),
           ...(deliveredAtUpdate && { deliveredAt: deliveredAtUpdate }),
           ...(confirmedAtUpdate && { confirmedAt: confirmedAtUpdate }),
+          ...(generatedDeliveryOtp && { deliveryOtp: generatedDeliveryOtp }),
+          ...(targetStatus === 'DELIVERED' && {
+            deliveryOtpVerifiedAt: new Date(),
+            ...(input.proofOfDeliveryImage && { proofOfDeliveryImage: input.proofOfDeliveryImage }),
+          }),
         },
       });
 
@@ -484,6 +579,30 @@ export class OrderService {
           reason: input.reason,
         },
       });
+
+      // Dispatched notification email
+      if (targetStatus === 'OUT_FOR_DELIVERY') {
+        const activeOtp = generatedDeliveryOtp || order.deliveryOtp;
+        if (activeOtp) {
+          emailService
+            .sendOrderDispatched(
+              {
+                ...order,
+                deliveryAgentName: input.deliveryAgentName || order.deliveryAgentName,
+                deliveryAgentPhone: input.deliveryAgentPhone || order.deliveryAgentPhone,
+              },
+              activeOtp
+            )
+            .catch((err) => console.error('[EMAIL ERROR] Dispatch email failed:', err));
+        }
+      }
+
+      // Return settled notification email
+      if (targetStatus === 'RETURNED') {
+        emailService
+          .sendReturnSettled(order, finalRefundAmount, order.isPartialReturn)
+          .catch((err) => console.error('[EMAIL ERROR] Return settled email failed:', err));
+      }
 
       return updated;
     });
@@ -516,7 +635,14 @@ export class OrderService {
     return updated;
   }
 
-  async requestReturn(orderNumber: string, reason: string, customerId: string, details?: string, images: string[] = []) {
+  async requestReturn(
+    orderNumber: string,
+    reason: string,
+    customerId: string,
+    details?: string,
+    images: string[] = [],
+    items?: { orderItemId: string; quantity: number }[]
+  ) {
     const order = await this.orderRepo.findByOrderNumber(orderNumber, customerId);
     if (!order) {
       throw new NotFoundError('Order not found for this customer');
@@ -526,7 +652,66 @@ export class OrderService {
       throw new UnprocessableEntityError('Only delivered orders can be submitted for return or replacement.');
     }
 
-    const returnStamp = `[Return/Replacement Requested: ${reason}${details ? ` - ${details}` : ''}]`;
+    let isPartialReturn = false;
+    let refundAmount = Number(order.totalAmount);
+    let returnItemsPayload: any[] = [];
+
+    const totalOrderQty = order.items.reduce((sum, it) => sum + it.quantity, 0);
+
+    if (items && Array.isArray(items) && items.length > 0) {
+      let totalReturnQty = 0;
+      let calculatedRefund = 0;
+
+      returnItemsPayload = items.map((retIt) => {
+        const match = order.items.find((i) => i.id === retIt.orderItemId);
+        if (!match) {
+          throw new BadRequestError(`Invalid item selected for return: ${retIt.orderItemId}`);
+        }
+        const remainingQty = match.quantity - match.returnedQuantity;
+        if (retIt.quantity > remainingQty) {
+          throw new BadRequestError(
+            `Return quantity (${retIt.quantity}) exceeds remaining delivered quantity (${remainingQty}) for ${match.productName}`
+          );
+        }
+
+        totalReturnQty += retIt.quantity;
+        const itemRefund = Number(match.unitPrice) * retIt.quantity;
+        calculatedRefund += itemRefund;
+
+        return {
+          orderItemId: match.id,
+          productId: match.productId,
+          variantId: match.variantId,
+          productName: match.productName,
+          variantName: match.variantName,
+          sku: match.sku,
+          quantity: retIt.quantity,
+          unitPrice: Number(match.unitPrice),
+          totalRefund: itemRefund,
+        };
+      });
+
+      isPartialReturn = totalReturnQty < totalOrderQty;
+      refundAmount = calculatedRefund;
+    } else {
+      // Entire order returned
+      isPartialReturn = false;
+      refundAmount = Number(order.totalAmount);
+      returnItemsPayload = order.items.map((i) => ({
+        orderItemId: i.id,
+        productId: i.productId,
+        variantId: i.variantId,
+        productName: i.productName,
+        variantName: i.variantName,
+        sku: i.sku,
+        quantity: i.quantity,
+        unitPrice: Number(i.unitPrice),
+        totalRefund: Number(i.totalPrice),
+      }));
+    }
+
+    const returnTypeLabel = isPartialReturn ? 'Partial Return' : 'Full Return';
+    const returnStamp = `[Return/Replacement Requested (${returnTypeLabel} - Est. Refund ₹${refundAmount.toLocaleString('en-IN')}): ${reason}${details ? ` - ${details}` : ''}]`;
     const updatedNote = order.customerNote ? `${order.customerNote} | ${returnStamp}` : returnStamp;
 
     return prisma.$transaction(async (tx) => {
@@ -537,6 +722,9 @@ export class OrderService {
           customerNote: updatedNote,
           cancelReason: `${reason}${details ? ` - ${details}` : ''}`,
           returnImages: Array.isArray(images) ? images : [],
+          isPartialReturn,
+          refundAmount,
+          returnItems: returnItemsPayload,
         },
       });
 
@@ -546,7 +734,7 @@ export class OrderService {
           previousStatus: 'DELIVERED',
           newStatus: 'RETURN_REQUESTED',
           changedBy: customerId,
-          reason: `${reason}${details ? `: ${details}` : ''}`,
+          reason: `${returnTypeLabel}: ${reason}${details ? `: ${details}` : ''} (Est. Refund ₹${refundAmount})`,
         },
       });
 

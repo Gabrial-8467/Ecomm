@@ -26,6 +26,10 @@ export const updateOrderStatusSchema = z.object({
   adminNote: z.string().max(500).optional(),
   deliveryAgentName: z.string().max(100).optional(),
   deliveryAgentPhone: z.string().max(20).optional(),
+  deliveryOtp: z.string().optional(),
+  bypassOtp: z.boolean().optional(),
+  bypassReason: z.string().max(255).optional(),
+  proofOfDeliveryImage: z.string().optional(),
 });
 
 export const assignDeliveryAgentSchema = z.object({
@@ -37,10 +41,16 @@ export const cancelOrderSchema = z.object({
   reason: z.string().min(3, 'Cancellation reason is required').max(255),
 });
 
+export const returnOrderItemSchema = z.object({
+  orderItemId: z.string(),
+  quantity: z.number().int().positive('Return quantity must be at least 1'),
+});
+
 export const returnOrderSchema = z.object({
   reason: z.string().min(3, 'Return/replacement reason is required').max(100),
   details: z.string().max(500).optional(),
   images: z.array(z.string()).max(4).optional().default([]),
+  items: z.array(returnOrderItemSchema).optional(),
 });
 
 export const orderQuerySchema = z.object({

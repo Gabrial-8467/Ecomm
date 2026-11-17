@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../../services/api/client.js';
 import { Order } from '../../types/index.js';
@@ -25,6 +25,10 @@ import {
   Camera,
   X,
   Maximize2,
+  Copy,
+  Check,
+  Plus,
+  Minus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadOrderInvoicePdf } from '../../utils/invoicePdf.js';
@@ -52,10 +56,46 @@ export const OrderSuccessPage: React.FC = () => {
   const [returnReason, setReturnReason] = useState('Transit Damage (Scratched, chipped wood, or dent)');
   const [returnDetails, setReturnDetails] = useState('');
   const [returnImages, setReturnImages] = useState<string[]>([]);
+  const [selectedReturnItems, setSelectedReturnItems] = useState<Record<string, number>>({});
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
   const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
+  const [copiedOtp, setCopiedOtp] = useState(false);
+
+  const openReturnModal = () => {
+    if (!order) return;
+    const initialSelection: Record<string, number> = {};
+    order.items.forEach((it) => {
+      const remainingQty = it.quantity - (it.returnedQuantity || 0);
+      if (remainingQty > 0) {
+        initialSelection[it.id] = remainingQty;
+      }
+    });
+    setSelectedReturnItems(initialSelection);
+    setReturnImages([]);
+    setReturnDetails('');
+    setReturnModalOpen(true);
+  };
+
+  const estimatedRefund = useMemo(() => {
+    if (!order) return 0;
+    return Object.entries(selectedReturnItems).reduce((sum, [itemId, qty]) => {
+      const item = order.items.find((i) => i.id === itemId);
+      if (!item || qty <= 0) return sum;
+      return sum + Number(item.unitPrice) * qty;
+    }, 0);
+  }, [order, selectedReturnItems]);
+
+  const isPartialSelection = useMemo(() => {
+    if (!order) return false;
+    const totalRemaining = order.items.reduce(
+      (sum, i) => sum + (i.quantity - (i.returnedQuantity || 0)),
+      0
+    );
+    const totalSelected = Object.values(selectedReturnItems).reduce((sum, q) => sum + q, 0);
+    return totalSelected > 0 && totalSelected < totalRemaining;
+  }, [order, selectedReturnItems]);
 
   useEffect(() => {
     async function fetchOrder() {
@@ -130,17 +170,27 @@ export const OrderSuccessPage: React.FC = () => {
     e.preventDefault();
     if (!order) return;
 
+    const itemsPayload = Object.entries(selectedReturnItems)
+      .filter(([_, qty]) => qty > 0)
+      .map(([orderItemId, quantity]) => ({ orderItemId, quantity }));
+
+    if (itemsPayload.length === 0) {
+      toast.error('Please select at least one item to return');
+      return;
+    }
+
     setIsSubmittingReturn(true);
     try {
       const response = await api.post(`/orders/${order.orderNumber}/return`, {
         reason: returnReason,
         details: returnDetails.trim() || undefined,
         images: returnImages,
+        items: itemsPayload,
       });
       setOrder(response.data?.data);
       setReturnModalOpen(false);
       setReturnImages([]);
-      toast.success('Return/Replacement request submitted! Showroom team will review photos.');
+      toast.success('Return/Replacement request submitted! Showroom concierge will review your claim.');
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || 'Failed to submit return request');
     } finally {
@@ -377,6 +427,88 @@ export const OrderSuccessPage: React.FC = () => {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* 4-Digit Delivery Verification PIN Card (When OUT_FOR_DELIVERY) */}
+      {order.status === 'OUT_FOR_DELIVERY' && order.deliveryOtp && (
+        <div className="bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-neutral-800 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-2xs font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                <Truck className="w-3.5 h-3.5 animate-pulse" /> Live White-Glove Dispatch
+              </div>
+              <h2 className="text-xl font-bold text-white tracking-tight">
+                Secure Delivery Verification Code
+              </h2>
+              <p className="text-xs text-neutral-400 max-w-xl leading-relaxed">
+                Please inspect your handcrafted furniture in your room. Once completely satisfied with the wood finish and assembly, share this 4-digit code with the delivery technician to confirm completion.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-4 bg-neutral-900/95 border border-neutral-700/80 px-6 py-4 rounded-2xl shadow-inner self-start sm:self-auto shrink-0">
+              <div className="text-right">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-400 block">Delivery PIN</span>
+                <span className="font-mono text-3xl sm:text-4xl font-black tracking-widest text-amber-400 select-all">
+                  {order.deliveryOtp}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(order.deliveryOtp || '');
+                  setCopiedOtp(true);
+                  toast.success('Copied 4-digit Delivery PIN to clipboard!');
+                  setTimeout(() => setCopiedOtp(false), 2000);
+                }}
+                className="p-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded-xl transition-all cursor-pointer shadow-xs"
+                title="Copy PIN"
+              >
+                {copiedOtp ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Proof of Delivery (POD) Photo Verified */}
+      {order.status === 'DELIVERED' && order.proofOfDeliveryImage && (
+        <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 sm:p-7 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5 stroke-[2]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-neutral-900">
+                  Proof of Delivery (POD) Verified
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-2xs font-semibold bg-emerald-100 text-emerald-800">
+                  Room Verified
+                </span>
+              </div>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Photographed in customer room upon successful assembly & OTP verification
+              </p>
+            </div>
+          </div>
+
+          <div
+            className="flex items-center gap-3 cursor-pointer group self-start sm:self-auto bg-neutral-50 hover:bg-neutral-100 p-2 rounded-2xl border border-neutral-200/80 transition-colors"
+            onClick={() => setLightboxImage(order.proofOfDeliveryImage || null)}
+          >
+            <img
+              src={order.proofOfDeliveryImage}
+              alt="Proof of Delivery"
+              className="w-14 h-14 rounded-xl object-cover border border-neutral-200 group-hover:scale-105 transition-transform"
+            />
+            <div className="pr-3 text-left">
+              <span className="text-xs font-bold text-neutral-900 block group-hover:underline">
+                View Photo
+              </span>
+              <span className="text-[11px] text-neutral-400">Click to expand</span>
+            </div>
           </div>
         </div>
       )}
@@ -703,7 +835,7 @@ export const OrderSuccessPage: React.FC = () => {
 
           {order.status === 'DELIVERED' && (
             <button
-              onClick={() => setReturnModalOpen(true)}
+              onClick={openReturnModal}
               className="w-full py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-full text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
             >
               <AlertTriangle className="w-4 h-4 text-neutral-600" />
@@ -713,24 +845,52 @@ export const OrderSuccessPage: React.FC = () => {
 
           {order.status === 'RETURN_REQUESTED' && (
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-3xl text-xs text-amber-950 space-y-1.5">
-              <p className="font-bold flex items-center gap-1.5 text-amber-900">
-                <AlertCircle className="w-4 h-4 text-amber-600" />
-                <span>Return Ticket Under Showroom Review</span>
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="font-bold flex items-center gap-1.5 text-amber-900">
+                  <AlertCircle className="w-4 h-4 text-amber-600" />
+                  <span>Return Ticket Under Showroom Review</span>
+                </p>
+                {order.isPartialReturn && (
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-amber-200 text-amber-900 rounded-full">
+                    Partial Return
+                  </span>
+                )}
+              </div>
               <p className="text-[11px] text-amber-800 leading-relaxed">
                 Our showroom concierge is reviewing your request and will contact you within 24 hours to schedule white-glove pickup.
+                {order.refundAmount && (
+                  <span className="block mt-1 font-semibold text-amber-900">
+                    Claimed Refund: ₹{Number(order.refundAmount).toLocaleString('en-IN')}
+                  </span>
+                )}
               </p>
             </div>
           )}
 
           {order.status === 'RETURNED' && (
             <div className="p-4 bg-rose-50/80 border border-rose-200 rounded-3xl text-xs text-rose-950 space-y-1.5">
-              <p className="font-bold flex items-center gap-1.5 text-rose-900">
-                <RotateCcw className="w-4 h-4 text-rose-700" />
-                <span>Return & Warehouse Restock Completed</span>
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="font-bold flex items-center gap-1.5 text-rose-900">
+                  <RotateCcw className="w-4 h-4 text-rose-700" />
+                  <span>Return & Warehouse Restock Completed</span>
+                </p>
+                {order.isPartialReturn ? (
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-rose-200 text-rose-900 rounded-full">
+                    Partial Return
+                  </span>
+                ) : (
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-rose-200 text-rose-900 rounded-full">
+                    Full Return
+                  </span>
+                )}
+              </div>
               <p className="text-[11px] text-rose-800 leading-relaxed">
                 Items were received at the Mohali showroom warehouse, verified by technicians, and restocked into live inventory. Refund has been settled.
+                {order.refundAmount && (
+                  <span className="block mt-1 font-semibold text-rose-950">
+                    Settled Refund: ₹{Number(order.refundAmount).toLocaleString('en-IN')}
+                  </span>
+                )}
               </p>
             </div>
           )}
@@ -786,15 +946,173 @@ export const OrderSuccessPage: React.FC = () => {
       {/* Return / Replacement Modal */}
       {returnModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-md w-full p-7 space-y-4 shadow-xl border border-neutral-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-7 space-y-4 shadow-xl border border-neutral-200">
             <h3 className="text-lg font-semibold tracking-tight text-neutral-900">
               Request Return or Replacement
             </h3>
             <p className="text-xs text-neutral-500 leading-relaxed">
-              Did your furniture or electronic appliance arrive with damage or defect? Submit a ticket and our service concierge will contact you.
+              Did your furniture or electronic appliance arrive with damage or defect? Select the damaged item(s) and submit a ticket.
             </p>
 
             <form onSubmit={handleReturnOrder} className="space-y-4">
+              {/* Item-Level Selection */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600">
+                    Select Items to Return / Replace
+                  </label>
+                  <span className="text-[11px] font-medium text-neutral-500">
+                    {Object.values(selectedReturnItems).reduce((s, q) => s + q, 0)} item(s) selected
+                  </span>
+                </div>
+
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {order.items.map((item) => {
+                    const remainingQty = item.quantity - (item.returnedQuantity || 0);
+                    const isSelected = !!selectedReturnItems[item.id];
+                    const selectedQty = selectedReturnItems[item.id] || 0;
+
+                    if (remainingQty <= 0) {
+                      return (
+                        <div
+                          key={item.id}
+                          className="p-3 bg-neutral-100 rounded-2xl opacity-60 flex items-center justify-between text-xs"
+                        >
+                          <div>
+                            <p className="font-medium text-neutral-700">{item.productName}</p>
+                            <p className="text-[10px] text-neutral-500">
+                              {item.variantName} • Qty {item.quantity}
+                            </p>
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 bg-neutral-200 text-neutral-600 rounded-full font-medium">
+                            Already Returned
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`p-3 rounded-2xl border transition-all ${
+                          isSelected
+                            ? 'border-neutral-900 bg-neutral-50/80 shadow-2xs'
+                            : 'border-neutral-200 bg-white hover:border-neutral-300'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            id={`return-item-${item.id}`}
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedReturnItems((prev) => ({
+                                  ...prev,
+                                  [item.id]: remainingQty,
+                                }));
+                              } else {
+                                setSelectedReturnItems((prev) => {
+                                  const next = { ...prev };
+                                  delete next[item.id];
+                                  return next;
+                                });
+                              }
+                            }}
+                            className="mt-1 h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 cursor-pointer"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <label
+                              htmlFor={`return-item-${item.id}`}
+                              className="text-xs font-semibold text-neutral-900 cursor-pointer block truncate"
+                            >
+                              {item.productName}
+                            </label>
+                            <p className="text-[10px] text-neutral-500">
+                              {item.variantName} {item.sku ? `• ${item.sku}` : ''} • ₹
+                              {Number(item.unitPrice).toLocaleString('en-IN')} each
+                            </p>
+                            {isSelected && remainingQty > 1 && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-[10px] text-neutral-500 font-medium">
+                                  Return Qty:
+                                </span>
+                                <div className="flex items-center border border-neutral-300 rounded-lg bg-white overflow-hidden shadow-2xs">
+                                  <button
+                                    type="button"
+                                    disabled={selectedQty <= 1}
+                                    onClick={() =>
+                                      setSelectedReturnItems((prev) => ({
+                                        ...prev,
+                                        [item.id]: Math.max(1, selectedQty - 1),
+                                      }))
+                                    }
+                                    className="p-1 hover:bg-neutral-100 disabled:opacity-30 cursor-pointer"
+                                  >
+                                    <Minus className="w-3 h-3 text-neutral-700" />
+                                  </button>
+                                  <span className="px-2 text-xs font-mono font-medium text-neutral-800">
+                                    {selectedQty}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    disabled={selectedQty >= remainingQty}
+                                    onClick={() =>
+                                      setSelectedReturnItems((prev) => ({
+                                        ...prev,
+                                        [item.id]: Math.min(remainingQty, selectedQty + 1),
+                                      }))
+                                    }
+                                    className="p-1 hover:bg-neutral-100 disabled:opacity-30 cursor-pointer"
+                                  >
+                                    <Plus className="w-3 h-3 text-neutral-700" />
+                                  </button>
+                                </div>
+                                <span className="text-[10px] text-neutral-400">
+                                  max {remainingQty}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-mono font-semibold text-neutral-900">
+                              ₹
+                              {(
+                                (isSelected ? selectedQty : remainingQty) * Number(item.unitPrice)
+                              ).toLocaleString('en-IN')}
+                            </p>
+                            {item.returnedQuantity && item.returnedQuantity > 0 ? (
+                              <p className="text-[9px] text-neutral-400">
+                                ({item.returnedQuantity} prev ret)
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Refund estimate banner */}
+                <div className="mt-2.5 p-2.5 bg-neutral-100/90 rounded-2xl flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-neutral-600 font-medium">Estimated Refund:</span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                        isPartialSelection
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                          : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      }`}
+                    >
+                      {isPartialSelection ? 'Partial Return' : 'Full Return'}
+                    </span>
+                  </div>
+                  <span className="font-mono font-bold text-neutral-900">
+                    ₹{estimatedRefund.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-600 mb-1.5">
                   Reason for Return / Replacement

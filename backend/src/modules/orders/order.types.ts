@@ -27,6 +27,10 @@ export interface UpdateOrderStatusInput {
   adminNote?: string;
   deliveryAgentName?: string;
   deliveryAgentPhone?: string;
+  deliveryOtp?: string;
+  bypassOtp?: boolean;
+  bypassReason?: string;
+  proofOfDeliveryImage?: string;
 }
 
 export interface AssignDeliveryAgentInput {
@@ -38,8 +42,14 @@ export interface CancelOrderInput {
   reason: string;
 }
 
+export interface ReturnOrderItemInput {
+  orderItemId: string;
+  quantity: number;
+}
+
 export interface RequestReturnInput {
   reason: string;
   details?: string;
   images?: string[];
+  items?: ReturnOrderItemInput[];
 }

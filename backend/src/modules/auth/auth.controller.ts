@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service.js';
 import { sendCreated, sendSuccess } from '../../utils/response.js';
 import { env } from '../../config/env.js';
+import { ForbiddenError } from '../../utils/errors.js';
 
 const authService = new AuthService();
 
@@ -19,15 +20,10 @@ const CLEAR_COOKIE_OPTIONS = {
 };
 
 function getClientApp(req: Request): 'admin' | 'storefront' {
-  const clientApp = req.headers['x-client-app'];
-  if (clientApp === 'admin') return 'admin';
-  if (clientApp === 'storefront') return 'storefront';
-
-  const origin = (req.headers.origin || req.headers.referer || '').toString();
-  if (origin.includes('5174') || (env.ADMIN_URL && origin.startsWith(env.ADMIN_URL))) {
-    return 'admin';
+  if (!req.clientApp) {
+    throw new ForbiddenError('API client is not configured for this route');
   }
-  return 'storefront';
+  return req.clientApp;
 }
 
 function getRefreshTokenCookieName(req: Request): string {

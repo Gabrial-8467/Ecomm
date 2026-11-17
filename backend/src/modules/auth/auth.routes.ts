@@ -11,19 +11,52 @@ import {
   changePasswordSchema,
 } from './auth.validation.js';
 import { requireAuth } from '../../middleware/auth.js';
+import { requireRole } from '../../middleware/role.js';
 import { authLimiter } from '../../middleware/rate-limiter.js';
 
-const router = Router();
 const controller = new AuthController();
 
-router.post('/register', authLimiter, validate({ body: registerSchema }), controller.register);
-router.post('/login', authLimiter, validate({ body: loginSchema }), controller.login);
-router.post('/refresh', validate({ body: refreshTokenSchema }), controller.refresh);
-router.post('/logout', controller.logout);
-router.get('/me', requireAuth, controller.me);
-router.patch('/profile', requireAuth, validate({ body: updateProfileSchema }), controller.updateProfile);
-router.post('/change-password', requireAuth, validate({ body: changePasswordSchema }), controller.changePassword);
-router.post('/forgot-password', authLimiter, validate({ body: forgotPasswordSchema }), controller.forgotPassword);
-router.post('/reset-password', authLimiter, validate({ body: resetPasswordSchema }), controller.resetPassword);
+export const adminAuthRoutes = Router();
 
-export const authRoutes = router;
+adminAuthRoutes.post('/login', authLimiter, validate({ body: loginSchema }), controller.login);
+adminAuthRoutes.post('/refresh', validate({ body: refreshTokenSchema }), controller.refresh);
+adminAuthRoutes.post('/logout', controller.logout);
+adminAuthRoutes.get('/me', requireAuth, requireRole('ADMIN', 'STAFF'), controller.me);
+adminAuthRoutes.patch(
+  '/profile',
+  requireAuth,
+  requireRole('ADMIN', 'STAFF'),
+  validate({ body: updateProfileSchema }),
+  controller.updateProfile
+);
+adminAuthRoutes.post(
+  '/change-password',
+  requireAuth,
+  requireRole('ADMIN', 'STAFF'),
+  validate({ body: changePasswordSchema }),
+  controller.changePassword
+);
+
+export const storefrontAuthRoutes = Router();
+
+storefrontAuthRoutes.post('/register', authLimiter, validate({ body: registerSchema }), controller.register);
+storefrontAuthRoutes.post('/login', authLimiter, validate({ body: loginSchema }), controller.login);
+storefrontAuthRoutes.post('/refresh', validate({ body: refreshTokenSchema }), controller.refresh);
+storefrontAuthRoutes.post('/logout', controller.logout);
+storefrontAuthRoutes.get('/me', requireAuth, requireRole('CUSTOMER'), controller.me);
+storefrontAuthRoutes.patch(
+  '/profile',
+  requireAuth,
+  requireRole('CUSTOMER'),
+  validate({ body: updateProfileSchema }),
+  controller.updateProfile
+);
+storefrontAuthRoutes.post(
+  '/change-password',
+  requireAuth,
+  requireRole('CUSTOMER'),
+  validate({ body: changePasswordSchema }),
+  controller.changePassword
+);
+storefrontAuthRoutes.post('/forgot-password', authLimiter, validate({ body: forgotPasswordSchema }), controller.forgotPassword);
+storefrontAuthRoutes.post('/reset-password', authLimiter, validate({ body: resetPasswordSchema }), controller.resetPassword);

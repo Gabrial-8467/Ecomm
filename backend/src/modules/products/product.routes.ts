@@ -2,20 +2,27 @@ import { Router } from 'express';
 import { ProductController } from './product.controller.js';
 import { validate } from '../../middleware/validate.js';
 import { createProductSchema, updateProductSchema, productQuerySchema } from './product.validation.js';
-import { requireAuth, optionalAuth } from '../../middleware/auth.js';
+import { requireAuth } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/role.js';
+import { backInStockController } from '../back-in-stock/back-in-stock.controller.js';
 
-const router = Router();
 const controller = new ProductController();
 
-// Public catalog routes (optionalAuth allows admins to preview drafts while hiding them from customers)
-router.get('/', optionalAuth, validate({ query: productQuerySchema }), controller.getAll);
-router.get('/featured', controller.getFeatured);
-router.get('/:slug', optionalAuth, controller.getBySlug);
+export const adminProductRoutes = Router();
 
-// Admin catalog routes
-router.post('/', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: createProductSchema }), controller.create);
-router.put('/:id', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: updateProductSchema }), controller.update);
-router.delete('/:id', requireAuth, requireRole('ADMIN'), controller.delete);
+// Staff can preview drafts and inactive products in the admin API.
+adminProductRoutes.get('/', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ query: productQuerySchema }), controller.getAll);
+adminProductRoutes.get('/bulk-template', requireAuth, requireRole('ADMIN', 'STAFF'), (req, res, next) => controller.getBulkTemplate(req, res, next));
+adminProductRoutes.post('/bulk-import', requireAuth, requireRole('ADMIN', 'STAFF'), (req, res, next) => controller.bulkImport(req, res, next));
+adminProductRoutes.get('/:slug', requireAuth, requireRole('ADMIN', 'STAFF'), controller.getBySlug);
+adminProductRoutes.post('/', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: createProductSchema }), controller.create);
+adminProductRoutes.put('/:id', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: updateProductSchema }), controller.update);
+adminProductRoutes.delete('/:id', requireAuth, requireRole('ADMIN'), controller.delete);
 
-export const productRoutes = router;
+export const storefrontProductRoutes = Router();
+
+// No optionalAuth: customer catalog can never see admin draft data.
+storefrontProductRoutes.get('/', validate({ query: productQuerySchema }), controller.getAll);
+storefrontProductRoutes.get('/featured', controller.getFeatured);
+storefrontProductRoutes.get('/:slug', controller.getBySlug);
+storefrontProductRoutes.post('/:id/back-in-stock', (req, res, next) => backInStockController.subscribe(req, res).catch(next));

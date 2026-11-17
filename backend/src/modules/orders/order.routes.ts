@@ -13,19 +13,19 @@ import { requireAuth } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/role.js';
 import { checkoutLimiter } from '../../middleware/rate-limiter.js';
 
-const router = Router();
 const controller = new OrderController();
 
-// Customer order routes (strictly isolated to CUSTOMER accounts)
-router.post('/', requireAuth, requireRole('CUSTOMER'), checkoutLimiter, validate({ body: checkoutSchema }), controller.checkout);
-router.get('/', requireAuth, requireRole('CUSTOMER'), validate({ query: orderQuerySchema }), controller.getMyOrders);
-router.get('/:orderNumber', requireAuth, controller.getOrderByNumber);
-router.post('/:orderNumber/cancel', requireAuth, requireRole('CUSTOMER'), validate({ body: cancelOrderSchema }), controller.cancelOrder);
-router.post('/:orderNumber/return', requireAuth, requireRole('CUSTOMER'), validate({ body: returnOrderSchema }), controller.requestReturn);
+export const adminOrderRoutes = Router();
 
-// Admin order routes
-router.get('/admin/all', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ query: orderQuerySchema }), controller.getAllOrders);
-router.patch('/admin/:id/status', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: updateOrderStatusSchema }), controller.updateStatus);
-router.patch('/admin/:id/assign-agent', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: assignDeliveryAgentSchema }), controller.assignDeliveryAgent);
+adminOrderRoutes.get('/all', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ query: orderQuerySchema }), controller.getAllOrders);
+adminOrderRoutes.get('/:orderNumber', requireAuth, requireRole('ADMIN', 'STAFF'), controller.getOrderByNumber);
+adminOrderRoutes.patch('/:id/status', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: updateOrderStatusSchema }), controller.updateStatus);
+adminOrderRoutes.patch('/:id/assign-agent', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: assignDeliveryAgentSchema }), controller.assignDeliveryAgent);
 
-export const orderRoutes = router;
+export const storefrontOrderRoutes = Router();
+
+storefrontOrderRoutes.post('/', requireAuth, requireRole('CUSTOMER'), checkoutLimiter, validate({ body: checkoutSchema }), controller.checkout);
+storefrontOrderRoutes.get('/', requireAuth, requireRole('CUSTOMER'), validate({ query: orderQuerySchema }), controller.getMyOrders);
+storefrontOrderRoutes.get('/:orderNumber', requireAuth, requireRole('CUSTOMER'), controller.getOrderByNumber);
+storefrontOrderRoutes.post('/:orderNumber/cancel', requireAuth, requireRole('CUSTOMER'), validate({ body: cancelOrderSchema }), controller.cancelOrder);
+storefrontOrderRoutes.post('/:orderNumber/return', requireAuth, requireRole('CUSTOMER'), validate({ body: returnOrderSchema }), controller.requestReturn);

@@ -28,9 +28,20 @@ export const checkoutLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-export const apiLimiter = rateLimit({
+export const adminApiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 120,
   standardHeaders: true,
   legacyHeaders: false,
+  identifier: 'admin-api',
+  keyGenerator: (req) => `admin:${req.ip}`,
+});
+
+export const storefrontApiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  identifier: 'storefront-api',
+  keyGenerator: (req) => `storefront:${req.ip}`,
 });

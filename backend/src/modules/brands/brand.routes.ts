@@ -5,14 +5,17 @@ import { createBrandSchema, updateBrandSchema } from './brand.validation.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/role.js';
 
-const router = Router();
 const controller = new BrandController();
 
-router.get('/', controller.getAll);
-router.get('/:slug', controller.getBySlug);
+export const adminBrandRoutes = Router();
 
-router.post('/', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: createBrandSchema }), controller.create);
-router.put('/:id', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: updateBrandSchema }), controller.update);
-router.delete('/:id', requireAuth, requireRole('ADMIN'), controller.delete);
+adminBrandRoutes.get('/', requireAuth, requireRole('ADMIN', 'STAFF'), controller.getAll);
+adminBrandRoutes.get('/:slug', requireAuth, requireRole('ADMIN', 'STAFF'), controller.getBySlug);
+adminBrandRoutes.post('/', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: createBrandSchema }), controller.create);
+adminBrandRoutes.put('/:id', requireAuth, requireRole('ADMIN', 'STAFF'), validate({ body: updateBrandSchema }), controller.update);
+adminBrandRoutes.delete('/:id', requireAuth, requireRole('ADMIN'), controller.delete);
 
-export const brandRoutes = router;
+export const storefrontBrandRoutes = Router();
+
+storefrontBrandRoutes.get('/', controller.getAll);
+storefrontBrandRoutes.get('/:slug', controller.getBySlug);

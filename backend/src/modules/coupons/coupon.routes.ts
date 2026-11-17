@@ -3,15 +3,14 @@ import { CouponController } from './coupon.controller.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/role.js';
 
-const router = Router();
 const controller = new CouponController();
 
-// Public validate
-router.post('/validate', controller.validate);
+export const adminCouponRoutes = Router();
 
-// Admin routes
-router.get('/', requireAuth, requireRole('ADMIN', 'STAFF'), controller.getAll);
-router.post('/', requireAuth, requireRole('ADMIN'), controller.create);
-router.delete('/:id', requireAuth, requireRole('ADMIN'), controller.delete);
+adminCouponRoutes.get('/', requireAuth, requireRole('ADMIN', 'STAFF'), controller.getAll);
+adminCouponRoutes.post('/', requireAuth, requireRole('ADMIN'), controller.create);
+adminCouponRoutes.delete('/:id', requireAuth, requireRole('ADMIN'), controller.delete);
 
-export const couponRoutes = router;
+export const storefrontCouponRoutes = Router();
+
+storefrontCouponRoutes.post('/validate', controller.validate);

@@ -121,6 +121,7 @@ export interface OrderItem {
   variantName: string;
   sku: string;
   quantity: number;
+  returnedQuantity?: number;
   unitPrice: number | string;
   totalPrice: number | string;
   product?: {
@@ -185,6 +186,20 @@ export interface Order {
   cancelReason?: string | null;
   adminNote?: string | null;
   returnImages?: string[];
+  deliveryOtp?: string | null;
+  deliveryOtpVerifiedAt?: string | null;
+  proofOfDeliveryImage?: string | null;
+  isPartialReturn?: boolean;
+  refundAmount?: number | string | null;
+  returnItems?: {
+    orderItemId: string;
+    productName: string;
+    variantName?: string;
+    sku?: string;
+    quantity: number;
+    unitPrice: number;
+    totalRefund: number;
+  }[] | null;
   items: OrderItem[];
   statusHistory?: OrderStatusHistory[];
   createdAt: string;

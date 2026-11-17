@@ -5,16 +5,15 @@ import { checkPincodeSchema, createDeliveryZoneSchema, updateDeliveryZoneSchema 
 import { requireAuth } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/role.js';
 
-const router = Router();
 const controller = new DeliveryController();
 
-// Public: check serviceability
-router.get('/check-pincode', validate({ query: checkPincodeSchema }), controller.checkPincode);
-router.get('/zones', controller.getAllZones);
+export const adminDeliveryRoutes = Router();
 
-// Admin: zone management
-router.post('/zones', requireAuth, requireRole('ADMIN'), validate({ body: createDeliveryZoneSchema }), controller.createZone);
-router.put('/zones/:id', requireAuth, requireRole('ADMIN'), validate({ body: updateDeliveryZoneSchema }), controller.updateZone);
-router.delete('/zones/:id', requireAuth, requireRole('ADMIN'), controller.deleteZone);
+adminDeliveryRoutes.get('/zones', requireAuth, requireRole('ADMIN', 'STAFF'), controller.getAllZones);
+adminDeliveryRoutes.post('/zones', requireAuth, requireRole('ADMIN'), validate({ body: createDeliveryZoneSchema }), controller.createZone);
+adminDeliveryRoutes.put('/zones/:id', requireAuth, requireRole('ADMIN'), validate({ body: updateDeliveryZoneSchema }), controller.updateZone);
+adminDeliveryRoutes.delete('/zones/:id', requireAuth, requireRole('ADMIN'), controller.deleteZone);
 
-export const deliveryRoutes = router;
+export const storefrontDeliveryRoutes = Router();
+
+storefrontDeliveryRoutes.get('/check-pincode', validate({ query: checkPincodeSchema }), controller.checkPincode);

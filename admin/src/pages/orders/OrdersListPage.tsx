@@ -28,7 +28,7 @@ export const OrdersListPage: React.FC = () => {
       if (statusFilter) params.status = statusFilter;
       if (search) params.orderNumber = search;
 
-      const response = await api.get('/orders/admin/all', { params });
+      const response = await api.get('/orders/all', { params });
       setOrders(response.data?.data || []);
     } catch (err) {
       console.error('Failed to load orders:', err);

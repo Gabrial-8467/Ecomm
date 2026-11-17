@@ -56,8 +56,8 @@ export class OrderController {
   async requestReturn(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const orderNumber = paramToString(req.params.orderNumber);
-      const { reason, details, images } = req.body;
-      const order = await orderService.requestReturn(orderNumber, reason, req.user!.id, details, images);
+      const { reason, details, images, items } = req.body;
+      const order = await orderService.requestReturn(orderNumber, reason, req.user!.id, details, images, items);
       sendSuccess(res, order, 'Return/Replacement request submitted successfully');
     } catch (error) {
       next(error);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api/client.js';
-import { InventoryItem, InventoryMovement } from '../../types/index.js';
+import { InventoryItem, InventoryMovement, WaitlistSummaryItem } from '../../types/index.js';
 import {
   Search,
   AlertTriangle,
@@ -18,6 +18,12 @@ import {
   Copy,
   Check,
   Hash,
+  Bell,
+  Users,
+  Sparkles,
+  Mail,
+  Smartphone,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -25,12 +31,14 @@ export const InventoryPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
+  const [waitlist, setWaitlist] = useState<WaitlistSummaryItem[]>([]);
+  const [selectedWaitlist, setSelectedWaitlist] = useState<WaitlistSummaryItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'lowStock' | 'outOfStock'>(
     searchParams.get('lowStock') === 'true' ? 'lowStock' : 'all'
   );
-  const [activeTab, setActiveTab] = useState<'stock' | 'history'>('stock');
+  const [activeTab, setActiveTab] = useState<'stock' | 'history' | 'waitlist'>('stock');
 
   // Adjustment Modal
   const [adjustModalOpen, setAdjustModalOpen] = useState(false);
@@ -57,13 +65,15 @@ export const InventoryPage: React.FC = () => {
   async function fetchInventory() {
     setIsLoading(true);
     try {
-      const [invRes, movRes] = await Promise.all([
+      const [invRes, movRes, waitlistRes] = await Promise.all([
         api.get('/inventory', { params: { limit: 100 } }),
         api.get('/inventory/movements'),
+        api.get('/back-in-stock/waitlist').catch(() => ({ data: { data: [] } })),
       ]);
 
       setItems(invRes.data?.data || []);
       setMovements(movRes.data?.data || []);
+      setWaitlist(waitlistRes.data?.data || []);
     } catch (err) {
       console.error('Failed to load inventory:', err);
       toast.error('Failed to load inventory data');
@@ -92,6 +102,8 @@ export const InventoryPage: React.FC = () => {
       }
     });
 
+    const totalPendingWaitlist = waitlist.reduce((sum, w) => sum + w.pendingCount, 0);
+
     return {
       totalAvailable,
       totalReserved,
@@ -99,8 +111,9 @@ export const InventoryPage: React.FC = () => {
       lowStockCount,
       outOfStockCount,
       totalSKUs: items.length,
+      totalPendingWaitlist,
     };
-  }, [items]);
+  }, [items, waitlist]);
 
   // Filtered items based on search and quick filter pills
   const filteredItems = useMemo(() => {
@@ -144,13 +157,15 @@ export const InventoryPage: React.FC = () => {
 
     setIsAdjusting(true);
     try {
+      let notifiedCount = 0;
       // 1. If quantity adjustment reason provided, adjust physical stock
       if (adjustReason.trim() && quantityDelta !== 0) {
-        await api.put(`/inventory/${selectedVariant.variantId}`, {
+        const res = await api.put(`/inventory/${selectedVariant.variantId}`, {
           type: adjustType,
           quantityDelta: finalDelta,
           reason: adjustReason.trim(),
         });
+        notifiedCount = res.data?.data?.notifiedSubscribersCount || 0;
       }
 
       // 2. If threshold changed, update low stock limit
@@ -160,7 +175,13 @@ export const InventoryPage: React.FC = () => {
         });
       }
 
-      toast.success('Inventory & alert limit updated successfully');
+      if (notifiedCount > 0) {
+        toast.success(
+          `Stock replenished! Automatically alerted ${notifiedCount} customer(s) on the priority waitlist.`
+        );
+      } else {
+        toast.success('Inventory & alert limit updated successfully');
+      }
       setAdjustModalOpen(false);
       setAdjustReason('');
       fetchInventory();
@@ -251,6 +272,22 @@ export const InventoryPage: React.FC = () => {
               Live Stock ({items.length})
             </button>
             <button
+              onClick={() => setActiveTab('waitlist')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === 'waitlist'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Bell className="w-3.5 h-3.5 text-amber-600" />
+              <span>Waitlist</span>
+              {stats.totalPendingWaitlist > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-500 text-white">
+                  {stats.totalPendingWaitlist}
+                </span>
+              )}
+            </button>
+            <button
               onClick={() => setActiveTab('history')}
               className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'history'
@@ -266,7 +303,7 @@ export const InventoryPage: React.FC = () => {
       </div>
 
       {/* 2. Top Summary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total Available Units */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
@@ -331,6 +368,31 @@ export const InventoryPage: React.FC = () => {
           </div>
           <div className="text-[11px] text-amber-800 font-semibold flex items-center gap-1">
             <span>{filterMode === 'lowStock' ? '✓ Showing Low Stock' : 'Click to filter low stock items →'}</span>
+          </div>
+        </button>
+
+        {/* Customer Restock Waitlist */}
+        <button
+          type="button"
+          onClick={() => setActiveTab('waitlist')}
+          className={`p-5 rounded-2xl border text-left transition-all shadow-2xs space-y-2 ${
+            activeTab === 'waitlist'
+              ? 'bg-amber-50/60 border-amber-300 ring-2 ring-amber-500/20'
+              : 'bg-white border-slate-200/90 hover:border-amber-200'
+          }`}
+        >
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-800">Customer Waitlist</span>
+            <div className="p-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
+              <Bell className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-2xl font-extrabold text-amber-900">
+            {stats.totalPendingWaitlist}{' '}
+            <span className="text-xs font-normal text-slate-500">waiting</span>
+          </div>
+          <div className="text-[11px] text-amber-700 font-semibold flex items-center gap-1">
+            <span>{activeTab === 'waitlist' ? '✓ Viewing Waitlist' : 'Inspect waitlist requests →'}</span>
           </div>
         </button>
       </div>
@@ -520,7 +582,7 @@ export const InventoryPage: React.FC = () => {
 
                           {/* Available Stock */}
                           <td className="py-4 px-6">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-1.5 items-start">
                               <span
                                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
                                   isOutOfStock
@@ -541,6 +603,28 @@ export const InventoryPage: React.FC = () => {
                                 />
                                 <span>{item.availableQuantity} units</span>
                               </span>
+
+                              {(() => {
+                                const itemWaitlist = waitlist.find(
+                                  (w) =>
+                                    w.variantId === item.variantId ||
+                                    (!w.variantId && w.productId === item.variant.product.id)
+                                );
+                                if (itemWaitlist && itemWaitlist.pendingCount > 0) {
+                                  return (
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedWaitlist(itemWaitlist)}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100/80 hover:bg-amber-200 text-amber-900 border border-amber-300/80 transition-colors cursor-pointer shadow-2xs"
+                                      title="Click to view waiting customer details"
+                                    >
+                                      <Bell className="w-2.5 h-2.5 text-amber-700 animate-pulse" />
+                                      <span>{itemWaitlist.pendingCount} waiting</span>
+                                    </button>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                           </td>
 
@@ -672,6 +756,158 @@ export const InventoryPage: React.FC = () => {
         </div>
       )}
 
+      {/* 5. Customer Restock Waitlist Tab */}
+      {activeTab === 'waitlist' && (
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+          <div className="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Bell className="w-4 h-4 text-amber-700" />
+                <h2 className="font-bold text-slate-900 text-sm">Customer Back-In-Stock Waitlist Queue</h2>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Customers signed up on the storefront for out-of-stock items. Restocking inventory automatically alerts all waiting customers.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5">
+                <Bell className="w-3.5 h-3.5 text-amber-700" />
+                <span>{stats.totalPendingWaitlist} Total Waiting</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-700">
+              <thead className="bg-slate-50 border-b border-slate-200 uppercase font-semibold text-[11px] tracking-wider text-slate-500">
+                <tr>
+                  <th className="py-3.5 px-6">Product & Variant</th>
+                  <th className="py-3.5 px-6">SKU Code</th>
+                  <th className="py-3.5 px-6">Warehouse Stock</th>
+                  <th className="py-3.5 px-6">Pending Customers</th>
+                  <th className="py-3.5 px-6">Notified Count</th>
+                  <th className="py-3.5 px-6">Latest Request</th>
+                  <th className="py-3.5 px-6 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {waitlist.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-16 text-center text-slate-400">
+                      <Bell className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="font-bold text-slate-700 text-sm">No active customer waitlists</p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        When customers request restock alerts on out-of-stock storefront PDPs, their requests will appear here.
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  waitlist.map((w) => {
+                    const isOut = w.availableStock <= 0;
+                    const matchingItem = items.find(
+                      (item) =>
+                        item.variantId === w.variantId ||
+                        (!w.variantId && item.variant.product.id === w.productId)
+                    );
+
+                    return (
+                      <tr
+                        key={`${w.productId}_${w.variantId || 'all'}`}
+                        className="hover:bg-slate-50/80 transition-colors"
+                      >
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-3">
+                            {w.primaryImage ? (
+                              <img
+                                src={w.primaryImage}
+                                alt={w.productName}
+                                className="w-11 h-11 rounded-xl object-cover border border-slate-200 bg-white shrink-0"
+                              />
+                            ) : (
+                              <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                                <Package className="w-5 h-5" />
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-bold text-slate-900 text-sm">{w.productName}</p>
+                              {w.variantName && (
+                                <p className="text-[11px] text-slate-500 font-medium">{w.variantName}</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="py-4 px-6 font-mono text-xs font-bold text-slate-700">
+                          {w.sku || 'All Variants'}
+                        </td>
+
+                        <td className="py-4 px-6">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                              isOut
+                                ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                                : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                isOut ? 'bg-rose-500' : 'bg-emerald-500'
+                              }`}
+                            />
+                            {w.availableStock} in stock
+                          </span>
+                        </td>
+
+                        <td className="py-4 px-6">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                            <Bell className="w-3 h-3 text-amber-700" />
+                            {w.pendingCount} Waiting
+                          </span>
+                        </td>
+
+                        <td className="py-4 px-6 text-xs text-slate-600">
+                          <span className="inline-flex items-center gap-1 text-slate-500">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            {w.notifiedCount} Notified
+                          </span>
+                        </td>
+
+                        <td className="py-4 px-6 text-xs text-slate-500 font-mono">
+                          {new Date(w.latestSubscribedAt).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </td>
+
+                        <td className="py-4 px-6 text-right space-x-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedWaitlist(w)}
+                            className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                          >
+                            View Subscribers ({w.subscribers.length})
+                          </button>
+                          {matchingItem && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAdjustModal(matchingItem)}
+                              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                            >
+                              Intake Restock
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* 6. Comprehensive Stock Adjustment & Threshold Modal */}
       {adjustModalOpen && selectedVariant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
@@ -723,6 +959,32 @@ export const InventoryPage: React.FC = () => {
                 </span>
               </div>
             </div>
+
+            {/* Waitlist Demand Alert in Restock Modal */}
+            {(() => {
+              const itemWaitlist = waitlist.find(
+                (w) =>
+                  w.variantId === selectedVariant.variantId ||
+                  (!w.variantId && w.productId === selectedVariant.variant.product.id)
+              );
+              const pendingCount = itemWaitlist?.pendingCount || 0;
+              if (pendingCount > 0) {
+                return (
+                  <div className="p-3.5 bg-amber-50 border border-amber-200/90 rounded-2xl flex items-start gap-3">
+                    <Bell className="w-5 h-5 text-amber-700 shrink-0 mt-0.5 animate-bounce" />
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-bold text-amber-900">
+                        {pendingCount} Customer{pendingCount > 1 ? 's' : ''} on Restock Waitlist
+                      </p>
+                      <p className="text-[11px] text-amber-800 leading-relaxed">
+                        Intaking positive stock for this item will automatically fire restock alerts to all registered customers.
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             <form onSubmit={handleAdjustSubmit} className="space-y-5">
               {/* Movement Type */}
@@ -862,6 +1124,133 @@ export const InventoryPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Waitlist Subscribers Detail Modal */}
+      {selectedWaitlist && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div className="flex items-start justify-between pb-4 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-800 border border-amber-200/80 flex items-center justify-center font-bold">
+                  <Bell className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Restock Waitlist Subscribers
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {selectedWaitlist.productName}{' '}
+                    {selectedWaitlist.variantName && `(${selectedWaitlist.variantName})`}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedWaitlist(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
+              <div>
+                <span className="text-slate-500">Warehouse Stock:</span>{' '}
+                <strong
+                  className={
+                    selectedWaitlist.availableStock > 0 ? 'text-emerald-700' : 'text-rose-600'
+                  }
+                >
+                  {selectedWaitlist.availableStock} units available
+                </strong>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-full text-2xs font-extrabold bg-amber-100 text-amber-900 border border-amber-200">
+                  {selectedWaitlist.pendingCount} Waiting
+                </span>
+                <span className="px-2.5 py-1 rounded-full text-2xs font-bold bg-slate-200 text-slate-700">
+                  {selectedWaitlist.notifiedCount} Already Alerted
+                </span>
+              </div>
+            </div>
+
+            <div className="max-h-72 overflow-y-auto border border-slate-200 rounded-2xl">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-500 sticky top-0">
+                  <tr>
+                    <th className="py-2.5 px-4">Customer Contact</th>
+                    <th className="py-2.5 px-4">Status</th>
+                    <th className="py-2.5 px-4">Requested Date</th>
+                    <th className="py-2.5 px-4">Notified Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {selectedWaitlist.subscribers.map((sub) => (
+                    <tr key={sub.id} className="hover:bg-slate-50">
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                          <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{sub.email}</span>
+                        </div>
+                        {sub.phone && (
+                          <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                            <Smartphone className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{sub.phone}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {sub.status === 'PENDING' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            Waiting
+                          </span>
+                        ) : sub.status === 'NOTIFIED' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            Alerted
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                            Cancelled
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-slate-500 font-mono text-[11px]">
+                        {new Date(sub.createdAt).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </td>
+                      <td className="py-3 px-4 text-slate-500 font-mono text-[11px]">
+                        {sub.notifiedAt
+                          ? new Date(sub.notifiedAt).toLocaleString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => setSelectedWaitlist(null)}
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                Close List
+              </button>
+            </div>
           </div>
         </div>
       )}

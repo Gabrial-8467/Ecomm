@@ -8,8 +8,7 @@ import { env } from '../../config/env.js';
 import { cloudinary } from '../../config/cloudinary.js';
 import { sendSuccess } from '../../utils/response.js';
 import { BadRequestError } from '../../utils/errors.js';
-
-const uploadRouter = Router();
+import { logger } from '../../utils/logger.js';
 
 // In-memory storage for handling upload to Cloudinary or disk fallback
 const storage = multer.memoryStorage();
@@ -61,7 +60,7 @@ async function saveImageBuffer(
         size: file.size,
       };
     } catch (cloudinaryErr) {
-      console.warn('Cloudinary upload failed, falling back to local storage:', cloudinaryErr);
+      logger.warn('Cloudinary upload failed, falling back to local storage:', cloudinaryErr);
     }
   }
 
@@ -89,8 +88,9 @@ async function saveImageBuffer(
   };
 }
 
-// Single image upload endpoint
-uploadRouter.post(
+export const adminUploadRouter = Router();
+
+adminUploadRouter.post(
   '/image',
   requireAuth,
   requireRole('ADMIN', 'STAFF'),
@@ -109,8 +109,7 @@ uploadRouter.post(
   }
 );
 
-// Multiple images upload endpoint (up to 10)
-uploadRouter.post(
+adminUploadRouter.post(
   '/images',
   requireAuth,
   requireRole('ADMIN', 'STAFF'),
@@ -130,8 +129,10 @@ uploadRouter.post(
   }
 );
 
+export const storefrontUploadRouter = Router();
+
 // Customer return damage photos upload endpoint (up to 4 photos)
-uploadRouter.post(
+storefrontUploadRouter.post(
   '/return-images',
   requireAuth,
   requireRole('CUSTOMER'),
@@ -156,5 +157,3 @@ uploadRouter.post(
     }
   }
 );
-
-export { uploadRouter };

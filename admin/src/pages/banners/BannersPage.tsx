@@ -49,7 +49,7 @@ export const BannersPage: React.FC = () => {
   const loadBanners = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get('/banners/admin');
+      const res = await api.get('/banners');
       setBanners(res.data?.data || []);
     } catch (err) {
       console.error('Failed to load banners:', err);

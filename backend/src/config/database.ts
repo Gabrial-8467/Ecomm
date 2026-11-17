@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { env } from './env.js';
+import { logger } from '../utils/logger.js';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -9,7 +10,12 @@ declare global {
 export const prisma =
   global.__prisma ||
   new PrismaClient({
-    log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    // Raw SQL is noisy; enable it only with LOG_PRISMA_QUERIES=true when debugging.
+    log: [
+      'error',
+      'warn',
+      ...(env.LOG_PRISMA_QUERIES ? (['query'] as const) : []),
+    ],
   });
 
 if (env.NODE_ENV !== 'production') {
@@ -19,9 +25,9 @@ if (env.NODE_ENV !== 'production') {
 export async function connectDatabase(): Promise<void> {
   try {
     await prisma.$connect();
-    console.log('✅ PostgreSQL database connected successfully via Prisma');
+    logger.info('✅ PostgreSQL database connected successfully via Prisma');
   } catch (error) {
-    console.error('❌ Failed to connect to PostgreSQL database:', error);
+    logger.error('❌ Failed to connect to PostgreSQL database:', error);
     process.exit(1);
   }
 }

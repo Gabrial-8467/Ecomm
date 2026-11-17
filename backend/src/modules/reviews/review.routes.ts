@@ -3,26 +3,13 @@ import { reviewController } from './review.controller.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/role.js';
 
-const reviewRoutes = Router();
+export const adminReviewRoutes = Router();
 
-// Public: get product reviews and stats
-reviewRoutes.get('/product/:productId', reviewController.getProductReviews);
+adminReviewRoutes.get('/', requireAuth, requireRole('ADMIN', 'STAFF'), reviewController.getAdminReviews);
+adminReviewRoutes.patch('/:id/approval', requireAuth, requireRole('ADMIN', 'STAFF'), reviewController.toggleApproval);
+adminReviewRoutes.delete('/:id', requireAuth, requireRole('ADMIN', 'STAFF'), reviewController.deleteReview);
 
-// Customer: submit or update review
-reviewRoutes.post('/', requireAuth, reviewController.submitReview);
+export const storefrontReviewRoutes = Router();
 
-// Admin: view all reviews
-reviewRoutes.get('/admin', requireAuth, requireRole('ADMIN', 'STAFF'), reviewController.getAdminReviews);
-
-// Admin: toggle review approval
-reviewRoutes.patch(
-  '/admin/:id/approval',
-  requireAuth,
-  requireRole('ADMIN', 'STAFF'),
-  reviewController.toggleApproval
-);
-
-// Admin: delete review
-reviewRoutes.delete('/admin/:id', requireAuth, requireRole('ADMIN', 'STAFF'), reviewController.deleteReview);
-
-export { reviewRoutes };
+storefrontReviewRoutes.get('/product/:productId', reviewController.getProductReviews);
+storefrontReviewRoutes.post('/', requireAuth, requireRole('CUSTOMER'), reviewController.submitReview);

@@ -4,12 +4,15 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
-import { apiRouter } from './routes/index.js';
+import { adminRouter, storefrontRouter } from './routes/index.js';
 import { errorHandler } from './middleware/error-handler.js';
-import { apiLimiter } from './middleware/rate-limiter.js';
+import { requestLogger } from './middleware/request-logger.js';
 import { NotFoundError } from './utils/errors.js';
 
 const app: Express = express();
+
+// Backend request logging (must be first so every request/response is logged)
+app.use(requestLogger);
 
 // Security headers
 app.use(helmet());
@@ -62,9 +65,6 @@ app.use(cookieParser());
 // Static files for uploads fallback
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
-// Rate Limiter for general endpoints
-app.use('/api', apiLimiter);
-
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
@@ -74,8 +74,9 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-// API routes
-app.use('/api/v1', apiRouter);
+// Isolated API namespaces — no endpoint is shared between the two clients.
+app.use('/api/admin/v1', adminRouter);
+app.use('/api/storefront/v1', storefrontRouter);
 
 // 404 handler
 app.use((_req: Request, _res: Response, next) => {

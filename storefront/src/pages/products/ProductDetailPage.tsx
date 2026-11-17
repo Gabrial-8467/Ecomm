@@ -30,7 +30,9 @@ import {
   Award,
   Layers,
   ChevronRight,
+  Bell,
 } from 'lucide-react';
+import { BackInStockModal } from '../../components/products/BackInStockModal.js';
 
 export const ProductDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -67,6 +69,9 @@ export const ProductDetailPage: React.FC = () => {
   const [pincode, setPincode] = useState('160071');
   const [pincodeChecking, setPincodeChecking] = useState(false);
   const [pincodeResult, setPincodeResult] = useState<DeliveryCheckResult | null>(null);
+
+  // Back-in-stock notification modal
+  const [backInStockOpen, setBackInStockOpen] = useState(false);
 
   const fetchReviews = async (productId: string) => {
     try {
@@ -467,62 +472,121 @@ export const ProductDetailPage: React.FC = () => {
           )}
 
           {/* Stock Status indicator */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {isAvailable ? (
               <div className="inline-flex items-center gap-2 text-xs font-medium text-neutral-900 bg-white px-3 py-1 rounded-full border border-neutral-200/80 shadow-2xs">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Showroom Ready ({availableStock} units available for instant dispatch)</span>
               </div>
             ) : (
-              <div className="inline-flex items-center gap-2 text-xs font-medium text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
-                <AlertCircle className="w-3.5 h-3.5" />
-                <span>Crafted to order • Available on advance request</span>
-              </div>
+              <>
+                <div className="inline-flex items-center gap-2 text-xs font-medium text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>Currently Out of Stock in Showroom</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setBackInStockOpen(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-900 bg-amber-50 hover:bg-amber-100 px-3 py-1 rounded-full border border-amber-200/80 transition-colors shadow-2xs cursor-pointer"
+                >
+                  <Bell className="w-3 h-3 text-amber-700 animate-bounce" />
+                  <span>Notify Me When In Stock</span>
+                </button>
+              </>
             )}
           </div>
 
           {/* Quantity and Actions */}
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center border border-neutral-200 rounded-full bg-white overflow-hidden shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="px-3.5 py-2.5 text-neutral-600 hover:bg-neutral-100 transition-colors"
-                >
-                  -
-                </button>
-                <span className="px-4 py-2 text-xs font-bold text-neutral-900 select-none">
-                  {quantity}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => Math.min(availableStock, q + 1))}
-                  className="px-3.5 py-2.5 text-neutral-600 hover:bg-neutral-100 transition-colors"
-                >
-                  +
-                </button>
+            {!isAvailable ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBackInStockOpen(true)}
+                    className="flex-1 py-3.5 px-6 bg-neutral-950 hover:bg-neutral-800 text-white font-medium rounded-full text-xs uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer group"
+                  >
+                    <Bell className="w-4 h-4 text-amber-300 group-hover:scale-110 transition-transform" />
+                    <span>Notify Me When Back in Stock</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const added = toggleWishlist({
+                        productId: product.id,
+                        name: product.name,
+                        slug: product.slug,
+                        price,
+                        compareAtPrice,
+                        image: selectedImage,
+                        categoryName: product.category?.name,
+                        defaultVariantId: selectedVariant.id,
+                      });
+                      if (added) {
+                        toast.success('Saved to Wishlist!');
+                      } else {
+                        toast.info('Removed from Wishlist');
+                      }
+                    }}
+                    className={`p-3.5 rounded-full border transition-all flex items-center justify-center shadow-2xs ${
+                      isInWishlist(product.id)
+                        ? 'bg-rose-50 border-rose-200 text-rose-600'
+                        : 'bg-white border-neutral-200 text-neutral-600 hover:text-rose-600 hover:border-rose-200'
+                    }`}
+                    title="Save to Wishlist"
+                  >
+                    <Heart
+                      className={`w-4 h-4 ${
+                        isInWishlist(product.id) ? 'fill-rose-500 text-rose-500' : ''
+                      }`}
+                    />
+                  </button>
+                </div>
+                <p className="text-[11px] text-neutral-500 flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+                  <span>Artisanal craftsmanship: Join our priority waitlist to be alerted first when fresh batch is completed.</span>
+                </p>
               </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center border border-neutral-200 rounded-full bg-white overflow-hidden shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    className="px-3.5 py-2.5 text-neutral-600 hover:bg-neutral-100 transition-colors"
+                  >
+                    -
+                  </button>
+                  <span className="px-4 py-2 text-xs font-bold text-neutral-900 select-none">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.min(availableStock, q + 1))}
+                    className="px-3.5 py-2.5 text-neutral-600 hover:bg-neutral-100 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
 
-              <button
-                type="button"
-                onClick={() => handleAddToCart(false)}
-                disabled={!isAvailable}
-                className="flex-1 py-3 px-6 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-200 text-white font-medium rounded-full text-xs uppercase tracking-widest transition-all shadow-xs flex items-center justify-center gap-2"
-              >
-                <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.75} />
-                <span>Add To Cart</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddToCart(false)}
+                  className="flex-1 py-3 px-6 bg-neutral-950 hover:bg-neutral-800 text-white font-medium rounded-full text-xs uppercase tracking-widest transition-all shadow-xs flex items-center justify-center gap-2"
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  <span>Add To Cart</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleAddToCart(true)}
-                disabled={!isAvailable}
-                className="py-3 px-6 border border-neutral-300 hover:border-neutral-950 bg-white hover:bg-neutral-50 disabled:bg-neutral-100 text-neutral-950 font-medium rounded-full text-xs uppercase tracking-widest transition-all shadow-2xs flex items-center justify-center gap-1.5"
-              >
-                <span>Buy with COD</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddToCart(true)}
+                  className="py-3 px-6 border border-neutral-300 hover:border-neutral-950 bg-white hover:bg-neutral-50 text-neutral-950 font-medium rounded-full text-xs uppercase tracking-widest transition-all shadow-2xs flex items-center justify-center gap-1.5"
+                >
+                  <span>Buy with COD</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
 
               <button
                 type="button"
@@ -566,7 +630,8 @@ export const ProductDetailPage: React.FC = () => {
                 <Scale className="w-4 h-4" strokeWidth={1.75} />
               </button>
             </div>
-          </div>
+          )}
+        </div>
 
           {/* Local Pincode Delivery Check */}
           <div className="p-5 bg-white rounded-2xl border border-neutral-200/70 shadow-2xs space-y-3">
@@ -1154,6 +1219,22 @@ export const ProductDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Back-In-Stock Notification Drawer / Modal */}
+      {product && (
+        <BackInStockModal
+          isOpen={backInStockOpen}
+          onClose={() => setBackInStockOpen(false)}
+          product={{
+            id: product.id,
+            name: product.name,
+            slug: product.slug,
+            price,
+            image: selectedImage || (product.images && product.images[0]?.url),
+          }}
+          variant={selectedVariant}
+        />
+      )}
     </div>
   );
 };

@@ -19,7 +19,7 @@ export const DashboardPage: React.FC = () => {
   useEffect(() => {
     async function fetchDashboard() {
       try {
-        const response = await api.get('/admin/dashboard');
+        const response = await api.get('/dashboard');
         setData(response.data?.data);
       } catch (err) {
         console.error('Failed to load dashboard metrics:', err);

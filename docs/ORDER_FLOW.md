@@ -16,7 +16,7 @@ sequenceDiagram
 
     Customer->>Storefront: Click "Place Order (COD)"
     Storefront->>Storefront: Generate Idempotency-Key (UUIDv4)
-    Storefront->>API: POST /api/v1/orders (Address, Note, Idempotency-Key)
+    Storefront->>API: POST /api/storefront/v1/orders (Address, Note, Idempotency-Key)
     API->>API: Verify customer auth & JWT
     API->>DB: Check idempotency record
     alt Already processed

@@ -60,7 +60,7 @@ STORE_EMAIL=support@yourfurniturestore.com
 
 ### Environment Variables:
 ```ini
-VITE_API_URL=https://api.yourfurniturestore.com/api/v1
+VITE_API_URL=https://api.yourfurniturestore.com/api/storefront/v1
 VITE_APP_NAME=Grand Living Furniture & Electronics
 VITE_APP_URL=https://www.yourfurniturestore.com
 ```
@@ -84,7 +84,7 @@ VITE_APP_URL=https://www.yourfurniturestore.com
 
 ### Environment Variables:
 ```ini
-VITE_API_URL=https://api.yourfurniturestore.com/api/v1
+VITE_API_URL=https://api.yourfurniturestore.com/api/admin/v1
 VITE_APP_NAME=Store Management Dashboard
 VITE_APP_URL=https://admin.yourfurniturestore.com
 ```

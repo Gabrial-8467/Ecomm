@@ -26,6 +26,7 @@ import {
   FileText,
   Camera,
   Maximize2,
+  KeyRound,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadOrderInvoicePdf } from '../../utils/invoicePdf.js';
@@ -43,6 +44,15 @@ export const OrderDetailPage: React.FC = () => {
   const [driverPhone, setDriverPhone] = useState('');
   const [isSavingDriver, setIsSavingDriver] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
+  // Delivery OTP & Proof of Delivery (POD) state
+  const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+  const [deliveryOtpInput, setDeliveryOtpInput] = useState('');
+  const [bypassOtp, setBypassOtp] = useState(false);
+  const [bypassReason, setBypassReason] = useState('');
+  const [podImage, setPodImage] = useState<string | null>(null);
+  const [isUploadingPod, setIsUploadingPod] = useState(false);
+
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadPDF = () => {
@@ -88,7 +98,7 @@ export const OrderDetailPage: React.FC = () => {
     if (!order) return;
     setIsSavingDriver(true);
     try {
-      const response = await api.patch(`/orders/admin/${order.id}/assign-agent`, {
+      const response = await api.patch(`/orders/${order.id}/assign-agent`, {
         deliveryAgentName: driverName.trim(),
         deliveryAgentPhone: driverPhone.trim(),
       });
@@ -107,7 +117,7 @@ export const OrderDetailPage: React.FC = () => {
     if (!order) return;
     setIsUpdating(true);
     try {
-      const response = await api.patch(`/orders/admin/${order.id}/status`, {
+      const response = await api.patch(`/orders/${order.id}/status`, {
         status: newStatus,
         reason: reason || `Updated to ${newStatus} by store staff`,
       });
@@ -116,6 +126,66 @@ export const OrderDetailPage: React.FC = () => {
       fetchOrder();
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || 'Status transition rejected');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handlePodUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    setIsUploadingPod(true);
+    try {
+      const res = await api.post('/upload/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const url = res.data?.data?.url;
+      setPodImage(url);
+      toast.success('Room proof-of-delivery photo uploaded');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to upload photo');
+    } finally {
+      setIsUploadingPod(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleConfirmDelivery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order) return;
+
+    if (!bypassOtp && !deliveryOtpInput.trim()) {
+      toast.error('Please enter the 4-digit Delivery OTP or select staff bypass');
+      return;
+    }
+
+    if (bypassOtp && !bypassReason.trim()) {
+      toast.error('Please provide a reason for bypassing customer OTP');
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const response = await api.patch(`/orders/${order.id}/status`, {
+        status: 'DELIVERED',
+        reason: bypassOtp
+          ? `Delivered & COD collected (OTP Bypassed: ${bypassReason.trim()})`
+          : 'Delivered and COD collected with customer OTP verification',
+        deliveryOtp: bypassOtp ? undefined : deliveryOtpInput.trim(),
+        bypassOtp,
+        bypassReason: bypassOtp ? bypassReason.trim() : undefined,
+        proofOfDeliveryImage: podImage || undefined,
+      });
+      setOrder(response.data?.data);
+      toast.success('Order marked as DELIVERED & COD Collected!');
+      setDeliveryModalOpen(false);
+      fetchOrder();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || 'Failed to confirm delivery');
     } finally {
       setIsUpdating(false);
     }
@@ -266,16 +336,22 @@ export const OrderDetailPage: React.FC = () => {
             <>
               <button
                 disabled={isUpdating}
-                onClick={() => handleUpdateStatus('DELIVERED', 'Delivered and COD collected')}
-                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+                onClick={() => {
+                  setDeliveryOtpInput('');
+                  setBypassOtp(false);
+                  setBypassReason('');
+                  setPodImage(order.proofOfDeliveryImage || null);
+                  setDeliveryModalOpen(true);
+                }}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Mark Delivered (COD Collected & Confirmed)</span>
+                <span>Mark Delivered (Verify OTP & POD)</span>
               </button>
               <button
                 disabled={isUpdating}
                 onClick={() => handleUpdateStatus('CANCELLED', 'Customer unavailable / refused')}
-                className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-colors"
+                className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
                 Mark Failed / Returned
               </button>
@@ -325,18 +401,58 @@ export const OrderDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Reported details from client (Structured) */}
+              {/* Customer Reported Defect / Return Reason (Structured) */}
               {(() => {
                 const parsed = parseOrderNotes(order.customerNote, order.cancelReason);
                 return (
                   <div className="bg-white/95 p-4 rounded-xl border border-amber-200 text-xs space-y-2.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                      Customer Reported Defect / Return Reason:
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                        Customer Reported Defect / Return Reason:
+                      </span>
+                      {order.isPartialReturn && (
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-amber-200 text-amber-950 rounded-full">
+                          Partial Return Request
+                        </span>
+                      )}
+                    </div>
                     <p className="text-slate-900 font-bold text-sm bg-amber-50/70 p-3 rounded-lg border border-amber-200/60 leading-relaxed">
                       {parsed.returnReason || order.cancelReason || 'No detailed note provided with return ticket.'}
                     </p>
+
+                    {/* Partial Return Items Breakdown */}
+                    {order.isPartialReturn && order.returnItems && order.returnItems.length > 0 && (
+                      <div className="p-3.5 rounded-xl bg-amber-100/60 border border-amber-300 space-y-2">
+                        <div className="flex items-center justify-between text-xs font-bold text-amber-950">
+                          <span className="flex items-center gap-1.5">
+                            <PackageCheck className="w-3.5 h-3.5 text-amber-700" />
+                            Items Selected for Return ({order.returnItems.length})
+                          </span>
+                          <span className="text-[11px] font-mono px-2.5 py-0.5 bg-amber-200 text-amber-950 rounded-md font-bold">
+                            Claim Refund: ₹{Number(order.refundAmount).toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                        <div className="divide-y divide-amber-200/60">
+                          {order.returnItems.map((rit, idx) => (
+                            <div key={idx} className="py-1.5 flex items-center justify-between text-xs">
+                              <div>
+                                <p className="font-semibold text-slate-900">{rit.productName}</p>
+                                <p className="text-[10px] text-slate-500">
+                                  {rit.variantName} {rit.sku ? `• ${rit.sku}` : ''}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <span className="font-bold text-slate-900">{rit.quantity} unit(s)</span>
+                                <p className="text-[10px] font-mono font-semibold text-amber-900">
+                                  ₹{Number(rit.totalRefund).toLocaleString('en-IN')}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Customer Attached Damage Photos */}
                     {order.returnImages && order.returnImages.length > 0 && (
@@ -409,11 +525,13 @@ export const OrderDetailPage: React.FC = () => {
                         Order Returned & Warehouse Restock Completed
                       </h3>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
-                        AUDITED
+                        {order.isPartialReturn ? 'PARTIAL RETURN' : 'FULL AUDITED'}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500">
-                      All line items have been received at Mohali warehouse, verified by staff, and restored to live stock.
+                      {order.isPartialReturn
+                        ? 'Selected line items have been received at Mohali warehouse, verified by staff, and restored to live stock.'
+                        : 'All line items have been received at Mohali warehouse, verified by staff, and restored to live stock.'}
                     </p>
                   </div>
                 </div>
@@ -434,7 +552,13 @@ export const OrderDetailPage: React.FC = () => {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Restock Movement</span>
                   <p className="font-bold text-slate-900 flex items-center gap-1">
                     <PackageCheck className="w-3.5 h-3.5 text-emerald-700" />
-                    <span>+{order.items.reduce((s, i) => s + i.quantity, 0)} Units Returned</span>
+                    <span>
+                      +
+                      {order.isPartialReturn && order.returnItems
+                        ? order.returnItems.reduce((s, i) => s + i.quantity, 0)
+                        : order.items.reduce((s, i) => s + i.quantity, 0)}{' '}
+                      Units Returned
+                    </span>
                   </p>
                   <p className="text-[11px] text-slate-500 font-mono">Type: RETURN in stock audit</p>
                 </div>
@@ -442,7 +566,7 @@ export const OrderDetailPage: React.FC = () => {
                 <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 space-y-1">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Refund Settlement</span>
                   <p className="font-bold text-slate-900 font-mono">
-                    ₹{Number(order.totalAmount).toLocaleString('en-IN')}
+                    ₹{Number(order.refundAmount || order.totalAmount).toLocaleString('en-IN')}
                   </p>
                   <p className="text-[11px] text-slate-500">Payment status updated to REFUNDED</p>
                 </div>
@@ -454,6 +578,33 @@ export const OrderDetailPage: React.FC = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Specific Items Restocked List */}
+              {order.isPartialReturn && order.returnItems && order.returnItems.length > 0 && (
+                <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 space-y-2 text-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Specific Items Returned & Restocked to Warehouse:
+                  </span>
+                  <div className="divide-y divide-slate-100">
+                    {order.returnItems.map((rit, idx) => (
+                      <div key={idx} className="py-1.5 flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-slate-900">{rit.productName}</p>
+                          <p className="text-[10px] text-slate-500">
+                            {rit.variantName} {rit.sku ? `• ${rit.sku}` : ''}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold text-slate-800">{rit.quantity} unit(s) restocked</span>
+                          <p className="text-[10px] font-mono text-emerald-700">
+                            Refund: ₹{Number(rit.totalRefund).toLocaleString('en-IN')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {(order.customerNote || order.cancelReason) && (() => {
                 const parsed = parseOrderNotes(order.customerNote, order.cancelReason);
@@ -588,6 +739,68 @@ export const OrderDetailPage: React.FC = () => {
               </p>
             )}
           </div>
+
+          {/* Delivery OTP & Proof of Delivery (POD) Snapshot Card */}
+          {(order.deliveryOtp || order.proofOfDeliveryImage || order.deliveryOtpVerifiedAt) && (
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <KeyRound className="w-4 h-4 text-emerald-600" />
+                  <span>Delivery OTP & Proof (POD)</span>
+                </h3>
+                {order.deliveryOtpVerifiedAt ? (
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    OTP Verified
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                    Active Code
+                  </span>
+                )}
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                    Customer Delivery PIN:
+                  </span>
+                  <span className="font-mono text-base font-black tracking-widest text-slate-900">
+                    {order.deliveryOtp || '----'}
+                  </span>
+                </div>
+                {order.deliveryOtpVerifiedAt && (
+                  <p className="text-[10px] text-emerald-700 font-medium">
+                    Verified at{' '}
+                    {new Date(order.deliveryOtpVerifiedAt).toLocaleTimeString('en-IN', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                )}
+              </div>
+
+              {order.proofOfDeliveryImage && (
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wider">
+                    Room Proof of Delivery Photo:
+                  </span>
+                  <div
+                    onClick={() => setLightboxImage(order.proofOfDeliveryImage || null)}
+                    className="relative rounded-xl overflow-hidden border border-slate-200 aspect-video max-h-36 bg-slate-100 cursor-pointer group hover:ring-2 hover:ring-emerald-500 transition-all shadow-2xs"
+                  >
+                    <img
+                      src={order.proofOfDeliveryImage}
+                      alt="Room Proof of Delivery"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                      <Maximize2 className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
@@ -881,6 +1094,152 @@ export const OrderDetailPage: React.FC = () => {
                 >
                   {isSavingDriver && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Save Driver & Update</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delivery Confirmation & OTP / POD Modal */}
+      {deliveryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Confirm Order Delivery</h3>
+                  <p className="text-[11px] text-slate-500">Collect COD payment & verify customer PIN</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeliveryModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmDelivery} className="space-y-4">
+              {/* COD Notice */}
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs space-y-1">
+                <div className="flex items-center justify-between font-bold text-amber-950">
+                  <span>Cash on Delivery to Collect:</span>
+                  <span className="font-mono text-sm">₹{Number(order.totalAmount).toLocaleString('en-IN')}</span>
+                </div>
+                <p className="text-[10px] text-amber-800">
+                  Ensure driver collected the exact cash amount before confirming completion.
+                </p>
+              </div>
+
+              {/* 4-digit OTP input */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                    4-Digit Delivery OTP / PIN
+                  </label>
+                  {order.deliveryOtp && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md font-semibold">
+                      Hint: {order.deliveryOtp}
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  maxLength={4}
+                  disabled={bypassOtp}
+                  value={deliveryOtpInput}
+                  onChange={(e) => setDeliveryOtpInput(e.target.value.replace(/\D/g, ''))}
+                  placeholder={bypassOtp ? 'OTP Bypassed' : 'Enter 4-digit customer PIN'}
+                  className="w-full text-center tracking-widest text-lg font-mono font-bold p-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-emerald-600 disabled:opacity-40 disabled:bg-slate-100"
+                />
+                <p className="text-[10px] text-slate-400">
+                  PIN was emailed and displayed on customer's order tracking page.
+                </p>
+              </div>
+
+              {/* POD Photo Upload */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                  Proof of Delivery (POD) Photo (Optional)
+                </label>
+                {podImage ? (
+                  <div className="relative rounded-xl overflow-hidden border border-slate-200 aspect-video max-h-36 bg-slate-100">
+                    <img src={podImage} alt="POD Room Snapshot" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setPodImage(null)}
+                      className="absolute top-2 right-2 p-1 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full transition-opacity cursor-pointer shadow-xs"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="border-2 border-dashed border-slate-300 hover:border-slate-400 rounded-xl p-3.5 flex flex-col items-center justify-center gap-1.5 cursor-pointer bg-slate-50/60 hover:bg-slate-50 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      disabled={isUploadingPod}
+                      onChange={handlePodUpload}
+                    />
+                    <div className="w-7 h-7 rounded-full bg-white shadow-2xs flex items-center justify-center text-slate-600">
+                      {isUploadingPod ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-900" />
+                      ) : (
+                        <Camera className="w-3.5 h-3.5 text-slate-700" />
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold text-slate-800">
+                      {isUploadingPod ? 'Uploading snapshot...' : 'Snap or upload room/furniture photo'}
+                    </span>
+                  </label>
+                )}
+              </div>
+
+              {/* Staff Bypass */}
+              <div className="pt-2 border-t border-slate-200 space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={bypassOtp}
+                    onChange={(e) => setBypassOtp(e.target.checked)}
+                    className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span>Customer phone offline / Staff manual bypass</span>
+                </label>
+
+                {bypassOtp && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Reason for bypass (e.g. Phone battery drained, ID checked)"
+                    value={bypassReason}
+                    onChange={(e) => setBypassReason(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-600"
+                  />
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setDeliveryModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating || isUploadingPod}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                >
+                  {isUpdating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Confirm Delivery & Mark Paid</span>
                 </button>
               </div>
             </form>

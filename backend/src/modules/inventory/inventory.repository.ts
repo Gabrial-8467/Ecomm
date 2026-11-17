@@ -2,6 +2,7 @@ import { prisma } from '../../config/database.js';
 import { StockAdjustmentInput, InventoryQueryFilter } from './inventory.types.js';
 import { BadRequestError, NotFoundError } from '../../utils/errors.js';
 import { Prisma } from '@prisma/client';
+import { backInStockService } from '../back-in-stock/back-in-stock.service.js';
 
 export class InventoryRepository {
   async findInventoryList(filters: InventoryQueryFilter) {
@@ -86,6 +87,7 @@ export class InventoryRepository {
         throw new NotFoundError('Inventory record for variant not found');
       }
 
+      const previousAvailable = inventory.availableQuantity;
       const newAvailable = inventory.availableQuantity + input.quantityDelta;
       if (newAvailable < 0) {
         throw new BadRequestError(
@@ -110,7 +112,21 @@ export class InventoryRepository {
         },
       });
 
-      return updated;
+      // Automatic trigger: If stock was replenished into positive available quantity, notify waitlist subscribers
+      let notifiedCount = 0;
+      if ((previousAvailable <= 0 && newAvailable > 0) || (input.type === 'RESTOCK' && newAvailable > 0)) {
+        const notifyResult = await backInStockService.notifySubscribersForVariant(
+          input.variantId,
+          newAvailable,
+          tx
+        );
+        notifiedCount = notifyResult.notifiedCount;
+      }
+
+      return {
+        ...updated,
+        notifiedSubscribersCount: notifiedCount,
+      };
     });
   }
 

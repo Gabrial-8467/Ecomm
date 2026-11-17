@@ -10,10 +10,18 @@ describe('API Health and Base Routes', () => {
     expect(res.body).toHaveProperty('service', 'furniture-electronics-api');
   });
 
-  it('GET /api/v1/invalid-route returns 404 with structured error', async () => {
+  it('returns 404 for the retired shared /api/v1 namespace', async () => {
     const res = await request(app).get('/api/v1/invalid-route');
     expect(res.status).toBe(404);
     expect(res.body.success).toBe(false);
     expect(res.body.error).toHaveProperty('code', 'NOT_FOUND');
+  });
+
+  it('keeps admin and storefront namespaces isolated', async () => {
+    const adminRes = await request(app).get('/api/admin/v1/invalid-route');
+    const storefrontRes = await request(app).get('/api/storefront/v1/invalid-route');
+
+    expect(adminRes.status).toBe(404);
+    expect(storefrontRes.status).toBe(404);
   });
 });

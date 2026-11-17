@@ -136,6 +136,28 @@ export interface InventoryMovement {
   };
 }
 
+export interface WaitlistSummaryItem {
+  productId: string;
+  productName: string;
+  productSlug: string;
+  primaryImage?: string | null;
+  variantId?: string | null;
+  variantName?: string | null;
+  sku?: string | null;
+  availableStock: number;
+  pendingCount: number;
+  notifiedCount: number;
+  latestSubscribedAt: string;
+  subscribers: {
+    id: string;
+    email: string;
+    phone?: string | null;
+    status: 'PENDING' | 'NOTIFIED' | 'CANCELLED';
+    createdAt: string;
+    notifiedAt?: string | null;
+  }[];
+}
+
 export interface OrderItem {
   id: string;
   productId: string;
@@ -144,6 +166,7 @@ export interface OrderItem {
   variantName: string;
   sku: string;
   quantity: number;
+  returnedQuantity?: number;
   unitPrice: number | string;
   totalPrice: number | string;
 }
@@ -204,6 +227,20 @@ export interface Order {
   cancelledAt?: string | null;
   cancelReason?: string | null;
   returnImages?: string[];
+  deliveryOtp?: string | null;
+  deliveryOtpVerifiedAt?: string | null;
+  proofOfDeliveryImage?: string | null;
+  isPartialReturn?: boolean;
+  refundAmount?: number | string | null;
+  returnItems?: {
+    orderItemId: string;
+    productName: string;
+    variantName?: string;
+    sku?: string;
+    quantity: number;
+    unitPrice: number;
+    totalRefund: number;
+  }[] | null;
   items: OrderItem[];
   statusHistory?: OrderStatusHistory[];
   createdAt: string;

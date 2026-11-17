@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/errors.js';
 import { sendError } from '../utils/response.js';
 import { env } from '../config/env.js';
+import { logger } from '../utils/logger.js';
 
 export function errorHandler(
   err: Error,
@@ -28,7 +29,7 @@ export function errorHandler(
     return;
   }
 
-  console.error('Unhandled Application Error:', err);
+  logger.error('Unhandled Application Error:', err);
 
   const message = env.NODE_ENV === 'production' ? 'An internal server error occurred.' : err.message;
   const details = env.NODE_ENV === 'development' ? err.stack : undefined;

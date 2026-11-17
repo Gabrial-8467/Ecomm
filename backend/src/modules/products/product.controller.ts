@@ -78,5 +78,28 @@ export class ProductController {
       next(error);
     }
   }
+
+  async bulkImport(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const items = Array.isArray(req.body) ? req.body : req.body.items;
+      if (!Array.isArray(items) || items.length === 0) {
+        res.status(400).json({ success: false, message: 'Request body must be a non-empty array of product rows' });
+        return;
+      }
+      const result = await productService.bulkImport(items);
+      sendSuccess(res, result, result.message);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getBulkTemplate(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const template = productService.getBulkTemplate();
+      sendSuccess(res, template);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 

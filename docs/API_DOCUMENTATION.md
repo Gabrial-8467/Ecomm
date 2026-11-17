@@ -1,6 +1,6 @@
 # REST API Documentation
 
-Base URL: `/api/v1`
+Base URLs: `/api/storefront/v1` (storefront), `/api/admin/v1` (admin). No endpoint is shared between the two APIs.
 
 All requests and responses use JSON format (`Content-Type: application/json`).
 Standard response envelope:
@@ -201,7 +201,7 @@ Cancel an order before dispatch. Restores reserved inventory immediately.
 
 ## 7. Admin Operations Endpoints (`Role: ADMIN` or `STAFF`)
 
-### `GET /admin/dashboard`
+### `GET /dashboard` (admin API)
 High-level KPIs: Total sales, orders today, pending dispatch, low stock alert count, recent orders, daily sales graph.
 
 ### `GET /admin/products`
